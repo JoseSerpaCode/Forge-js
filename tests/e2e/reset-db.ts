@@ -100,4 +100,14 @@ export default function resetDb() {
     INSERT INTO workspace_members (workspace_id, user_id, ws_role)
     VALUES (?, ?, ?)
   `).run('ws-notion-d', 'test-user-notion-d', 'owner');
+
+  db.prepare(`
+    INSERT INTO users (id, username, password_hash, is_sysadmin)
+    VALUES (?, ?, ?, ?)
+  `).run('test-user-notion-e', 'TestUserNotionE', pwHash, 0);
+
+  db.prepare(`
+    INSERT INTO workspace_members (workspace_id, user_id, ws_role)
+    VALUES (?, ?, ?)
+  `).run('ws-notion-c', 'test-user-notion-e', 'viewer');
 }

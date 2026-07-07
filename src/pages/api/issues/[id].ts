@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import db from '../../../lib/db';
+import { checkWorkspaceAccess } from '../../../lib/guard';
 
 export const PATCH: APIRoute = async ({ params, request, locals }) => {
   const { id } = params;
@@ -7,6 +8,17 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
   if (!user || !id) return new Response('Unauthorized', { status: 401 });
 
   try {
+    const issue = db.prepare('SELECT id, workspace_id FROM issues WHERE id = ?').get(id) as any;
+    if (!issue) return new Response('Not Found', { status: 404 });
+
+    const access = checkWorkspaceAccess(user.id, user.is_sysadmin, issue.workspace_id, 'editor');
+    if (!access.granted) {
+      if (access.reason === 'not_member') {
+        return new Response('Not Found', { status: 404 });
+      }
+      return new Response(access.error, { status: 403 });
+    }
+
     const data = await request.json();
     
     // Updates description if passed

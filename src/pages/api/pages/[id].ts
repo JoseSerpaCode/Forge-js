@@ -18,7 +18,12 @@ function authorize(user: any, requiredRole: 'owner' | 'editor' | 'commenter' | '
 
   // 3. Solo si la página pertenece al workspace correcto, invocar al Guard para validar el rol
   const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspaceId, requiredRole);
-  if (!access.granted) return { error: new Response(access.error, { status: 403 }) };
+  if (!access.granted) {
+    if (access.reason === 'not_member') {
+      return { error: new Response('Page not found or belongs to another workspace', { status: 404 }) };
+    }
+    return { error: new Response(access.error, { status: 403 }) };
+  }
 
   return { workspaceId, page };
 }
