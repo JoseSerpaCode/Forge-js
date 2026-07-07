@@ -39,6 +39,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   // Inject role context based on current workspace
+  // SECURITY WARNING: sessionData.role is derived from last_workspace_id, which is fallible 
+  // with parallel tabs. This field is EXCLUSIVELY for UI presentation (e.g. Sidebar text).
+  // NEVER use sessionData.role or user.role for backend authorization decisions. 
+  // Always use guard.ts (checkWorkspaceAccess) which queries the DB directly.
   const currentWsTag = sessionData.last_workspace_id;
   if (sessionData.is_sysadmin === 1) {
     sessionData.role = 'owner';
