@@ -84,7 +84,13 @@ const { pageId, initialTitle, initialContent, canEdit } = Astro.props;
       readOnly: !canEdit,
       data: initialData,
       tools: {
-        header: Header,
+        header: {
+          class: Header,
+          config: {
+            levels: [1, 2, 3, 4, 5, 6],
+            defaultLevel: 1
+          }
+        },
         list: List,
         checklist: Checklist,
         quote: Quote,
@@ -148,7 +154,8 @@ const { pageId, initialTitle, initialContent, canEdit } = Astro.props;
       }
 
       const text = textNode.textContent || '';
-      if (text.trim() === '/') {
+      const cleanText = text.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+      if (cleanText === '/') {
         const selection = window.getSelection();
         if (selection && selection.rangeCount > 0) {
           const range = selection.getRangeAt(0);

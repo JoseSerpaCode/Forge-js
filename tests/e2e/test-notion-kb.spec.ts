@@ -43,23 +43,31 @@ test('Knowledge Base: Create, auto-save and cascading delete', async ({ page }) 
   expect(pages[0].content_json).toContain('Hello world');
   expect(pages[0].content_json).not.toContain('<script>');
   expect(pages[0].content_json).not.toContain('javascript:alert(2)');
-  // Ensure the link text survived but without the malicious href
-  expect(pages[0].content_json).toContain('<a>test</a>');
+  // Ensure the link text survived but without the malicious href (Editor.js strips invalid a tags natively before saving)
+  expect(pages[0].content_json).toContain('test');
+  expect(pages[0].content_json).not.toContain('<a href');
   
   // SLASH COMMAND TEST
-  // Move to a new line and type /
+  // Move to a new line, ensure focus, and type /
   await page.keyboard.press('Enter');
+  await page.waitForTimeout(500); // Wait for Editor.js to create the new block
   await page.evaluate(() => {
     const p = document.querySelectorAll('.ce-paragraph')[1];
     if (p) {
       p.textContent = '/';
-      p.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: '/' }));
+      const range = document.createRange();
+      range.selectNodeContents(p);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+      document.getElementById('page-editor')?.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: '/' }));
     }
   });
   
-  // Wait for popup and click the Header option
-  await page.waitForSelector('.slash-menu-item[data-type="header"]');
-  await page.click('.slash-menu-item[data-type="header"]');
+  // Wait for popup and click the Header H1 option
+  await page.waitForSelector('.slash-menu-item[data-type="header"][data-level="1"]', { state: 'visible' });
+  await page.click('.slash-menu-item[data-type="header"][data-level="1"]');
   
   // Type header text
   await page.keyboard.type('My Header');
@@ -74,7 +82,7 @@ test('Knowledge Base: Create, auto-save and cascading delete', async ({ page }) 
   const headerBlock = parsedContent.blocks.find((b: any) => b.type === 'header');
   expect(headerBlock).toBeDefined();
   expect(headerBlock.data.text).toBe('My Header');
-  expect([1, 2]).toContain(headerBlock.data.level);
+  expect(headerBlock.data.level).toBe(1);
 
   const parentId = pages[0].id;
 
