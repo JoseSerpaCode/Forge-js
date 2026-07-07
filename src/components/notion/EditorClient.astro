@@ -1,0 +1,91 @@
+---
+interface Props {
+  pageId: string;
+  initialTitle: string;
+  initialContent: string;
+  canEdit: boolean;
+}
+const { pageId, initialTitle, initialContent, canEdit } = Astro.props;
+---
+
+<div class="flex-1 flex flex-col h-full bg-forge-bg overflow-y-auto">
+  <div class="max-w-4xl mx-auto w-full p-8 pt-16 flex flex-col min-h-full">
+    
+    <div class="flex items-center justify-between mb-8 group">
+      <input 
+        id="page-title"
+        type="text" 
+        value={initialTitle}
+        readonly={!canEdit}
+        class="text-4xl font-bold bg-transparent text-white focus:outline-none focus:border-b focus:border-forge-neon border-b border-transparent w-full transition-colors"
+        placeholder="Page Title"
+      />
+      {canEdit && (
+        <button id="btn-delete-page" class="w-8 h-8 rounded flex items-center justify-center text-forge-muted hover:bg-red-500/20 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100" title="Delete Page">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+        </button>
+      )}
+    </div>
+
+    <!-- Very simple rich text area for now -->
+    <div 
+      id="page-editor"
+      contenteditable={canEdit ? "true" : "false"}
+      class="flex-1 text-forge-text outline-none prose prose-invert max-w-none"
+      set:html={initialContent || '<p><br></p>'}
+    ></div>
+
+    <div class="fixed bottom-4 right-8 flex items-center gap-2 text-xs font-mono text-forge-muted">
+      <span id="save-status">Saved</span>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ pageId }}>
+  let timeout;
+  const titleInput = document.getElementById('page-title');
+  const editorDiv = document.getElementById('page-editor');
+  const statusSpan = document.getElementById('save-status');
+  
+  async function save() {
+    if (statusSpan) statusSpan.textContent = 'Saving...';
+    try {
+      const res = await fetch(`/api/pages/${pageId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          title: titleInput?.value, 
+          content_json: editorDiv?.innerHTML 
+        })
+      });
+      if (!res.ok) throw new Error('Save failed');
+      if (statusSpan) statusSpan.textContent = 'Saved';
+    } catch (e) {
+      if (statusSpan) statusSpan.textContent = 'Error saving';
+    }
+  }
+
+  function debounceSave() {
+    if (statusSpan) statusSpan.textContent = 'Unsaved changes...';
+    clearTimeout(timeout);
+    timeout = setTimeout(save, 1000);
+  }
+
+  titleInput?.addEventListener('input', debounceSave);
+  editorDiv?.addEventListener('input', debounceSave);
+
+  document.getElementById('btn-delete-page')?.addEventListener('click', async () => {
+    if (!confirm('Are you sure you want to delete this page and ALL its subpages? This action cannot be undone.')) return;
+    
+    const res = await fetch(`/api/pages/${pageId}`, { method: 'DELETE' });
+    if (res.ok) {
+      // Redirect to KB home
+      const sysTagMatch = window.location.pathname.match(/^\/w\/([^/]+)/);
+      if (sysTagMatch) {
+        window.location.href = `/w/${sysTagMatch[1]}/p`;
+      }
+    } else {
+      alert('Error deleting page: ' + await res.text());
+    }
+  });
+</script>

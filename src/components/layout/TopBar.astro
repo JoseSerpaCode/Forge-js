@@ -56,7 +56,7 @@ const user = Astro.locals.user;
            searchResults.innerHTML = '<li class="p-2 text-forge-muted text-sm text-center">No results found</li>';
         } else {
            data.forEach((item: any) => {
-             searchResults.innerHTML += `<li class="p-2 hover:bg-forge-panel rounded cursor-pointer text-sm text-forge-text border-l-2 border-transparent hover:border-forge-neon transition-all">${item.title}</li>`;
+             searchResults.innerHTML += `<li data-id="${item.id || item.title}" class="search-item p-2 hover:bg-forge-panel rounded cursor-pointer text-sm text-forge-text border-l-2 border-transparent hover:border-forge-neon transition-all">${item.title}</li>`;
            });
         }
       }
@@ -67,6 +67,14 @@ const user = Astro.locals.user;
 
   document.addEventListener('click', (e: any) => {
     if (!searchInput?.contains(e.target) && !searchDropdown?.contains(e.target)) {
+      searchDropdown?.classList.add('hidden');
+    }
+  });
+
+  searchResults?.addEventListener('click', (e: any) => {
+    const item = e.target.closest('.search-item');
+    if (item) {
+      alert('Selected: ' + item.getAttribute('data-id'));
       searchDropdown?.classList.add('hidden');
     }
   });

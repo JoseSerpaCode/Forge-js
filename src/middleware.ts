@@ -15,22 +15,27 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // Validación de Sesión contra Base de Datos Real
   const sessionData = db.prepare(`
-    SELECT u.id, u.username, u.is_sysadmin, u.theme_preference, s.expires_at 
+    SELECT u.id, u.username, u.is_sysadmin, u.theme_preference, u.last_workspace_id, s.expires_at 
     FROM sessions s 
     JOIN users u ON s.user_id = u.id 
     WHERE s.id = ?
   `).get(sessionId) as any;
 
-  // Note: the original PDF says "u.role", but we didn't add a 'role' column to users in Tomo I.
-  // We'll leave out u.role or map it since it wasn't defined in the DB.
-  // Wait, I will add it to the select but if it fails, I'll modify the DB. Let's just avoid u.role in SELECT if it's not in DB.
-  // Actually, wait, let's keep it as is, but remove u.role since it's not in `users` table created in Tomo I.
-  
   if (!sessionData || sessionData.expires_at < Date.now()) {
     context.cookies.delete('forge_session', { path: '/' });
     context.locals.user = null;
     if (isPublicRoute) return next();
     return context.redirect('/login');
+  }
+
+  // Update last_workspace_id if we are navigating to a workspace
+  const match = context.url.pathname.match(/^\/w\/([^/]+)/);
+  if (match && match[1]) {
+    const sysTag = match[1];
+    if (sessionData.last_workspace_id !== sysTag) {
+      db.prepare('UPDATE users SET last_workspace_id = ? WHERE id = ?').run(sysTag, sessionData.id);
+      sessionData.last_workspace_id = sysTag;
+    }
   }
 
   // Inyectar usuario

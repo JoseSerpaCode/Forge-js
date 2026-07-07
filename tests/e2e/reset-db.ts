@@ -1,0 +1,103 @@
+import fs from 'fs';
+import path from 'path';
+import Database from 'better-sqlite3';
+import bcrypt from 'bcryptjs';
+
+import { execSync } from 'child_process';
+import db from '../../src/lib/db';
+
+export default function resetDb() {
+  const dbPath = path.join(process.cwd(), 'forge_test.db');
+  
+  // Actually, importing db from src/lib/db automatically creates tables if they don't exist.
+  // We just need to DELETE FROM all tables to clear them out, then insert test data.
+  // Since db is already loaded, we can't delete the file, we just clear tables.
+  
+  db.exec(`
+    DELETE FROM workspace_members;
+    DELETE FROM issues;
+    DELETE FROM workspaces;
+    DELETE FROM sessions;
+    DELETE FROM users;
+  `);
+
+  // Seed data
+  const pwHash = bcrypt.hashSync('#juniorManda1924', 10);
+  
+  // Insert TestUser1 for settings test
+  db.prepare(`
+    INSERT INTO users (id, username, password_hash, is_sysadmin)
+    VALUES (?, ?, ?, ?)
+  `).run('test-user-settings', 'TestUserSettings', pwHash, 0);
+
+  // Insert TestUser2 for sidebar active test
+  db.prepare(`
+    INSERT INTO users (id, username, password_hash, is_sysadmin)
+    VALUES (?, ?, ?, ?)
+  `).run('test-user-sidebar', 'TestUserSidebar', pwHash, 1);
+  
+  db.prepare(`
+    INSERT INTO workspaces (id, name, sys_tag, created_by)
+    VALUES (?, ?, ?, ?)
+  `).run('ws-test', 'Test Workspace', 'test-workspace', 'test-user-sidebar');
+
+  db.prepare(`
+    INSERT INTO users (id, username, password_hash, is_sysadmin)
+    VALUES (?, ?, ?, ?)
+  `).run('test-user-notion-a', 'TestUserNotionA', pwHash, 0);
+
+  db.prepare(`
+    INSERT INTO users (id, username, password_hash, is_sysadmin)
+    VALUES (?, ?, ?, ?)
+  `).run('test-user-notion-b', 'TestUserNotionB', pwHash, 0);
+
+  db.prepare(`
+    INSERT INTO workspaces (id, name, sys_tag, created_by)
+    VALUES (?, ?, ?, ?)
+  `).run('ws-notion-a', 'Notion Workspace A', 'notion-ws-a', 'test-user-notion-a');
+
+  db.prepare(`
+    INSERT INTO workspaces (id, name, sys_tag, created_by)
+    VALUES (?, ?, ?, ?)
+  `).run('ws-notion-b', 'Notion Workspace B', 'notion-ws-b', 'test-user-notion-b');
+
+  db.prepare(`
+    INSERT INTO workspace_members (workspace_id, user_id, ws_role)
+    VALUES (?, ?, ?)
+  `).run('ws-notion-a', 'test-user-notion-a', 'owner');
+
+  db.prepare(`
+    INSERT INTO workspace_members (workspace_id, user_id, ws_role)
+    VALUES (?, ?, ?)
+  `).run('ws-notion-b', 'test-user-notion-b', 'owner');
+
+  db.prepare(`
+    INSERT INTO users (id, username, password_hash, is_sysadmin)
+    VALUES (?, ?, ?, ?)
+  `).run('test-user-notion-c', 'TestUserNotionC', pwHash, 0);
+
+  db.prepare(`
+    INSERT INTO users (id, username, password_hash, is_sysadmin)
+    VALUES (?, ?, ?, ?)
+  `).run('test-user-notion-d', 'TestUserNotionD', pwHash, 0);
+
+  db.prepare(`
+    INSERT INTO workspaces (id, name, sys_tag, created_by)
+    VALUES (?, ?, ?, ?)
+  `).run('ws-notion-c', 'Notion Workspace C', 'notion-ws-c', 'test-user-notion-c');
+
+  db.prepare(`
+    INSERT INTO workspaces (id, name, sys_tag, created_by)
+    VALUES (?, ?, ?, ?)
+  `).run('ws-notion-d', 'Notion Workspace D', 'notion-ws-d', 'test-user-notion-d');
+
+  db.prepare(`
+    INSERT INTO workspace_members (workspace_id, user_id, ws_role)
+    VALUES (?, ?, ?)
+  `).run('ws-notion-c', 'test-user-notion-c', 'owner');
+
+  db.prepare(`
+    INSERT INTO workspace_members (workspace_id, user_id, ws_role)
+    VALUES (?, ?, ?)
+  `).run('ws-notion-d', 'test-user-notion-d', 'owner');
+}

@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
+process.env.NODE_ENV = 'test';
+
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
@@ -12,6 +14,7 @@ import { defineConfig, devices } from '@playwright/test';
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
+  globalSetup: './tests/e2e/reset-db.ts',
   testDir: './tests/e2e',
   /* Run tests in files in parallel */
   fullyParallel: true,
@@ -26,7 +29,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
-    baseURL: 'http://localhost:4321',
+    baseURL: 'http://localhost:4322',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -71,9 +74,10 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run dev',
-  //   url: 'http://localhost:4321',
-  //   reuseExistingServer: !process.env.CI,
-  // },
+  webServer: {
+    command: 'NODE_ENV=test PORT=4322 npm run build && NODE_ENV=test PORT=4322 node server.mjs',
+    url: 'http://localhost:4322',
+    reuseExistingServer: false,
+    timeout: 120 * 1000,
+  },
 });

@@ -1,0 +1,116 @@
+---
+import db from '../../lib/db';
+import PageTreeItem from './PageTreeItem.astro';
+import { checkWorkspaceAccess } from '../../lib/guard';
+
+interface Props {
+  workspaceId: string;
+  sysTag: string;
+  currentPageId?: string;
+}
+
+const { workspaceId, sysTag, currentPageId } = Astro.props;
+const user = Astro.locals.user;
+if (!user) return new Response('Unauthorized', { status: 401 });
+
+// Check access (viewer minimum)
+const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspaceId, 'viewer');
+if (!access.granted) return new Response(access.error, { status: 403 });
+
+// One single query for the whole tree
+const pages = db.prepare('SELECT id, parent_page_id, title, icon FROM pages WHERE workspace_id = ? ORDER BY created_at ASC').all(workspaceId) as any[];
+
+const childrenMap = new Map<string, any[]>();
+const rootPages: any[] = [];
+
+for (const p of pages) {
+  if (!p.parent_page_id) {
+    rootPages.push(p);
+  } else {
+    if (!childrenMap.has(p.parent_page_id)) childrenMap.set(p.parent_page_id, []);
+    childrenMap.get(p.parent_page_id)!.push(p);
+  }
+}
+---
+
+<aside class="w-64 bg-forge-panel border-r border-forge-border flex flex-col h-full shrink-0">
+  <div class="p-4 border-b border-forge-border flex items-center justify-between">
+    <h2 class="font-bold text-forge-neon uppercase tracking-widest text-sm flex items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+      Knowledge Base
+    </h2>
+    <button id="btn-new-root-page" class="w-6 h-6 flex items-center justify-center bg-forge-bg hover:bg-forge-neon hover:text-black rounded border border-forge-border transition-colors" title="New Page">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+    </button>
+  </div>
+  
+  <div class="flex-1 overflow-y-auto p-2">
+    <ul id="page-tree-root" class="space-y-1">
+      {rootPages.length === 0 ? (
+        <li class="p-4 text-xs text-forge-muted italic text-center">No pages yet. Create one!</li>
+      ) : (
+        rootPages.map(page => (
+          <PageTreeItem page={page} childrenMap={childrenMap} currentPageId={currentPageId} sys_tag={sysTag} />
+        ))
+      )}
+    </ul>
+  </div>
+</aside>
+
+<script>
+  // Handle toggling of folders
+  document.getElementById('page-tree-root')?.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest('button[aria-label="Toggle"]');
+    if (btn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const parentLi = btn.closest('li');
+      const childrenUl = parentLi?.querySelector('ul');
+      if (childrenUl) {
+        parentLi.firstElementChild?.classList.toggle('expanded');
+      }
+    }
+  });
+
+  // Automatically expand folders that contain the active page
+  const activeLink = document.querySelector('a.text-forge-neon.font-bold');
+  if (activeLink) {
+    let parent = activeLink.parentElement?.parentElement; // li
+    while (parent && parent.tagName === 'LI') {
+      const toggleWrapper = parent.firstElementChild;
+      if (toggleWrapper) toggleWrapper.classList.add('expanded');
+      parent = parent.parentElement?.parentElement; // go up to next li
+    }
+  }
+
+  // Create page logic
+  async function createPage(parentId: string | null) {
+    const res = await fetch('/api/pages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: 'Untitled', parent_page_id: parentId })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      // Wait for sysTag from URL
+      const sysTagMatch = window.location.pathname.match(/^\/w\/([^/]+)/);
+      const sysTag = sysTagMatch ? sysTagMatch[1] : '';
+      if (sysTag) {
+        window.location.href = `/w/${sysTag}/p/${data.id}`;
+      }
+    } else {
+      alert('Error creating page: ' + await res.text());
+    }
+  }
+
+  document.getElementById('btn-new-root-page')?.addEventListener('click', () => createPage(null));
+  
+  document.querySelectorAll('.add-child-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const parentId = btn.getAttribute('data-parent-id');
+      if (parentId) createPage(parentId);
+    });
+  });
+</script>

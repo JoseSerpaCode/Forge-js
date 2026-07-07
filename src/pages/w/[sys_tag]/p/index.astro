@@ -1,0 +1,32 @@
+---
+import MainLayout from '../../../../layouts/MainLayout.astro';
+import PageTree from '../../../../components/notion/PageTree.astro';
+import db from '../../../../lib/db';
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/login');
+
+const { sys_tag } = Astro.params;
+const ws = db.prepare('SELECT id FROM workspaces WHERE sys_tag = ?').get(sys_tag) as any;
+if (!ws) return new Response('Workspace not found', { status: 404 });
+
+const firstPage = db.prepare('SELECT id FROM pages WHERE workspace_id = ? ORDER BY created_at ASC LIMIT 1').get(ws.id) as any;
+
+if (firstPage) {
+  return Astro.redirect(`/w/${sys_tag}/p/${firstPage.id}`);
+}
+---
+
+<MainLayout title="Knowledge Base | Forge JS">
+  <div class="flex h-full overflow-hidden">
+    <PageTree workspaceId={ws.id} sysTag={sys_tag!} />
+    
+    <div class="flex-1 flex flex-col items-center justify-center text-forge-muted">
+      <div class="w-16 h-16 border border-dashed border-forge-border rounded-lg flex items-center justify-center mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+      </div>
+      <p>No pages found in this workspace.</p>
+      <p class="text-sm">Click "New Page" in the sidebar to create one.</p>
+    </div>
+  </div>
+</MainLayout>

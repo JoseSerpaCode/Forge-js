@@ -20,8 +20,9 @@ CREATE TABLE IF NOT EXISTS users (
  username TEXT UNIQUE NOT NULL,
  password_hash TEXT NOT NULL,
  is_sysadmin BOOLEAN DEFAULT 0 CHECK(is_sysadmin IN (0, 1)),
- avatar_url TEXT DEFAULT '/default-avatar.png',
+ avatar_url TEXT DEFAULT '/default-avatar.svg',
  theme_preference TEXT DEFAULT 'orion_neon',
+ last_workspace_id TEXT,
  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
