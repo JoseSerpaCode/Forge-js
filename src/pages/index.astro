@@ -1,11 +1,63 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+// src/pages/index.astro
+import MainLayout from '../layouts/MainLayout.astro';
+import db from '../lib/db';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const user = Astro.locals.user;
+
+// 1. Obtener Workspaces donde el usuario es miembro (o todos si es sysadmin)
+const workspacesQuery = user.is_sysadmin === 1 
+  ? 'SELECT id, name, sys_tag FROM workspaces'
+  : 'SELECT w.id, w.name, w.sys_tag FROM workspaces w JOIN workspace_members wm ON w.id = wm.workspace_id WHERE wm.user_id = ?';
+
+const workspaces = user.is_sysadmin === 1 ? db.prepare(workspacesQuery).all() as any[] : db.prepare(workspacesQuery).all(user.id) as any[];
+
+// 2. Obtener Tareas Asignadas a mí (My Tasks)
+const myTasks = db.prepare(`
+  SELECT i.id, i.title, i.status, w.sys_tag 
+  FROM issues i 
+  JOIN workspaces w ON i.workspace_id = w.id 
+  WHERE i.assignee_id = ? AND i.status != 'done'
+  ORDER BY i.updated_at DESC LIMIT 10
+`).all(user.id) as any[];
 ---
 
-<Layout>
-	<Welcome />
-</Layout>
+<MainLayout title="My Hub">
+  <div class="space-y-8 max-w-5xl mx-auto">
+    <header>
+      <h1 class="text-3xl font-bold text-forge-neon mb-2">My Hub</h1>
+      <p class="text-forge-text">Bienvenido de vuelta, {user.username}</p>
+    </header>
+
+    <section>
+      <h2 class="text-xl font-bold text-white mb-4 border-b border-forge-border pb-2">Mis Workspaces</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {workspaces.map(ws => (
+          <a href={`/w/${ws.sys_tag}/board`} class="block bg-forge-panel border border-forge-border p-6 rounded-lg hover:border-forge-neon transition-colors group">
+            <h3 class="text-lg font-bold text-white group-hover:text-forge-neon mb-1">{ws.name}</h3>
+            <span class="text-xs font-mono text-forge-text bg-forge-bg px-2 py-1 rounded">#{ws.sys_tag}</span>
+          </a>
+        ))}
+        {workspaces.length === 0 && <p class="text-forge-text italic">No tienes workspaces asignados.</p>}
+      </div>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-bold text-white mb-4 border-b border-forge-border pb-2">Mis Tareas Pendientes</h2>
+      <div class="bg-forge-panel border border-forge-border rounded-lg overflow-hidden">
+        <ul class="divide-y divide-forge-border">
+          {myTasks.map(task => (
+            <li class="p-4 hover:bg-forge-bg/50 transition-colors flex items-center justify-between">
+              <div>
+                <p class="text-white font-medium">{task.title}</p>
+                <p class="text-xs text-forge-text font-mono mt-1">{task.sys_tag}-{task.id}</p>
+              </div>
+              <span class="text-xs font-mono px-2 py-1 rounded bg-forge-bg border border-forge-border uppercase">{task.status}</span>
+            </li>
+          ))}
+          {myTasks.length === 0 && <li class="p-4 text-forge-text italic">No tienes tareas pendientes.</li>}
+        </ul>
+      </div>
+    </section>
+  </div>
+</MainLayout>

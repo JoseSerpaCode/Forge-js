@@ -1,0 +1,31 @@
+---
+interface Props {
+  issue: {
+    id: string;
+    title: string;
+    description: string;
+    type: string;
+    story_points: number;
+    assignee_initials: string;
+  };
+}
+
+const { issue } = Astro.props;
+---
+<!-- Componente IssueCard.astro -->
+<div id={issue.id} draggable="true" class="issue-card group bg-forge-panel border border-forge-border p-4 rounded-md shadow-lg hover:border-forge-neon transition-all cursor-grab active:cursor-grabbing">
+  <div class="flex justify-between items-start mb-2">
+    <span class="font-mono text-xs text-forge-neon uppercase">{issue.id}</span>
+    <div class="w-6 h-6 rounded-full bg-forge-bg border border-forge-border flex items-center justify-center text-[10px] text-forge-muted font-bold">
+      {issue.assignee_initials}
+    </div>
+  </div>
+  <h4 class="text-forge-text font-bold text-sm mb-1">{issue.title}</h4>
+  <p class="text-forge-muted text-xs line-clamp-2 mb-3">{issue.description || 'No description provided.'}</p>
+  <div class="flex items-center gap-2">
+    <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-forge-bg text-forge-neon border border-forge-border uppercase">
+      {issue.type}
+    </span>
+    <span class="text-[10px] text-forge-muted font-mono">{issue.story_points} SP</span>
+  </div>
+</div>

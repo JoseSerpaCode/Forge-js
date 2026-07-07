@@ -1,0 +1,145 @@
+---
+---
+<!-- Drawer backdrop -->
+<div id="issue-details-backdrop" class="fixed inset-0 bg-black/50 hidden z-40 transition-opacity"></div>
+
+<!-- Drawer container -->
+<div id="issue-details-modal" class="fixed top-0 right-0 w-[500px] max-w-full h-full bg-forge-bg border-l border-forge-border z-50 transform translate-x-full transition-transform duration-300 ease-in-out shadow-2xl overflow-y-auto flex flex-col">
+  <div class="p-4 border-b border-forge-border flex justify-between items-center bg-forge-panel">
+    <div class="flex items-center gap-3">
+      <span id="modal-issue-type" class="px-2 py-0.5 rounded text-xs font-mono bg-forge-bg text-forge-neon border border-forge-border uppercase">TASK</span>
+      <span id="modal-issue-id" class="font-mono text-sm text-forge-muted">ID-XXX</span>
+    </div>
+    <button id="close-modal-btn" class="text-forge-muted hover:text-forge-neon transition-colors">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+  </div>
+  
+  <div class="p-6 flex-1 flex flex-col gap-6">
+    <h2 id="modal-issue-title" class="text-xl font-bold text-forge-text">Loading...</h2>
+    
+    <div class="grid grid-cols-2 gap-4">
+      <div class="space-y-1">
+        <label class="text-xs font-bold text-forge-muted uppercase tracking-wider">Assignee</label>
+        <div class="flex items-center gap-2 p-2 bg-forge-panel border border-forge-border rounded">
+          <div class="w-6 h-6 rounded-full bg-forge-bg flex items-center justify-center text-xs font-bold text-forge-muted">U</div>
+          <span class="text-sm">Unassigned</span>
+        </div>
+      </div>
+      <div class="space-y-1">
+        <label class="text-xs font-bold text-forge-muted uppercase tracking-wider">Reporter</label>
+        <div class="flex items-center gap-2 p-2 bg-forge-panel border border-forge-border rounded">
+          <div class="w-6 h-6 rounded-full bg-forge-bg flex items-center justify-center text-xs font-bold text-forge-muted">S</div>
+          <span class="text-sm">System</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="space-y-1 relative">
+      <label class="text-xs font-bold text-forge-muted uppercase tracking-wider flex justify-between">
+        Description
+      </label>
+      <textarea id="modal-issue-desc" rows="5" class="w-full bg-forge-panel border border-forge-border rounded p-3 text-sm text-forge-text focus:outline-none focus:border-forge-neon transition-colors placeholder:text-forge-muted" placeholder="Add a description..."></textarea>
+      <button id="btn-save-desc" class="hidden absolute bottom-2 right-2 bg-forge-neon text-forge-bg text-xs font-bold px-3 py-1 rounded hover:bg-[#99cc00] transition-colors">Save</button>
+    </div>
+    
+    <div class="grid grid-cols-2 gap-4">
+      <div class="space-y-1">
+        <label class="text-xs font-bold text-forge-muted uppercase tracking-wider">Story Points</label>
+        <input type="number" id="modal-issue-points" value="0" class="w-full bg-forge-panel border border-forge-border rounded p-2 text-sm text-forge-text focus:outline-none focus:border-forge-neon transition-colors" />
+      </div>
+      <div class="space-y-1 flex flex-col justify-end">
+        <button id="btn-log-work" class="w-full bg-forge-panel border border-forge-border hover:border-forge-neon hover:text-forge-neon text-forge-text py-2 px-4 rounded text-sm font-bold transition-colors flex items-center justify-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Log Work
+        </button>
+      </div>
+    </div>
+    
+    <div class="space-y-2 mt-auto pt-6 border-t border-forge-border">
+      <label class="text-xs font-bold text-forge-muted uppercase tracking-wider">Attachments</label>
+      <div class="border border-dashed border-forge-border bg-forge-panel/50 rounded-lg p-6 flex flex-col items-center justify-center text-forge-muted hover:text-forge-neon hover:border-forge-neon hover:bg-forge-panel transition-all cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-2"><path d="M21.2 15c.7-1.2 1-2.5.7-3.9-.6-2-2.4-3.5-4.4-3.5h-1.2c-.7-3-3.2-5.2-6.2-5.6-3-.3-5.9 1.3-7.3 4-1.2 2.5-1 6.5.5 8.4"></path><path d="M12 18v-6"></path><path d="M9 15l3-3 3 3"></path></svg>
+        <span class="text-sm font-bold">Drop files here to upload</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const closeBtn = document.getElementById('close-modal-btn');
+  const modal = document.getElementById('issue-details-modal');
+  const backdrop = document.getElementById('issue-details-backdrop');
+
+  function close() {
+    modal?.classList.add('translate-x-full');
+    backdrop?.classList.add('hidden');
+  }
+
+  closeBtn?.addEventListener('click', close);
+  backdrop?.addEventListener('click', close);
+
+  // RBAC validation
+  const role = document.body.getAttribute('data-user-role');
+  if (role === 'viewer') {
+    const inputs = modal?.querySelectorAll('input, textarea, button') as NodeListOf<HTMLInputElement | HTMLButtonElement | HTMLTextAreaElement>;
+    inputs?.forEach(el => {
+      if (el.id !== 'close-modal-btn') {
+        el.disabled = true;
+        el.classList.add('opacity-50', 'cursor-not-allowed');
+      }
+    });
+  }
+  // Interaction Logic
+  const descEl = document.getElementById('modal-issue-desc') as HTMLTextAreaElement;
+  const saveBtn = document.getElementById('btn-save-desc');
+  const logWorkBtn = document.getElementById('btn-log-work');
+  
+  descEl?.addEventListener('input', () => {
+    saveBtn?.classList.remove('hidden');
+  });
+
+  saveBtn?.addEventListener('click', async () => {
+    const idEl = document.getElementById('modal-issue-id');
+    const issueId = idEl?.getAttribute('data-full-id');
+    if (!issueId) return;
+
+    saveBtn.textContent = 'Saving...';
+    try {
+      const res = await fetch(`/api/issues/${issueId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: descEl.value })
+      });
+      if (!res.ok) throw new Error();
+      
+      saveBtn.textContent = 'Saved!';
+      setTimeout(() => saveBtn.classList.add('hidden'), 1000);
+      saveBtn.textContent = 'Save';
+    } catch (e) {
+      alert('Error saving');
+      saveBtn.textContent = 'Save';
+    }
+  });
+
+  logWorkBtn?.addEventListener('click', () => {
+    alert('Log Work modal feature coming in next phase.');
+  });
+
+  const pointsEl = document.getElementById('modal-issue-points') as HTMLInputElement;
+  pointsEl?.addEventListener('change', async () => {
+    const idEl = document.getElementById('modal-issue-id');
+    const issueId = idEl?.getAttribute('data-full-id');
+    if (!issueId) return;
+
+    try {
+      await fetch(`/api/issues/${issueId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ story_points: parseInt(pointsEl.value) || 0 })
+      });
+    } catch (e) {
+      console.error('Failed to update story points', e);
+    }
+  });
+</script>

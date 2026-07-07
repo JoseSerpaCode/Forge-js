@@ -1,0 +1,17 @@
+---
+interface Props {
+  title: string;
+  status: string;
+}
+
+const { title, status } = Astro.props;
+---
+<div class="board-column flex-1 flex flex-col bg-forge-bg border border-forge-border rounded-md overflow-hidden min-w-[280px]" data-status={status}>
+  <div class="bg-forge-panel border-b border-forge-border p-3 font-bold text-sm tracking-wide text-forge-text uppercase flex items-center justify-between">
+    {title}
+    <span class="text-xs bg-forge-bg px-2 py-0.5 rounded text-forge-muted font-mono border border-forge-border issue-count">0</span>
+  </div>
+  <div class="flex-1 p-2 space-y-2 overflow-y-auto min-h-[150px] transition-colors column-content">
+    <slot />
+  </div>
+</div>

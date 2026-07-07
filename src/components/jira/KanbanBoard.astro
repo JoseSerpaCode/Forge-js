@@ -1,0 +1,139 @@
+---
+import BoardColumn from './BoardColumn.astro';
+import IssueCard from './IssueCard.astro';
+import IssueDetailsModal from './IssueDetailsModal.astro';
+
+interface Props {
+  issues: any[];
+  workspaceId: string;
+}
+
+const { issues, workspaceId } = Astro.props;
+
+const columns = [
+  { id: 'todo', title: 'To Do' },
+  { id: 'in_progress', title: 'In Progress' },
+  { id: 'review', title: 'Review' },
+  { id: 'done', title: 'Done' }
+];
+
+// Helper para extraer iniciales
+function getInitials(username: string) {
+  if (!username) return 'UN';
+  return username.substring(0, 2).toUpperCase();
+}
+---
+<div class="h-full flex flex-col">
+  <div class="flex gap-4 h-full overflow-x-auto pb-4 kanban-container" data-workspace={workspaceId}>
+    {columns.map(col => (
+      <BoardColumn title={col.title} status={col.id}>
+        {issues.filter(i => i.status === col.id).map(issue => (
+          <IssueCard issue={{
+            id: issue.id,
+            title: issue.title,
+            description: issue.description,
+            type: issue.type,
+            story_points: issue.story_points || 0,
+            assignee_initials: getInitials(issue.assignee_username || issue.reporter_username)
+          }} />
+        ))}
+      </BoardColumn>
+    ))}
+  </div>
+</div>
+
+<IssueDetailsModal />
+
+<script>
+  const columns = document.querySelectorAll('.board-column');
+  const cards = document.querySelectorAll('.issue-card');
+  const container = document.querySelector('.kanban-container');
+  const workspaceId = container?.getAttribute('data-workspace');
+
+  // Inicializar conteos
+  const updateCounts = () => {
+    columns.forEach(col => {
+      const count = col.querySelectorAll('.issue-card').length;
+      const countBadge = col.querySelector('.issue-count');
+      if (countBadge) countBadge.textContent = count.toString();
+    });
+  };
+  updateCounts();
+
+  cards.forEach(card => {
+    card.addEventListener('dragstart', (e: any) => {
+      e.dataTransfer.setData('text/plain', card.id);
+      card.classList.add('opacity-50');
+    });
+
+    card.addEventListener('dragend', () => {
+      card.classList.remove('opacity-50');
+      columns.forEach(c => {
+        const content = c.querySelector('.column-content');
+        if (content) content.classList.remove('bg-forge-neon/10');
+      });
+    });
+    
+    // Modal logic
+    card.addEventListener('click', () => {
+      const modal = document.getElementById('issue-details-modal');
+      const titleEl = document.getElementById('modal-issue-title');
+      const idEl = document.getElementById('modal-issue-id');
+      const descEl = document.getElementById('modal-issue-desc') as HTMLTextAreaElement;
+      const pointsEl = document.getElementById('modal-issue-points') as HTMLInputElement;
+      
+      if (modal && titleEl && idEl && descEl && pointsEl) {
+        idEl.textContent = card.id.substring(0, 8).toUpperCase();
+        idEl.setAttribute('data-full-id', card.id);
+        titleEl.textContent = card.querySelector('h4')?.textContent || '';
+        descEl.value = card.querySelector('p')?.textContent || '';
+        const spStr = card.querySelector('.font-mono')?.textContent || '0';
+        pointsEl.value = spStr.replace(' SP', '').trim();
+        modal.classList.remove('translate-x-full');
+        document.getElementById('issue-details-backdrop')?.classList.remove('hidden');
+      }
+    });
+  });
+
+  columns.forEach(column => {
+    const content = column.querySelector('.column-content');
+    column.addEventListener('dragover', (e: any) => {
+      e.preventDefault();
+      if (content) content.classList.add('bg-forge-neon/10');
+    });
+
+    column.addEventListener('dragleave', () => {
+      if (content) content.classList.remove('bg-forge-neon/10');
+    });
+
+    column.addEventListener('drop', async (e: any) => {
+      e.preventDefault();
+      if (content) content.classList.remove('bg-forge-neon/10');
+      
+      const issueId = e.dataTransfer.getData('text/plain');
+      const card = document.getElementById(issueId);
+      const newStatus = column.getAttribute('data-status');
+
+      if (card && content && newStatus) {
+        // Optimistic UI
+        content.appendChild(card);
+        updateCounts();
+
+        try {
+          const response = await fetch(`/api/issues/${issueId}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus, workspaceId })
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to update status');
+          }
+        } catch (error) {
+          console.error('[SYS.NET] Update failed', error);
+          // Rollback could be implemented here
+        }
+      }
+    });
+  });
+</script>

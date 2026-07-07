@@ -1,0 +1,28 @@
+---
+import MainLayout from '../../../../layouts/MainLayout.astro';
+import db from '../../../../lib/db';
+import { checkWorkspaceAccess } from '../../../../lib/guard';
+
+const { sys_tag, page_id } = Astro.params;
+const user = Astro.locals.user;
+
+if (!user) return Astro.redirect('/login');
+
+const workspace = db.prepare('SELECT id, name FROM workspaces WHERE sys_tag = ?').get(sys_tag) as any;
+if (!workspace) return new Response('Workspace Not Found', { status: 404 });
+
+const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspace.id, 'viewer');
+if (!access.granted) return new Response('Access Denied', { status: 403 });
+---
+
+<MainLayout title={`Docs - ${workspace.name}`} workspaceId={workspace.id}>
+  <div class="h-full flex flex-col items-center">
+    <div class="w-full max-w-3xl mt-10">
+      <h1 class="text-4xl font-bold text-forge-text mb-8 border-b border-forge-border pb-4">Knowledge Base</h1>
+      <div class="bg-forge-panel border border-forge-border p-8 rounded-lg min-h-[500px]">
+        <h2 class="text-xl font-bold text-forge-neon mb-4">Start Writing...</h2>
+        <p class="text-forge-muted">Press '/' for commands (BlockEditor integration pending).</p>
+      </div>
+    </div>
+  </div>
+</MainLayout>

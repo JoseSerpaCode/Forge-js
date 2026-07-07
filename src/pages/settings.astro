@@ -1,0 +1,49 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import db from '../lib/db';
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/login');
+---
+
+<MainLayout title="Settings">
+  <div class="max-w-xl mx-auto mt-10 p-6 bg-forge-panel border border-forge-border rounded-lg shadow-lg">
+    <h1 class="text-2xl font-bold text-forge-neon mb-6">User Settings</h1>
+    
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-bold text-forge-muted uppercase mb-1">Username</label>
+        <input type="text" id="username-input" value={user.username} class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-neon" />
+      </div>
+      
+      <div>
+        <label class="block text-sm font-bold text-forge-muted uppercase mb-1">Theme</label>
+        <select disabled class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text opacity-50 cursor-not-allowed">
+          <option>Orion Neon (Active)</option>
+        </select>
+      </div>
+      
+      <button id="btn-save-settings" class="bg-forge-neon text-forge-bg font-bold py-2 px-6 rounded hover:bg-[#99cc00] transition-colors mt-4">
+        Save Changes
+      </button>
+    </div>
+  </div>
+</MainLayout>
+
+<script>
+  document.getElementById('btn-save-settings')?.addEventListener('click', async () => {
+    const newUsername = (document.getElementById('username-input') as HTMLInputElement).value;
+    const res = await fetch('/api/user/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: newUsername })
+    });
+    
+    if (res.ok) {
+      alert('Settings updated!');
+      window.location.reload();
+    } else {
+      alert('Failed to update settings');
+    }
+  });
+</script>

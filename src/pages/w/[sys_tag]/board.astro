@@ -1,0 +1,37 @@
+---
+import MainLayout from '../../../layouts/MainLayout.astro';
+import KanbanBoard from '../../../components/jira/KanbanBoard.astro';
+import BoardColumn from '../../../components/jira/BoardColumn.astro';
+import IssueCard from '../../../components/jira/IssueCard.astro';
+import db from '../../../lib/db';
+import { checkWorkspaceAccess } from '../../../lib/guard';
+
+const { sys_tag } = Astro.params;
+const user = Astro.locals.user;
+
+if (!user) return Astro.redirect('/login');
+
+const workspace = db.prepare('SELECT id, name FROM workspaces WHERE sys_tag = ?').get(sys_tag) as any;
+if (!workspace) return new Response('Workspace Not Found', { status: 404 });
+
+const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspace.id, 'viewer');
+if (!access.granted) return new Response('Access Denied', { status: 403 });
+
+const issues = db.prepare('SELECT * FROM issues WHERE workspace_id = ?').all(workspace.id) as any[];
+
+const todoIssues = issues.filter(i => i.status === 'todo');
+const inProgressIssues = issues.filter(i => i.status === 'in_progress');
+const doneIssues = issues.filter(i => i.status === 'done');
+---
+
+<MainLayout title={`Board - ${workspace.name}`} workspaceId={workspace.id}>
+  <div class="h-full flex flex-col">
+    <header class="mb-6">
+      <h1 class="text-2xl font-bold text-forge-neon">{workspace.name} Board</h1>
+    </header>
+
+    <div class="flex-1 overflow-hidden">
+      <KanbanBoard workspaceId={workspace.id} issues={issues} />
+    </div>
+  </div>
+</MainLayout>

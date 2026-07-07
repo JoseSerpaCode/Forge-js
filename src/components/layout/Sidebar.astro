@@ -1,0 +1,33 @@
+---
+interface Props {
+  workspaceId?: string;
+}
+const { workspaceId } = Astro.props;
+const user = Astro.locals.user;
+const sys_tag = Astro.params.sys_tag || '';
+---
+<aside class="w-64 bg-forge-panel border-r border-forge-border flex flex-col h-full shrink-0">
+  <div class="p-4 border-b border-forge-border flex items-center gap-2">
+    <div class="w-8 h-8 bg-forge-neon rounded shadow-[0_0_10px_var(--forge-accent)] flex items-center justify-center text-forge-bg font-black">
+      F
+    </div>
+    <span class="font-bold text-forge-text text-lg tracking-wider">FORGE OS</span>
+  </div>
+  <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+    <div class="text-xs font-bold text-forge-muted uppercase tracking-widest mb-2">Workspace</div>
+    <a href={sys_tag ? `/w/${sys_tag}` : '#'} class="block px-3 py-2 text-sm text-forge-text hover:bg-forge-bg rounded transition-colors border border-transparent hover:border-forge-border">Dashboard</a>
+    <a href={sys_tag ? `/w/${sys_tag}/board` : '#'} class="block px-3 py-2 text-sm text-forge-neon bg-forge-bg rounded border border-forge-border shadow-inner">Kanban Board</a>
+    <a href={sys_tag ? `/w/${sys_tag}/p/home` : '#'} class="block px-3 py-2 text-sm text-forge-text hover:bg-forge-bg rounded transition-colors border border-transparent hover:border-forge-border">Knowledge Base</a>
+  </nav>
+  <div class="p-4 border-t border-forge-border">
+    <a href="/settings" class="flex items-center justify-between hover:bg-forge-bg p-2 -mx-2 rounded transition-colors" id="btn-settings">
+      <div class="flex items-center gap-3">
+        <img src={user?.avatar_url || '/default-avatar.png'} class="w-8 h-8 rounded-full border border-forge-border bg-forge-bg" alt="Avatar" />
+        <div>
+          <div class="text-sm font-bold">{user?.username || 'Guest'}</div>
+          <div class="text-xs text-forge-neon font-mono uppercase">{user?.role || 'Viewer'}</div>
+        </div>
+      </div>
+    </a>
+  </div>
+</aside>

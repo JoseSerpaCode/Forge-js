@@ -1,0 +1,42 @@
+/* src/styles/themes.css */
+@import 'tailwindcss';
+
+@theme {
+  --color-forge-bg: var(--forge-bg);
+  --color-forge-panel: var(--forge-panel);
+  --color-forge-neon: var(--forge-accent);
+  --color-forge-border: #333333;
+  --color-forge-text: #e5e7eb;
+  --color-forge-muted: #9ca3af;
+}
+
+@layer base {
+  :root { 
+    --forge-bg: #050505; 
+    --forge-panel: #111111; 
+  }
+  
+  [data-theme="orion_neon"] { 
+    --forge-accent: #bfff00; 
+    --forge-accent-hover: #99cc00; 
+  }
+  [data-theme="cyberpunk"] { 
+    --forge-accent: #d946ef; 
+    --forge-accent-hover: #c026d3; 
+  }
+  [data-theme="terminal_amber"] { 
+    --forge-accent: #f59e0b; 
+    --forge-accent-hover: #d97706; 
+  }
+  [data-theme="deep_core"] { 
+    --forge-accent: #06b6d4; 
+    --forge-accent-hover: #0891b2; 
+  }
+  
+  body { 
+    background-color: var(--forge-bg);
+    color: #e5e7eb;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}

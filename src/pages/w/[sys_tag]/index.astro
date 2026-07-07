@@ -1,0 +1,38 @@
+---
+import MainLayout from '../../../layouts/MainLayout.astro';
+import db from '../../../lib/db';
+import { checkWorkspaceAccess } from '../../../lib/guard';
+
+const { sys_tag } = Astro.params;
+const user = Astro.locals.user;
+
+if (!user) return Astro.redirect('/login');
+
+const workspace = db.prepare('SELECT id, name FROM workspaces WHERE sys_tag = ?').get(sys_tag) as any;
+if (!workspace) return new Response('Workspace Not Found', { status: 404 });
+
+const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspace.id, 'viewer');
+if (!access.granted) return new Response('Access Denied', { status: 403 });
+---
+
+<MainLayout title={`Dashboard - ${workspace.name}`} workspaceId={workspace.id}>
+  <div class="h-full flex flex-col">
+    <header class="mb-6">
+      <h1 class="text-2xl font-bold text-forge-neon">{workspace.name} Dashboard</h1>
+    </header>
+    <div class="grid grid-cols-3 gap-6">
+      <div class="bg-forge-panel border border-forge-border p-6 rounded-lg">
+        <h3 class="text-sm font-bold text-forge-muted uppercase tracking-wider mb-2">Active Sprint</h3>
+        <div class="text-3xl font-black text-forge-text">Sprint 1</div>
+      </div>
+      <div class="bg-forge-panel border border-forge-border p-6 rounded-lg">
+        <h3 class="text-sm font-bold text-forge-muted uppercase tracking-wider mb-2">Pending Issues</h3>
+        <div class="text-3xl font-black text-forge-neon">14</div>
+      </div>
+      <div class="bg-forge-panel border border-forge-border p-6 rounded-lg">
+        <h3 class="text-sm font-bold text-forge-muted uppercase tracking-wider mb-2">Knowledge Pages</h3>
+        <div class="text-3xl font-black text-forge-text">5</div>
+      </div>
+    </div>
+  </div>
+</MainLayout>

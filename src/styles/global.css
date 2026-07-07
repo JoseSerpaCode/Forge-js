@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --forge-bg: #0f111a;
+    --forge-panel: #161b22;
+    --forge-border: #30363d;
+    --forge-text: #c9d1d9;
+    --forge-neon: #00ff00; /* Green neon or any other */
+  }
+
+  [data-theme="orion_neon"] {
+    --forge-neon: #39ff14;
+  }
+}
+
+@layer utilities {
+  .bg-forge-bg { background-color: var(--forge-bg); }
+  .bg-forge-panel { background-color: var(--forge-panel); }
+  .bg-forge-neon { background-color: var(--forge-neon); }
+  .border-forge-border { border-color: var(--forge-border); }
+  .text-forge-text { color: var(--forge-text); }
+  .text-forge-neon { color: var(--forge-neon); }
+}
