@@ -38,6 +38,17 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
   }
 
+  // Inject role context based on current workspace
+  const currentWsTag = sessionData.last_workspace_id;
+  if (sessionData.is_sysadmin === 1) {
+    sessionData.role = 'owner';
+  } else if (currentWsTag) {
+    const roleQuery = db.prepare('SELECT wm.ws_role FROM workspace_members wm JOIN workspaces w ON w.id = wm.workspace_id WHERE w.sys_tag = ? AND wm.user_id = ?').get(currentWsTag, sessionData.id) as any;
+    sessionData.role = roleQuery ? roleQuery.ws_role : 'viewer';
+  } else {
+    sessionData.role = 'viewer';
+  }
+
   // Inyectar usuario
   context.locals.user = sessionData;
 
