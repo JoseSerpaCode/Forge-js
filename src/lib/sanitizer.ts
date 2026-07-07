@@ -56,9 +56,14 @@ export function sanitizeEditorBlocks(blocks: any[]) {
         
       case 'list':
         if (Array.isArray(safeBlock.data.items)) {
-          safeBlock.data.items = safeBlock.data.items.map((item: any) => 
-            typeof item === 'string' ? cleanHTML(item) : ''
-          );
+          safeBlock.data.items = safeBlock.data.items.map((item: any) => {
+            if (typeof item === 'string') {
+              return cleanHTML(item);
+            } else {
+              console.warn(`[Sanitizer] Ítem de lista no válido descartado (no era string)`);
+              return '';
+            }
+          });
         }
         safeBlocks.push(safeBlock);
         break;
