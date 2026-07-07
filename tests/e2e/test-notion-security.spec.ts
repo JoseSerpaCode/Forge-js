@@ -46,6 +46,8 @@ test('Knowledge Base: Cross-workspace IDOR isolation', async ({ request, page })
       'Origin': 'http://localhost:4322'
     }
   });
+  console.log('DELETE status:', resDelete.status());
+  console.log('DELETE body:', await resDelete.text());
   expect(resDelete.status()).toBe(404);
 
   // 6. ATTEMPT CROSS-PARENTING: Try to create a page in Workspace D with parent in Workspace C (POST)
