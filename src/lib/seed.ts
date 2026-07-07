@@ -21,6 +21,13 @@ export function runSeed() {
   insertUser.run('janus-llm-bot-id', 'janus_ai', janusHash, 0);
 
 
+  // 4. Crear Workspace Principal para el Administrador (Main Workspace)
+  const mainWsId = crypto.randomUUID();
+  const adminUser = db.prepare('SELECT id FROM users WHERE username = ?').get('jose') as any;
+  if (adminUser) {
+    db.prepare('INSERT OR IGNORE INTO workspaces (id, name, sys_tag, created_by) VALUES (?, ?, ?, ?)').run(mainWsId, 'Main Workspace', 'main', adminUser.id);
+    db.prepare('INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, ws_role) VALUES (?, ?, ?)').run(mainWsId, adminUser.id, 'owner');
+  }
 
   console.log('[SYS.LOG] Base de datos SQLite inicializada. Integrantes y Bot Janus activos.');
 }
