@@ -7,6 +7,10 @@ import { execSync } from 'child_process';
 import db from '../../src/lib/db';
 
 export default function resetDb() {
+  if (process.env.NODE_ENV !== 'test') {
+    throw new Error('SECURITY HALT: reset-db.ts no puede ejecutarse fuera de NODE_ENV=test.');
+  }
+  
   const dbPath = path.join(process.cwd(), 'forge_test.db');
   
   // Actually, importing db from src/lib/db automatically creates tables if they don't exist.
