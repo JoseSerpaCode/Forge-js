@@ -20,16 +20,7 @@ export function runSeed() {
   const janusHash = bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), 12);
   insertUser.run('janus-llm-bot-id', 'janus_ai', janusHash, 0);
 
-  // 4. Crear Workspace de Prueba y Tarjetas para E2E
-  const wsId = crypto.randomUUID();
-  const adminUser = db.prepare('SELECT id FROM users WHERE username = ?').get('jose') as any;
-  if (adminUser) {
-    db.prepare('INSERT OR IGNORE INTO workspaces (id, name, sys_tag, created_by) VALUES (?, ?, ?, ?)').run(wsId, 'Test Workspace', 'test-workspace', adminUser.id);
-    db.prepare('INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, ws_role) VALUES (?, ?, ?)').run(wsId, adminUser.id, 'owner');
-    
-    // Crear un issue "To Do"
-    db.prepare('INSERT OR IGNORE INTO issues (id, workspace_id, type, title, reporter_id, status) VALUES (?, ?, ?, ?, ?, ?)').run(crypto.randomUUID(), wsId, 'task', 'Test E2E Drag & Drop', adminUser.id, 'todo');
-  }
+
 
   console.log('[SYS.LOG] Base de datos SQLite inicializada. Integrantes, Workspace de prueba y Bot Janus activos.');
 }
