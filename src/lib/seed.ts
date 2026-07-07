@@ -22,5 +22,5 @@ export function runSeed() {
 
 
 
-  console.log('[SYS.LOG] Base de datos SQLite inicializada. Integrantes, Workspace de prueba y Bot Janus activos.');
+  console.log('[SYS.LOG] Base de datos SQLite inicializada. Integrantes y Bot Janus activos.');
 }
