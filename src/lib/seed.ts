@@ -7,11 +7,11 @@ export function runSeed() {
   const insertUser = db.prepare('INSERT OR IGNORE INTO users (id, username, password_hash, is_sysadmin) VALUES (?, ?, ?, ?)');
 
   // 1. Crear System Admin (Tú)
-  const adminHash = bcrypt.hashSync('#juniorManda1924', 12);
+  const adminHash = bcrypt.hashSync('#NuevaSeguridad2026!', 12);
   insertUser.run(crypto.randomUUID(), 'jose', adminHash, 1);
 
   // 2. Crear usuarios del equipo base con contraseña genérica (cambiable)
-  const teamHash = bcrypt.hashSync('changeMe123', 12);
+  const teamHash = bcrypt.hashSync('SecureTeam!2026', 12);
   insertUser.run(crypto.randomUUID(), 'samuel', teamHash, 0);
   insertUser.run(crypto.randomUUID(), 'juan', teamHash, 0);
   insertUser.run(crypto.randomUUID(), 'michael', teamHash, 0);
