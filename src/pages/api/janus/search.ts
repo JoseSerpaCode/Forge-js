@@ -10,6 +10,12 @@ export const GET: APIRoute = async ({ request }) => {
 
   const url = new URL(request.url);
   const query = url.searchParams.get('q');
+  
+  // DEUDA TÉCNICA (SEGURIDAD): api/janus/search.ts confía ciegamente en el workspaceId
+  // recibido. Hoy esto no es explotable porque no existe ningún orquestador que invoque este
+  // endpoint (janus_mentioned no tiene listener). En el momento en que se implemente un consumidor,
+  // ese componente (proxy/orquestador) DEBE resolver la membresía del usuario emisor contra 
+  // el workspace ANTES de adjuntar JANUS_SYSTEM_TOKEN. Esto es un requisito de diseño.
   const workspaceId = url.searchParams.get('workspaceId');
 
   if (!query || !workspaceId) return new Response('Missing params', { status: 400 });
