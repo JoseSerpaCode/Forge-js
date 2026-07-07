@@ -1,6 +1,17 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
+import readline from 'readline';
+
+if (process.env.NODE_ENV !== 'test') {
+  console.warn("WARNING: You are about to run migration against the PRODUCTION database.");
+  console.warn("To run against test DB, use: NODE_ENV=test node scripts/migrate_to_editorjs.mjs");
+  if (!process.argv.includes('--force')) {
+    console.error("Pass --force to confirm running against production.");
+    process.exit(1);
+  }
+}
+
 const dbPath = process.env.NODE_ENV === 'test' ? path.join(process.cwd(), 'forge_test.db') : path.join(process.cwd(), 'forge.db');
 const db = new Database(dbPath, { verbose: console.log });
 

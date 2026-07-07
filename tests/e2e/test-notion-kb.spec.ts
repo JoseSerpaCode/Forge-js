@@ -24,7 +24,14 @@ test('Knowledge Base: Create, auto-save and cascading delete', async ({ page }) 
   
   await page.waitForSelector('.ce-paragraph');
   await page.locator('.ce-paragraph').first().click();
-  await page.keyboard.type('Hello world <script>alert(1)</script> <a href="javascript:alert(2)">test</a>');
+  // We use innerHTML to simulate malicious pasted/injected HTML, as keyboard.type escapes it
+  await page.evaluate(() => {
+    const el = document.querySelector('.ce-paragraph');
+    if (el) {
+      el.innerHTML = 'Hello world <script>alert(1)</script> <a href="javascript:alert(2)">test</a>';
+      el.dispatchEvent(new Event('input', { bubbles: true })); // Trigger debounceSave
+    }
+  });
   
   // Wait for auto-save (debounce is 1s, we wait 2s)
   await expect(page.locator('#save-status')).toHaveText('Saved', { timeout: 3000 });
@@ -36,7 +43,39 @@ test('Knowledge Base: Create, auto-save and cascading delete', async ({ page }) 
   expect(pages[0].content_json).toContain('Hello world');
   expect(pages[0].content_json).not.toContain('<script>');
   expect(pages[0].content_json).not.toContain('javascript:alert(2)');
+  // Ensure the link text survived but without the malicious href
+  expect(pages[0].content_json).toContain('<a>test</a>');
   
+  // SLASH COMMAND TEST
+  // Move to a new line and type /
+  await page.keyboard.press('Enter');
+  await page.evaluate(() => {
+    const p = document.querySelectorAll('.ce-paragraph')[1];
+    if (p) {
+      p.textContent = '/';
+      p.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: '/' }));
+    }
+  });
+  
+  // Wait for popup and click the Header option
+  await page.waitForSelector('.slash-menu-item[data-type="header"]');
+  await page.click('.slash-menu-item[data-type="header"]');
+  
+  // Type header text
+  await page.keyboard.type('My Header');
+  
+  // Wait for save
+  await expect(page.locator('#save-status')).toHaveText('Unsaved changes...');
+  await expect(page.locator('#save-status')).toHaveText('Saved', { timeout: 5000 });
+  
+  // Verify DB contains a header block
+  const updatedPages = db.prepare('SELECT * FROM pages WHERE id = ?').get(pages[0].id) as any;
+  const parsedContent = JSON.parse(updatedPages.content_json);
+  const headerBlock = parsedContent.blocks.find((b: any) => b.type === 'header');
+  expect(headerBlock).toBeDefined();
+  expect(headerBlock.data.text).toBe('My Header');
+  expect([1, 2]).toContain(headerBlock.data.level);
+
   const parentId = pages[0].id;
 
   // Add subpage via UI

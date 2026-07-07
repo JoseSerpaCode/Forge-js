@@ -30,11 +30,21 @@ const { pageId, initialTitle, initialContent, canEdit } = Astro.props;
     <!-- Editor.js Container -->
     <div 
       id="page-editor"
-      class="flex-1 text-forge-text outline-none prose prose-invert max-w-none"
+      class="flex-1 text-forge-text outline-none prose prose-invert max-w-none relative"
       data-page-id={pageId}
       data-initial-content={initialContent}
       data-can-edit={canEdit.toString()}
     ></div>
+
+    <!-- Slash Menu Popover -->
+    <div id="slash-menu" class="hidden absolute bg-forge-bg border border-forge-border rounded shadow-lg p-2 flex flex-col gap-1 w-48 z-50">
+      <button class="slash-menu-item text-left px-2 py-1 hover:bg-forge-highlight rounded text-sm text-forge-text" data-type="header" data-level="1">H1 - Heading 1</button>
+      <button class="slash-menu-item text-left px-2 py-1 hover:bg-forge-highlight rounded text-sm text-forge-text" data-type="header" data-level="2">H2 - Heading 2</button>
+      <button class="slash-menu-item text-left px-2 py-1 hover:bg-forge-highlight rounded text-sm text-forge-text" data-type="list" data-style="unordered">Bulleted List</button>
+      <button class="slash-menu-item text-left px-2 py-1 hover:bg-forge-highlight rounded text-sm text-forge-text" data-type="list" data-style="ordered">Numbered List</button>
+      <button class="slash-menu-item text-left px-2 py-1 hover:bg-forge-highlight rounded text-sm text-forge-text" data-type="checklist">Checklist</button>
+      <button class="slash-menu-item text-left px-2 py-1 hover:bg-forge-highlight rounded text-sm text-forge-text" data-type="quote">Quote</button>
+    </div>
 
     <div class="fixed bottom-4 right-8 flex items-center gap-2 text-xs font-mono text-forge-muted">
       <span id="save-status">Saved</span>
@@ -118,6 +128,72 @@ const { pageId, initialTitle, initialContent, canEdit } = Astro.props;
     }
 
     titleInput?.addEventListener('input', debounceSave);
+
+    const slashMenu = document.getElementById('slash-menu');
+    let currentBlockIndex = -1;
+
+    editorDiv.addEventListener('keyup', (e) => {
+      if (!slashMenu || !canEdit) return;
+      
+      const currentBlockIndexApi = editor.blocks.getCurrentBlockIndex();
+      if (currentBlockIndexApi < 0) return;
+      
+      const currentBlock = editor.blocks.getBlockByIndex(currentBlockIndexApi);
+      if (!currentBlock) return;
+
+      const textNode = currentBlock.holder.querySelector('.ce-paragraph');
+      if (!textNode) {
+        slashMenu.classList.add('hidden');
+        return;
+      }
+
+      const text = textNode.textContent || '';
+      if (text.trim() === '/') {
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+          slashMenu.style.top = `${rect.bottom + window.scrollY}px`;
+          slashMenu.style.left = `${rect.left + window.scrollX}px`;
+        } else {
+          slashMenu.style.top = '100px';
+          slashMenu.style.left = '100px';
+        }
+        slashMenu.classList.remove('hidden');
+        currentBlockIndex = currentBlockIndexApi;
+      } else {
+        slashMenu.classList.add('hidden');
+      }
+    });
+
+    document.querySelectorAll('.slash-menu-item').forEach(item => {
+      item.addEventListener('click', async (e) => {
+        if (!canEdit) return;
+        const target = e.currentTarget as HTMLElement;
+        const type = target.dataset.type;
+        const level = target.dataset.level;
+        const style = target.dataset.style;
+        
+        if (currentBlockIndex >= 0 && type) {
+          editor.blocks.delete(currentBlockIndex);
+          
+          let data: any = {};
+          if (level) data.level = parseInt(level);
+          if (style) data.style = style;
+          
+          editor.blocks.insert(type, data, {}, currentBlockIndex, true);
+          editor.caret.setToBlock(currentBlockIndex, 'start');
+        }
+        
+        slashMenu?.classList.add('hidden');
+      });
+    });
+
+    document.addEventListener('click', (e) => {
+      if (slashMenu && !slashMenu.contains(e.target as Node) && !(e.target as Element).closest('#page-editor')) {
+        slashMenu.classList.add('hidden');
+      }
+    });
 
     document.getElementById('btn-delete-page')?.addEventListener('click', async () => {
       if (!confirm('Are you sure you want to delete this page and ALL its subpages? This action cannot be undone.')) return;
