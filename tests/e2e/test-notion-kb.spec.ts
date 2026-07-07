@@ -22,8 +22,9 @@ test('Knowledge Base: Create, auto-save and cascading delete', async ({ page }) 
   const titleInput = page.locator('#page-title');
   await titleInput.fill('My First Page');
   
-  const editor = page.locator('#page-editor');
-  await editor.fill('Hello world content');
+  await page.waitForSelector('.ce-paragraph');
+  await page.locator('.ce-paragraph').first().click();
+  await page.keyboard.type('Hello world <script>alert(1)</script> <a href="javascript:alert(2)">test</a>');
   
   // Wait for auto-save (debounce is 1s, we wait 2s)
   await expect(page.locator('#save-status')).toHaveText('Saved', { timeout: 3000 });
@@ -32,7 +33,9 @@ test('Knowledge Base: Create, auto-save and cascading delete', async ({ page }) 
   const pages = db.prepare('SELECT * FROM pages WHERE workspace_id = ?').all('ws-notion-a') as any[];
   expect(pages.length).toBe(1);
   expect(pages[0].title).toBe('My First Page');
-  expect(pages[0].content_json).toContain('Hello world content');
+  expect(pages[0].content_json).toContain('Hello world');
+  expect(pages[0].content_json).not.toContain('<script>');
+  expect(pages[0].content_json).not.toContain('javascript:alert(2)');
   
   const parentId = pages[0].id;
 

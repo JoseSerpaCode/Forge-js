@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import db from '../../../lib/db';
 import { checkWorkspaceAccess } from '../../../lib/guard';
+import { sanitizeEditorBlocks } from '../../../lib/sanitizer';
 
 // Helper to resolve workspace and check permissions
 function authorize(user: any, requiredRole: 'owner' | 'editor' | 'commenter' | 'viewer', pageId: string) {
@@ -49,8 +50,33 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
   try {
     const data = await request.json();
     
+    let finalContentJson = undefined;
+    
+    if (data.content_json !== undefined) {
+      let parsed;
+      try {
+        parsed = typeof data.content_json === 'string' ? JSON.parse(data.content_json) : data.content_json;
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid JSON payload' }), { status: 400 });
+      }
+      
+      if (!parsed || typeof parsed !== 'object') {
+         return new Response(JSON.stringify({ error: 'Invalid JSON payload format' }), { status: 400 });
+      }
+
+      const blocks = Array.isArray(parsed.blocks) ? parsed.blocks : [];
+      const safeBlocks = sanitizeEditorBlocks(blocks);
+      
+      if (blocks.length > 0 && safeBlocks.length === 0) {
+        return new Response(JSON.stringify({ error: 'El contenido fue rechazado porque contiene únicamente bloques no soportados o maliciosos' }), { status: 400 });
+      }
+      
+      parsed.blocks = safeBlocks;
+      finalContentJson = JSON.stringify(parsed);
+    }
+
     // Explicit IDOR mitigation: AND workspace_id = ?
-    if (data.title !== undefined || data.content_json !== undefined) {
+    if (data.title !== undefined || finalContentJson !== undefined) {
       db.prepare(`
         UPDATE pages 
         SET title = COALESCE(?, title), 
@@ -59,7 +85,7 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
         WHERE id = ? AND workspace_id = ?
       `).run(
         data.title !== undefined ? data.title : null, 
-        data.content_json !== undefined ? data.content_json : null, 
+        finalContentJson !== undefined ? finalContentJson : null, 
         id, 
         auth.workspaceId
       );
