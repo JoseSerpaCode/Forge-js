@@ -7,9 +7,9 @@ test('smoke: login redirige correctamente', async ({ page }) => {
     }
   });
 
-  await page.goto('http://localhost:4321/login');
-  await page.fill('input[name="username"]', 'Jose');
+  await page.goto('/login');
+  await page.fill('input[name="username"]', 'jose');
   await page.fill('input[name="password"]', '#juniorManda1924');
   await page.click('button[type="submit"]');
-  await page.waitForURL('http://localhost:4321/', { timeout: 10000 });
+  await page.waitForURL('**/', { timeout: 10000 });
 });

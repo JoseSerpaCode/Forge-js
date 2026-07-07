@@ -30,7 +30,7 @@ test.describe('UI Integrity & DB Sync', () => {
     expect(response?.status()).toBe(200);
     
     // 4. Validar en Base de Datos directamente
-    const db = new Database(path.join(process.cwd(), 'forge.db'));
+    const db = new Database(path.join(process.cwd(), 'forge_test.db'));
     const user = db.prepare('SELECT username FROM users WHERE username = ?').get('jose_modificado') as any;
     
     expect(user).toBeDefined();

@@ -90,7 +90,7 @@ test.describe('Forge OS - Full System Omnibus Validation', () => {
     expect((await settingsReq.response())?.status()).toBe(200);
     
     // Validación SQLite
-    const db = new Database(path.join(process.cwd(), 'forge.db'));
+    const db = new Database(path.join(process.cwd(), 'forge_test.db'));
     const user = db.prepare('SELECT username FROM users WHERE username = ?').get('jose_admin') as any;
     expect(user).toBeDefined();
     expect(user.username).toBe('jose_admin');
