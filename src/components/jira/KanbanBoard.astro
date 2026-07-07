@@ -34,7 +34,8 @@ function getInitials(username: string) {
             description: issue.description,
             type: issue.type,
             story_points: issue.story_points || 0,
-            assignee_initials: getInitials(issue.assignee_username || issue.reporter_username)
+            assignee_initials: getInitials(issue.assignee_username || issue.reporter_username),
+            position: issue.position || 0
           }} />
         ))}
       </BoardColumn>
@@ -64,6 +65,8 @@ function getInitials(username: string) {
     card.addEventListener('dragstart', (e: any) => {
       e.dataTransfer.setData('text/plain', card.id);
       card.classList.add('opacity-50');
+      // Set drag effect
+      e.dataTransfer.effectAllowed = 'move';
     });
 
     card.addEventListener('dragend', () => {
@@ -95,11 +98,37 @@ function getInitials(username: string) {
     });
   });
 
+  // Helper to determine insert position
+  function getDragAfterElement(container: Element, y: number) {
+    const draggableElements = [...container.querySelectorAll('.issue-card:not(.opacity-50)')];
+    
+    return draggableElements.reduce((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      if (offset < 0 && offset > closest.offset) {
+        return { offset: offset, element: child };
+      } else {
+        return closest;
+      }
+    }, { offset: Number.NEGATIVE_INFINITY, element: null as Element | null }).element;
+  }
+
   columns.forEach(column => {
     const content = column.querySelector('.column-content');
     column.addEventListener('dragover', (e: any) => {
       e.preventDefault();
-      if (content) content.classList.add('bg-forge-neon/10');
+      if (content) {
+        content.classList.add('bg-forge-neon/10');
+        const afterElement = getDragAfterElement(content, e.clientY);
+        const draggable = document.querySelector('.opacity-50');
+        if (draggable) {
+          if (afterElement == null) {
+            content.appendChild(draggable);
+          } else {
+            content.insertBefore(draggable, afterElement);
+          }
+        }
+      }
     });
 
     column.addEventListener('dragleave', () => {
@@ -115,23 +144,46 @@ function getInitials(username: string) {
       const newStatus = column.getAttribute('data-status');
 
       if (card && content && newStatus) {
-        // Optimistic UI
-        content.appendChild(card);
         updateCounts();
+        
+        // Calculate new position based on siblings
+        const siblings = [...content.querySelectorAll('.issue-card')];
+        const cardIndex = siblings.indexOf(card);
+        
+        let newPosition = 0;
+        if (siblings.length === 1) {
+          newPosition = 100000;
+        } else if (cardIndex === 0) {
+          const nextPos = parseFloat(siblings[1].getAttribute('data-position') || '100000');
+          newPosition = nextPos / 2;
+        } else if (cardIndex === siblings.length - 1) {
+          const prevPos = parseFloat(siblings[cardIndex - 1].getAttribute('data-position') || '0');
+          newPosition = prevPos + 100000;
+        } else {
+          const prevPos = parseFloat(siblings[cardIndex - 1].getAttribute('data-position') || '0');
+          const nextPos = parseFloat(siblings[cardIndex + 1].getAttribute('data-position') || '0');
+          newPosition = (prevPos + nextPos) / 2;
+        }
+        
+        card.setAttribute('data-position', newPosition.toString());
 
         try {
-          const response = await fetch(`/api/issues/${issueId}/status`, {
+          const response = await fetch(`/api/issues/${issueId}/move`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus, workspaceId })
+            body: JSON.stringify({ 
+              status: newStatus,
+              position: newPosition,
+              workspaceId 
+            })
           });
           
           if (!response.ok) {
-            throw new Error('Failed to update status');
+            throw new Error('Failed to update status and position');
           }
         } catch (error) {
           console.error('[SYS.NET] Update failed', error);
-          // Rollback could be implemented here
+          // Omitimos rollback visual para no complicar el script en el entorno actual
         }
       }
     });

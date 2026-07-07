@@ -17,7 +17,7 @@ if (!workspace) return new Response('Workspace Not Found', { status: 404 });
 const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspace.id, 'viewer');
 if (!access.granted) return new Response('Access Denied', { status: 403 });
 
-const issues = db.prepare('SELECT * FROM issues WHERE workspace_id = ?').all(workspace.id) as any[];
+const issues = db.prepare('SELECT * FROM issues WHERE workspace_id = ? ORDER BY position ASC, id ASC').all(workspace.id) as any[];
 
 const todoIssues = issues.filter(i => i.status === 'todo');
 const inProgressIssues = issues.filter(i => i.status === 'in_progress');

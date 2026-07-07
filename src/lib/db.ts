@@ -84,6 +84,7 @@ CREATE TABLE IF NOT EXISTS issues (
  story_points INTEGER DEFAULT 0,
  estimated_hours REAL DEFAULT 0.0,
  logged_hours REAL DEFAULT 0.0,
+ position REAL DEFAULT 0.0,
  reporter_id TEXT NOT NULL,
  assignee_id TEXT,
  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
