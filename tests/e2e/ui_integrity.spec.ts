@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import Database from 'better-sqlite3';
+import { getTestDb } from './test-utils';
 import path from 'path';
 
 test.describe('UI Integrity & DB Sync', () => {
@@ -30,7 +30,7 @@ test.describe('UI Integrity & DB Sync', () => {
     expect(response?.status()).toBe(200);
     
     // 4. Validar en Base de Datos directamente
-    const db = new Database(path.join(process.cwd(), 'forge_test.db'));
+    const db = getTestDb();
     const user = db.prepare('SELECT username FROM users WHERE username = ?').get('jose_modificado') as any;
     
     expect(user).toBeDefined();
