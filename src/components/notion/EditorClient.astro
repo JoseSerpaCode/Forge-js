@@ -119,7 +119,7 @@ function formatDate(dateStr: string | undefined) {
   import InlineCode from '@editorjs/inline-code';
 
   const editorDiv = document.getElementById('page-editor');
-  const titleInput = document.getElementById('page-title') as HTMLInputElement;
+  const titleInput = document.getElementById('editor-title') as HTMLElement;
   const statusSpan = document.getElementById('save-status');
 
   if (editorDiv) {
@@ -168,7 +168,7 @@ function formatDate(dateStr: string | undefined) {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            title: titleInput?.value, 
+            title: (titleInput as HTMLElement)?.innerText?.trim() || 'Untitled', 
             content_json: JSON.stringify(outputData)
           })
         });

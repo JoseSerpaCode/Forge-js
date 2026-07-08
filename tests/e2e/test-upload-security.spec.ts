@@ -12,7 +12,7 @@ test.describe('Upload API Security', () => {
     await page.waitForURL(/\/$/);
     
     // Navigate to a workspace to set last_workspace_id
-    await page.goto('/w/project-alpha/board');
+    await page.goto('/w/test-workspace/board');
     await page.waitForLoadState('networkidle');
 
     // Grab the cookie for API requests
