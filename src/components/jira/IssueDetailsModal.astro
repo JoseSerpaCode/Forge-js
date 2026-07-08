@@ -151,6 +151,13 @@ const { sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.pr
   function close() {
     modal?.classList.add('translate-x-full');
     backdrop?.classList.add('hidden');
+    
+    // Remove ?issue= from URL so reloading the page doesn't reopen it
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('issue')) {
+      url.searchParams.delete('issue');
+      window.history.replaceState({}, '', url.toString());
+    }
   }
 
   closeBtn?.addEventListener('click', close);

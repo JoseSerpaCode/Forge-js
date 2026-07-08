@@ -242,6 +242,11 @@ function getInitials(username: string) {
       if (card) {
         // Find the specific card and simulate a click on its outer div
         (card as HTMLElement).click();
+        
+        // Remove from URL so reloads don't reopen it
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('issue');
+        window.history.replaceState({}, '', newUrl.toString());
       }
     }
   });
