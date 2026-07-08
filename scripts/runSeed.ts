@@ -1,2 +1,2 @@
-import { runSeed } from './src/lib/seed.ts';
+import { runSeed } from '../src/lib/seed.ts';
 runSeed();

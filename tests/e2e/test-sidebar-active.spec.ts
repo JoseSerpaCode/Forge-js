@@ -15,14 +15,14 @@ test('Sidebar active states toggle correctly', async ({ page }) => {
   const dashboardLink = page.locator('nav a', { hasText: 'Dashboard' });
   const kanbanLink = page.locator('nav a', { hasText: 'Kanban Board' });
   
-  await expect(dashboardLink).toHaveClass(/text-forge-neon/);
-  await expect(kanbanLink).not.toHaveClass(/text-forge-neon/);
+  await expect(dashboardLink).toHaveClass(/shadow-inner/);
+  await expect(kanbanLink).not.toHaveClass(/shadow-inner/);
   
   // Click Kanban Board
   await kanbanLink.click();
-  await page.waitForLoadState('networkidle');
+  await page.waitForURL('**/board');
   
-  // Now Kanban should be active, Dashboard should not
-  await expect(kanbanLink).toHaveClass(/text-forge-neon/);
-  await expect(dashboardLink).not.toHaveClass(/text-forge-neon/);
+  // Verify classes swapped
+  await expect(kanbanLink).toHaveClass(/shadow-inner/);
+  await expect(dashboardLink).not.toHaveClass(/shadow-inner/);
 });

@@ -14,10 +14,10 @@ test.describe('Kanban UI Flow', () => {
     
     // Simular Drag & Drop
     const card = page.locator('.issue-card').first();
-    const targetColumn = page.locator('.board-column[data-status="in_progress"]');
+    const targetColumn = page.locator('.board-column[data-status="in_progress"] .column-content');
     
     // Setup request promise BEFORE dragging
-    const requestPromise = page.waitForRequest(req => req.url().includes('/status') && req.method() === 'PATCH');
+    const requestPromise = page.waitForRequest(req => req.url().includes('/move') && req.method() === 'PATCH');
     
     await card.dragTo(targetColumn);
     
