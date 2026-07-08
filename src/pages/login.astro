@@ -11,9 +11,15 @@ if (user) return Astro.redirect('/');
   <meta charset="UTF-8">
   <title>Login | Forge JS</title>
 </head>
-<body class="bg-forge-bg text-forge-text font-sans h-screen flex flex-col items-center justify-center">
-  <div class="bg-forge-panel border border-forge-border p-8 rounded-lg shadow-xl w-96">
-    <h1 class="text-2xl font-bold text-forge-text mb-6">System Login</h1>
+<body class="bg-forge-bg text-white font-sans h-screen flex flex-col items-center justify-center">
+  <div class="bg-forge-panel border border-forge-border p-8 rounded-lg w-96">
+    <div class="text-center mb-8">
+      <div class="w-16 h-16 rounded-2xl bg-forge-primary mx-auto mb-6 flex items-center justify-center">
+        <span class="text-3xl font-black text-white">F</span>
+      </div>
+      <h1 class="text-2xl font-black tracking-wider text-forge-text mb-2">FORGE OS</h1>
+      <p class="text-forge-muted text-sm font-mono">AUTHORIZED PERSONNEL ONLY</p>
+    </div>
     <form id="login-form" class="flex flex-col gap-4">
       <div>
         <label class="block text-xs font-mono text-forge-text mb-1 uppercase">Username</label>
