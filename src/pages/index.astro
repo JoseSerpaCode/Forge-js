@@ -28,7 +28,7 @@ for (const ws of workspaces) {
 
 // 2. Obtener Tareas Asignadas a mí (My Tasks)
 const myTasks = db.prepare(`
-  SELECT i.id, i.title, i.status, w.sys_tag 
+  SELECT i.id, i.title, i.status, w.sys_tag, w.icon as workspace_icon, w.name as workspace_name
   FROM issues i 
   JOIN workspaces w ON i.workspace_id = w.id 
   WHERE i.assignee_id = ? AND i.status != 'done'
@@ -121,9 +121,18 @@ const myTasks = db.prepare(`
           {myTasks.map(task => (
             <li>
               <a href={`/w/${task.sys_tag}/board?issue=${task.id}`} class="p-4 hover:bg-forge-bg transition-colors flex items-center justify-between group block">
-                <div>
-                  <p class="text-forge-text font-medium group-hover:text-forge-secondary transition-colors">{task.title}</p>
-                  <p class="text-xs text-forge-muted font-mono mt-1">{task.sys_tag}-{task.id.substring(0,8)}</p>
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded shrink-0 flex items-center justify-center bg-forge-bg border border-forge-border font-bold text-forge-secondary overflow-hidden" title={task.workspace_name}>
+                    {task.workspace_icon && task.workspace_icon.startsWith('data:image') ? (
+                      <img src={task.workspace_icon} alt={task.sys_tag} class="w-full h-full object-cover" />
+                    ) : (
+                      <span class="text-[10px] uppercase">{task.sys_tag.substring(0, 2)}</span>
+                    )}
+                  </div>
+                  <div>
+                    <p class="text-forge-text font-medium group-hover:text-forge-secondary transition-colors">{task.title}</p>
+                    <p class="text-xs text-forge-muted font-mono mt-1">{task.sys_tag}-{task.id.substring(0,8)}</p>
+                  </div>
                 </div>
                 <span class="text-[10px] font-mono px-2 py-1 rounded bg-forge-bg border border-forge-border text-forge-muted uppercase">{task.status}</span>
               </a>

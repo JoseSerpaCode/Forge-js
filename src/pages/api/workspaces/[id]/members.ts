@@ -27,8 +27,24 @@ export const POST: APIRoute = async ({ request, params, locals }) => {
     const existing = db.prepare('SELECT * FROM workspace_members WHERE workspace_id = ? AND user_id = ?').get(workspaceId, targetUser.id);
     if (existing) return new Response('User is already a member', { status: 400 });
 
-    db.prepare('INSERT INTO workspace_members (workspace_id, user_id, ws_role) VALUES (?, ?, ?)').run(workspaceId, targetUser.id, role);
-    return new Response(JSON.stringify({ success: true }), { status: 200 });
+    const existingInvite = db.prepare('SELECT id FROM notifications WHERE user_id = ? AND type = "invite" AND link_url LIKE ?').get(targetUser.id, `%"ws_id":"${workspaceId}"%`);
+    if (existingInvite) return new Response('An invitation is already pending', { status: 400 });
+
+    const wsInfo = db.prepare('SELECT name FROM workspaces WHERE id = ?').get(workspaceId) as any;
+    const crypto = require('crypto');
+    db.prepare(`
+      INSERT INTO notifications (id, user_id, title, message, type, link_url, is_read, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)
+    `).run(
+      crypto.randomUUID(), 
+      targetUser.id, 
+      `Invitation to ${wsInfo.name}`, 
+      `${user.username} has invited you to join ${wsInfo.name} as ${role}.`, 
+      'invite', 
+      JSON.stringify({ ws_id: workspaceId, role })
+    );
+
+    return new Response(JSON.stringify({ success: true, invited: true }), { status: 200 });
   } catch (err: any) {
     return new Response(err.message, { status: 500 });
   }

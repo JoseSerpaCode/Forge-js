@@ -164,18 +164,32 @@ const { title, workspaceName } = Astro.props;
           notifList.innerHTML = '';
           data.notifications.forEach((n: any) => {
             const date = new Date(n.created_at.includes('Z') ? n.created_at : n.created_at.replace(' ', 'T') + 'Z').toLocaleString();
+            
+            let actionHtml = '';
+            if (n.type === 'invite') {
+              actionHtml = `
+                <div class="flex gap-2 mt-3">
+                  <button class="bg-forge-secondary text-forge-bg px-3 py-1.5 rounded text-[10px] font-bold btn-invite-action hover:opacity-90 transition-opacity" data-id="${n.id}" data-action="accept">Accept</button>
+                  <button class="bg-forge-panel border border-forge-border text-forge-text hover:bg-forge-bg px-3 py-1.5 rounded text-[10px] btn-invite-action transition-colors" data-id="${n.id}" data-action="reject">Reject</button>
+                </div>
+              `;
+            }
+
             notifList.innerHTML += `
-              <li class="relative group/notif p-3 border-b border-forge-border hover:bg-forge-panel transition-colors ${n.is_read ? 'opacity-60' : 'bg-forge-bg'}">
-                <a href="${n.link_url || '#'}" class="block pr-6">
+              <li class="relative group/notif p-3 border-b border-forge-border transition-colors ${n.is_read ? 'opacity-60' : 'bg-forge-bg'} ${n.type !== 'invite' ? 'hover:bg-forge-panel' : ''}">
+                <a href="${n.type !== 'invite' ? (n.link_url || '#') : '#'}" class="block ${n.type !== 'invite' ? 'pr-6' : ''}">
                   <div class="flex justify-between items-start mb-1">
                     <span class="text-xs font-bold ${n.is_read ? 'text-forge-muted' : 'text-forge-secondary'} truncate">${n.title}</span>
                     <span class="text-[10px] text-forge-muted shrink-0 ml-2">${date}</span>
                   </div>
                   <p class="text-xs text-forge-text break-words">${n.message}</p>
                 </a>
+                ${actionHtml}
+                ${n.type !== 'invite' ? `
                 <button class="absolute top-2 right-2 text-forge-muted hover:text-red-500 opacity-0 group-hover/notif:opacity-100 transition-opacity p-1 delete-notif-btn bg-forge-panel rounded" data-id="${n.id}" title="Delete notification">
                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                 </button>
+                ` : ''}
               </li>
             `;
           });
@@ -191,6 +205,26 @@ const { title, workspaceName } = Astro.props;
                 body: JSON.stringify({ action: 'delete', id })
               });
               fetchNotifications();
+            });
+          });
+
+          notifList.querySelectorAll('.btn-invite-action').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const notifId = btn.getAttribute('data-id');
+              const action = btn.getAttribute('data-action');
+              const res = await fetch('/api/user/invites', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notifId, action })
+              });
+              if (res.ok) {
+                 if (action === 'accept') window.location.reload();
+                 else fetchNotifications();
+              } else {
+                 alert('Error processing invitation.');
+              }
             });
           });
         }
