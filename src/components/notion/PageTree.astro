@@ -77,19 +77,18 @@ for (const p of pages) {
       e.stopPropagation();
       const parentLi = btn.closest('li');
       const childrenUl = parentLi?.querySelector('ul');
-      if (childrenUl) {
-        parentLi.firstElementChild?.classList.toggle('expanded');
+      if (childrenUl && parentLi) {
+        parentLi.classList.toggle('expanded');
       }
     }
   });
 
   // Automatically expand folders that contain the active page
-  const activeLink = document.querySelector('a.text-forge-secondary.font-bold');
+  const activeLink = document.querySelector('a.text-forge-text.font-bold');
   if (activeLink) {
     let parent = activeLink.parentElement?.parentElement; // li
     while (parent && parent.tagName === 'LI') {
-      const toggleWrapper = parent.firstElementChild;
-      if (toggleWrapper) toggleWrapper.classList.add('expanded');
+      parent.classList.add('expanded');
       parent = parent.parentElement?.parentElement; // go up to next li
     }
   }

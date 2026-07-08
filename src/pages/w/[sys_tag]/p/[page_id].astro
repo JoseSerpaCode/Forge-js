@@ -31,9 +31,13 @@ if (!page) return new Response('Page not found', { status: 404 });
 
 // Fetch parent page title for breadcrumb (optional, just 1 level for now)
 let parentTitle = null;
+let parentId = null;
 if (page.parent_page_id) {
-  const parent = db.prepare('SELECT title FROM pages WHERE id = ?').get(page.parent_page_id) as any;
-  if (parent) parentTitle = parent.title;
+  const parent = db.prepare('SELECT id, title FROM pages WHERE id = ?').get(page.parent_page_id) as any;
+  if (parent) {
+    parentTitle = parent.title;
+    parentId = parent.id;
+  }
 }
 ---
 
@@ -51,6 +55,8 @@ if (page.parent_page_id) {
       updatedAt={page.updated_at}
       createdAt={page.created_at}
       parentTitle={parentTitle}
+      parentId={parentId}
+      sysTag={sys_tag!}
     />
   </div>
 </MainLayout>

@@ -9,8 +9,10 @@ interface Props {
   updatedAt?: string;
   createdAt?: string;
   parentTitle?: string | null;
+  parentId?: string | null;
+  sysTag: string;
 }
-const { pageId, initialTitle, initialContent, canEdit, authorName, authorAvatar, updatedAt, parentTitle } = Astro.props;
+const { pageId, initialTitle, initialContent, canEdit, authorName, authorAvatar, updatedAt, parentTitle, parentId, sysTag } = Astro.props;
 
 // Date formatter
 function formatDate(dateStr: string | undefined) {
@@ -46,7 +48,7 @@ function formatDate(dateStr: string | undefined) {
     <!-- Breadcrumbs -->
     {parentTitle && (
       <nav class="text-xs font-mono text-forge-muted mb-4 flex items-center gap-2">
-        <span class="hover:text-forge-secondary transition-colors cursor-pointer">{parentTitle}</span>
+        <a href={`/w/${sysTag}/p/${parentId}`} class="hover:text-forge-text transition-colors">{parentTitle}</a>
         <span class="text-forge-border">/</span>
         <span class="text-forge-text truncate">{initialTitle || 'Untitled'}</span>
       </nav>
