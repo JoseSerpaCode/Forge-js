@@ -162,8 +162,18 @@ const { sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.pr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: typeEl.value })
       });
-      // Optionally reload to update icon on board
-      window.location.reload();
+      // Update DOM
+      const card = document.getElementById(issueId);
+      if (card) {
+        const badge = card.querySelector('.issue-type-badge');
+        if (badge) badge.textContent = typeEl.value;
+        // Update border color
+        card.classList.remove('border-l-red-500', 'border-l-green-500', 'border-l-blue-500');
+        if (typeEl.value === 'bug') card.classList.add('border-l-red-500');
+        else if (typeEl.value === 'story') card.classList.add('border-l-green-500');
+        else card.classList.add('border-l-blue-500');
+      }
+      if (window.showToast) window.showToast('Type saved');
     } catch (e) {
       console.error(e);
     }
@@ -181,7 +191,12 @@ const { sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.pr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: titleEl.value })
       });
-      window.location.reload();
+      const card = document.getElementById(issueId);
+      if (card) {
+        const h4 = card.querySelector('h4');
+        if (h4) h4.textContent = titleEl.value;
+      }
+      if (window.showToast) window.showToast('Title saved');
     } catch (e) {
       console.error(e);
     }
@@ -198,7 +213,17 @@ const { sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.pr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ assignee_id: assigneeEl.value || null })
       });
-      window.location.reload();
+      const card = document.getElementById(issueId);
+      if (card) {
+        card.setAttribute('data-assignee-id', assigneeEl.value || '');
+        const initialsDiv = card.querySelector('div[title]');
+        if (initialsDiv) {
+          const text = assigneeEl.options[assigneeEl.selectedIndex].text;
+          initialsDiv.textContent = text === 'Unassigned' ? 'U' : text.substring(0,2).toUpperCase();
+          initialsDiv.setAttribute('title', text);
+        }
+      }
+      if (window.showToast) window.showToast('Assignee saved');
     } catch (e) {
       console.error(e);
     }
@@ -215,7 +240,11 @@ const { sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.pr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reporter_id: reporterEl.value === 'system' ? null : reporterEl.value })
       });
-      window.location.reload();
+      const card = document.getElementById(issueId);
+      if (card) {
+        card.setAttribute('data-reporter-id', reporterEl.value || '');
+      }
+      if (window.showToast) window.showToast('Reporter saved');
     } catch (e) {
       console.error(e);
     }
@@ -449,6 +478,13 @@ const { sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.pr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ story_points: parseInt(pointsEl.value) || 0 })
       });
+      const card = document.getElementById(issueId);
+      if (card) {
+        card.setAttribute('data-points', pointsEl.value);
+        const spSpan = card.querySelector('.issue-type-badge')?.nextElementSibling;
+        if (spSpan) spSpan.textContent = `${pointsEl.value || 0} SP`;
+      }
+      if (window.showToast) window.showToast('Points saved');
     } catch (e) {
       console.error('Failed to update story points', e);
     }

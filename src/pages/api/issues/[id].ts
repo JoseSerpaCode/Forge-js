@@ -38,6 +38,14 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
     if (data.title !== undefined) {
       db.prepare('UPDATE issues SET title = ? WHERE id = ?').run(data.title, id);
     }
+    
+    if (data.assignee_id !== undefined) {
+      db.prepare('UPDATE issues SET assignee_id = ? WHERE id = ?').run(data.assignee_id, id);
+    }
+
+    if (data.reporter_id !== undefined) {
+      db.prepare('UPDATE issues SET reporter_id = ? WHERE id = ?').run(data.reporter_id, id);
+    }
 
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   } catch (err: any) {
