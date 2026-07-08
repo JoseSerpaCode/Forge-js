@@ -16,8 +16,21 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   if (!file || !entityType || !entityId) return new Response('Missing data', { status: 400 });
 
+  if (entityType !== 'issue' && entityType !== 'page') {
+    return new Response('Invalid entity type', { status: 400 });
+  }
+
+  const table = entityType === 'issue' ? 'issues' : 'pages';
+  const entity = db.prepare(`SELECT workspace_id FROM ${table} WHERE id = ?`).get(entityId) as any;
+  if (!entity) return new Response('Entity not found', { status: 404 });
+
+  const { checkWorkspaceAccess } = await import('../../lib/guard');
+  const access = checkWorkspaceAccess(user.id, user.is_sysadmin, entity.workspace_id, 'editor');
+  if (!access.granted) return new Response('Forbidden', { status: 403 });
+
   const buffer = Buffer.from(await file.arrayBuffer());
-  const fileName = `${crypto.randomUUID()}-${file.name}`;
+  const safeFilename = path.basename(file.name).replace(/[^a-zA-Z0-9.\-_]/g, '_');
+  const fileName = `${crypto.randomUUID()}-${safeFilename}`;
   const uploadDir = path.join(process.cwd(), 'public', 'storage');
 
   await fs.mkdir(uploadDir, { recursive: true });

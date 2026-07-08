@@ -20,9 +20,21 @@ if (!access.granted) return new Response(access.error, { status: 403 });
 const editAccess = checkWorkspaceAccess(user.id, user.is_sysadmin, ws.id, 'editor');
 const canEdit = editAccess.granted;
 
-// Fetch page
-const page = db.prepare('SELECT * FROM pages WHERE id = ? AND workspace_id = ?').get(page_id, ws.id) as any;
+// Fetch page with author info
+const page = db.prepare(`
+  SELECT p.*, u.username as author_name, u.avatar_url as author_avatar
+  FROM pages p
+  LEFT JOIN users u ON p.created_by = u.id
+  WHERE p.id = ? AND p.workspace_id = ?
+`).get(page_id, ws.id) as any;
 if (!page) return new Response('Page not found', { status: 404 });
+
+// Fetch parent page title for breadcrumb (optional, just 1 level for now)
+let parentTitle = null;
+if (page.parent_page_id) {
+  const parent = db.prepare('SELECT title FROM pages WHERE id = ?').get(page.parent_page_id) as any;
+  if (parent) parentTitle = parent.title;
+}
 ---
 
 <MainLayout title={`${page.title} | Knowledge Base`} workspaceId={ws.id}>
@@ -34,6 +46,11 @@ if (!page) return new Response('Page not found', { status: 404 });
       initialTitle={page.title} 
       initialContent={page.content_json} 
       canEdit={canEdit}
+      authorName={page.author_name}
+      authorAvatar={page.author_avatar}
+      updatedAt={page.updated_at}
+      createdAt={page.created_at}
+      parentTitle={parentTitle}
     />
   </div>
 </MainLayout>

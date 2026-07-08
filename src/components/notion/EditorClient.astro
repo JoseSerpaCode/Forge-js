@@ -4,27 +4,82 @@ interface Props {
   initialTitle: string;
   initialContent: string;
   canEdit: boolean;
+  authorName?: string;
+  authorAvatar?: string;
+  updatedAt?: string;
+  createdAt?: string;
+  parentTitle?: string | null;
 }
-const { pageId, initialTitle, initialContent, canEdit } = Astro.props;
+const { pageId, initialTitle, initialContent, canEdit, authorName, authorAvatar, updatedAt, parentTitle } = Astro.props;
+
+// Date formatter
+function formatDate(dateStr: string | undefined) {
+  if (!dateStr) return '';
+  // SQLite CURRENT_TIMESTAMP is UTC: "YYYY-MM-DD HH:MM:SS"
+  const safeStr = dateStr.includes('Z') ? dateStr : dateStr.replace(' ', 'T') + 'Z';
+  const date = new Date(safeStr);
+  
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins} min ago`;
+  if (diffMins < 120) return `1 hour ago`;
+  
+  const isToday = date.toDateString() === now.toDateString();
+  const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  
+  if (isToday) return `today at ${timeStr}`;
+  
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) return `yesterday at ${timeStr}`;
+  
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
 ---
 
 <div class="flex-1 flex flex-col h-full bg-forge-bg overflow-y-auto">
-  <div class="max-w-4xl mx-auto w-full p-8 pt-16 flex flex-col min-h-full">
+  <div class="max-w-3xl mx-auto w-full px-8 py-12 flex flex-col min-h-full">
     
-    <div class="flex items-center justify-between mb-8 group">
-      <input 
-        id="page-title"
-        type="text" 
+    <!-- Breadcrumbs -->
+    {parentTitle && (
+      <nav class="text-xs font-mono text-forge-muted mb-4 flex items-center gap-2">
+        <span class="hover:text-forge-secondary transition-colors cursor-pointer">{parentTitle}</span>
+        <span class="text-forge-border">/</span>
+        <span class="text-forge-text truncate">{initialTitle || 'Untitled'}</span>
+      </nav>
+    )}
+
+    <!-- Title & Delete -->
+    <div class="flex items-center justify-between mb-4 group relative">
+      <input type="text" id="editor-title" 
         value={initialTitle}
         readonly={!canEdit}
-        class="text-4xl font-bold bg-transparent text-white focus:outline-none focus:border-b focus:border-forge-neon border-b border-transparent w-full transition-colors"
-        placeholder="Page Title"
-      />
+        class="text-4xl font-bold bg-transparent text-forge-text focus:outline-none focus:border-b focus:border-forge-secondary border-b border-transparent w-full transition-colors pb-1"
+        placeholder="Untitled" autocomplete="off" />
       {canEdit && (
-        <button id="btn-delete-page" class="w-8 h-8 rounded flex items-center justify-center text-forge-muted hover:bg-red-500/20 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100" title="Delete Page">
+        <button id="btn-delete-page" class="absolute -right-12 w-8 h-8 rounded flex items-center justify-center text-forge-muted hover:bg-red-500/20 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100" title="Delete Page">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
         </button>
       )}
+    </div>
+
+    <!-- Metadata Bar -->
+    <div class="flex items-center gap-3 mb-10 pb-4 border-b border-forge-border/50">
+      <img src={authorAvatar || '/default-avatar.svg'} class="w-6 h-6 rounded-full border border-forge-border bg-forge-panel" alt="Author" />
+      <div class="flex items-center gap-2 text-xs font-mono text-forge-muted">
+        <span>Forged by <span class="text-forge-text font-bold">{authorName || 'Unknown'}</span></span>
+        <span class="text-forge-border">•</span>
+        <span>Updated {formatDate(updatedAt)}</span>
+        {initialContent === 'null' || !initialContent ? (
+          <>
+            <span class="text-forge-border">•</span>
+            <span class="bg-forge-primary/10 text-forge-primary px-1.5 py-0.5 rounded border border-forge-primary/30">Draft</span>
+          </>
+        ) : null}
+      </div>
     </div>
 
     <!-- Editor.js Container -->

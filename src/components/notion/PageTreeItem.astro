@@ -11,27 +11,32 @@ const hasChildren = children.length > 0;
 const isActive = page.id === currentPageId;
 ---
 
-<li class="pl-4">
-  <div class={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors group ${isActive ? 'bg-forge-panel border border-forge-border shadow-inner' : 'hover:bg-forge-bg'}`}>
+<li class="pl-4 relative">
+  <div class={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors group/item ${isActive ? 'bg-forge-panel border border-forge-border shadow-inner' : 'hover:bg-forge-bg'}`}>
     {hasChildren ? (
-      <button class="w-4 h-4 text-forge-muted hover:text-forge-neon transition-colors" aria-label="Toggle">
+      <button class="w-4 h-4 text-forge-muted hover:text-forge-secondary transition-colors" aria-label="Toggle">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right transform transition-transform group-[.expanded]:rotate-90"><path d="m9 18 6-6-6-6"/></svg>
       </button>
     ) : (
       <span class="w-4 h-4"></span>
     )}
     <span class="text-sm">{page.icon || '📄'}</span>
-    <a href={`/w/${sys_tag}/p/${page.id}`} class={`flex-1 text-sm truncate select-none ${isActive ? 'text-forge-neon font-bold' : 'text-forge-text'}`}>
+    <a href={`/w/${sys_tag}/p/${page.id}`} class={`flex-1 text-sm truncate select-none ${isActive ? 'text-forge-secondary font-bold drop-shadow-[0_0_8px_rgba(45,212,191,0.5)]' : 'text-forge-text hover:text-forge-secondary transition-colors'}`}>
       {page.title}
     </a>
     
-    <button class="add-child-btn w-5 h-5 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 hover:bg-forge-border text-forge-muted hover:text-white transition-all" data-parent-id={page.id} aria-label="Add subpage" title="Add subpage">
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-    </button>
+    <div class="flex items-center opacity-0 group-hover/item:opacity-100 transition-opacity">
+      <button class="add-child-btn w-5 h-5 flex items-center justify-center rounded hover:bg-forge-border text-forge-muted hover:text-forge-secondary transition-all" data-parent-id={page.id} aria-label="Add subpage" title="Add subpage">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+      </button>
+      <button class="more-opts-btn w-5 h-5 flex items-center justify-center rounded hover:bg-forge-border text-forge-muted hover:text-forge-secondary transition-all" aria-label="More options" title="Options">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+      </button>
+    </div>
   </div>
   
   {hasChildren && (
-    <ul class="border-l border-forge-border ml-2 mt-1 hidden group-[.expanded]:block" data-parent-id={page.id}>
+    <ul class="border-l border-forge-border/50 hover:border-forge-secondary/50 transition-colors ml-2 mt-1 hidden group-[.expanded]:block" data-parent-id={page.id}>
       {children.map(child => (
         <Astro.self page={child} childrenMap={childrenMap} currentPageId={currentPageId} sys_tag={sys_tag} />
       ))}

@@ -13,26 +13,49 @@ if (!workspace) return new Response('Workspace Not Found', { status: 404 });
 
 const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspace.id, 'viewer');
 if (!access.granted) return new Response('Access Denied', { status: 403 });
+const activeSprint = db.prepare("SELECT id, name FROM sprints WHERE workspace_id = ? AND status = 'active' LIMIT 1").get(workspace.id) as any;
+const pendingIssues = db.prepare("SELECT COUNT(*) as count FROM issues WHERE workspace_id = ? AND status != 'done'").get(workspace.id) as any;
+const totalPages = db.prepare("SELECT COUNT(*) as count FROM pages WHERE workspace_id = ?").get(workspace.id) as any;
 ---
 
 <MainLayout title={`Dashboard - ${workspace.name}`} workspaceId={workspace.id}>
   <div class="h-full flex flex-col">
     <header class="mb-6">
-      <h1 class="text-2xl font-bold text-forge-neon">{workspace.name} Dashboard</h1>
+      <h1 class="text-2xl font-bold text-forge-text">{workspace.name} Dashboard</h1>
     </header>
-    <div class="grid grid-cols-3 gap-6">
-      <div class="bg-forge-panel border border-forge-border p-6 rounded-lg">
-        <h3 class="text-sm font-bold text-forge-muted uppercase tracking-wider mb-2">Active Sprint</h3>
-        <div class="text-3xl font-black text-forge-text">Sprint 1</div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      
+      <!-- Active Sprint Card -->
+      <div class="bg-forge-panel border border-forge-border p-6 rounded-lg flex flex-col">
+        <h3 class="text-sm font-bold text-forge-muted uppercase tracking-wider mb-4">Active Sprint</h3>
+        {activeSprint ? (
+          <div class="mt-auto">
+            <div class="text-3xl font-black text-forge-text">{activeSprint.name}</div>
+            <a href={`/w/${sys_tag}/board`} class="text-xs text-forge-secondary hover:underline mt-2 inline-block">Go to Board →</a>
+          </div>
+        ) : (
+          <div class="flex-1 flex flex-col items-center justify-center text-center p-4 border border-dashed border-forge-border/30 rounded bg-forge-bg/50 relative overflow-hidden mt-auto">
+            <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(circle at 50% 50%, var(--forge-muted) 2px, transparent 2px); background-size: 100% 100%;">
+              <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M 20 20 L 80 80 M 80 20 L 20 80" fill="none" stroke="currentColor" class="text-forge-muted" stroke-dasharray="2,2" stroke-width="0.5" /></svg>
+            </div>
+            <p class="text-forge-muted font-mono text-[10px] mb-2 relative z-10 opacity-60">NO_ACTIVE_SPRINT</p>
+            <a href={`/w/${sys_tag}/board`} class="text-forge-secondary font-bold text-sm relative z-10 hover:bg-forge-secondary/10 px-2 py-1 rounded transition-colors">+ New Sprint</a>
+          </div>
+        )}
       </div>
-      <div class="bg-forge-panel border border-forge-border p-6 rounded-lg">
+
+      <!-- Pending Issues Card -->
+      <div class="bg-forge-panel border border-forge-border p-6 rounded-lg flex flex-col justify-between">
         <h3 class="text-sm font-bold text-forge-muted uppercase tracking-wider mb-2">Pending Issues</h3>
-        <div class="text-3xl font-black text-forge-neon">14</div>
+        <div class="text-4xl font-black text-forge-secondary">{pendingIssues.count}</div>
       </div>
-      <div class="bg-forge-panel border border-forge-border p-6 rounded-lg">
+
+      <!-- Knowledge Pages Card -->
+      <div class="bg-forge-panel border border-forge-border p-6 rounded-lg flex flex-col justify-between">
         <h3 class="text-sm font-bold text-forge-muted uppercase tracking-wider mb-2">Knowledge Pages</h3>
-        <div class="text-3xl font-black text-forge-text">5</div>
+        <div class="text-4xl font-black text-forge-text">{totalPages.count}</div>
       </div>
+
     </div>
   </div>
 </MainLayout>
