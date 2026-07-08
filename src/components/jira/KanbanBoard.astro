@@ -232,4 +232,17 @@ function getInitials(username: string) {
       }
     });
   });
+
+  // Check URL for issue parameter to auto-open
+  window.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const issueId = urlParams.get('issue');
+    if (issueId) {
+      const card = document.getElementById(issueId);
+      if (card) {
+        // Find the specific card and simulate a click on its outer div
+        (card as HTMLElement).click();
+      }
+    }
+  });
 </script>

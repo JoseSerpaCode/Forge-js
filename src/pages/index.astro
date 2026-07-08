@@ -119,12 +119,14 @@ const myTasks = db.prepare(`
       <div class="bg-forge-panel border border-forge-border rounded-lg overflow-hidden">
         <ul class="divide-y divide-forge-border">
           {myTasks.map(task => (
-            <li class="p-4 hover:bg-forge-bg transition-colors flex items-center justify-between group">
-              <div>
-                <p class="text-forge-text font-medium group-hover:text-forge-secondary transition-colors">{task.title}</p>
-                <p class="text-xs text-forge-muted font-mono mt-1">{task.sys_tag}-{task.id}</p>
-              </div>
-              <span class="text-[10px] font-mono px-2 py-1 rounded bg-forge-bg border border-forge-border text-forge-muted uppercase">{task.status}</span>
+            <li>
+              <a href={`/w/${task.sys_tag}/board?issue=${task.id}`} class="p-4 hover:bg-forge-bg transition-colors flex items-center justify-between group block">
+                <div>
+                  <p class="text-forge-text font-medium group-hover:text-forge-secondary transition-colors">{task.title}</p>
+                  <p class="text-xs text-forge-muted font-mono mt-1">{task.sys_tag}-{task.id.substring(0,8)}</p>
+                </div>
+                <span class="text-[10px] font-mono px-2 py-1 rounded bg-forge-bg border border-forge-border text-forge-muted uppercase">{task.status}</span>
+              </a>
             </li>
           ))}
           {myTasks.length === 0 && (
