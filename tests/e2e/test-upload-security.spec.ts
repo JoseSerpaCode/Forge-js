@@ -9,11 +9,23 @@ test.describe('Upload API Security', () => {
     await page.fill('input[name="username"]', 'jose');
     await page.fill('input[name="password"]', '#juniorManda1924'); // Use test seed password
     await page.click('button[type="submit"]');
+    await page.waitForURL(/\/$/);
+    
+    // Navigate to a workspace to set last_workspace_id
+    await page.goto('/w/project-alpha/board');
     await page.waitForLoadState('networkidle');
+
+    // Grab the cookie for API requests
+    const cookies = await page.context().cookies();
+    const sessionCookie = cookies.find(c => c.name === 'forge_session');
 
     // Create a page
     const newPageRes = await request.post('/api/pages', {
-      data: { title: 'Security Test Page' }
+      data: { title: 'Security Test Page' },
+      headers: { 
+        'Cookie': `forge_session=${sessionCookie?.value}`,
+        'Origin': 'http://localhost:4322'
+      }
     });
     const newPage = await newPageRes.json();
     const entityId = newPage.id;

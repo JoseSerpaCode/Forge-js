@@ -17,25 +17,28 @@ test('Kanban: Positional rebalancing resolves collisions in Backlog (sprint_id I
   // 2. Limpiar issues existentes en ws-a y crear dos issues en backlog (sprint_id = null)
   db.prepare("DELETE FROM issues WHERE workspace_id = 'ws-a'").run();
   
-  const issue1 = crypto.randomUUID();
-  const issue2 = crypto.randomUUID();
-  const issue3 = crypto.randomUUID(); // Issue to be moved to cause collision
+  const reporter = db.prepare("SELECT id FROM users WHERE username = 'TestUserA'").get() as { id: string };
+  const reporterId = reporter?.id || 'unknown';
+
+  const issue1 = 'issue-pos-1';
+  const issue2 = 'issue-pos-2';
+  const issue3 = 'issue-pos-3';
   
   // Insert issue 1 and 2 extremely close to each other to exhaust precision
   db.prepare(`
-    INSERT INTO issues (id, workspace_id, reporter_username, title, type, status, position, sprint_id) 
-    VALUES (?, 'ws-a', 'TestUserA', 'Issue 1', 'task', 'todo', 100000.00000000001, null)
-  `).run(issue1);
+    INSERT INTO issues (id, workspace_id, reporter_id, title, type, status, position, sprint_id) 
+    VALUES (?, 'ws-a', ?, 'Issue 1', 'task', 'todo', 100000.00000000001, null)
+  `).run(issue1, reporterId);
 
   db.prepare(`
-    INSERT INTO issues (id, workspace_id, reporter_username, title, type, status, position, sprint_id) 
-    VALUES (?, 'ws-a', 'TestUserA', 'Issue 2', 'task', 'todo', 100000.00000000002, null)
-  `).run(issue2);
+    INSERT INTO issues (id, workspace_id, reporter_id, title, type, status, position, sprint_id) 
+    VALUES (?, 'ws-a', ?, 'Issue 2', 'task', 'todo', 100000.00000000002, null)
+  `).run(issue2, reporterId);
 
   db.prepare(`
-    INSERT INTO issues (id, workspace_id, reporter_username, title, type, status, position, sprint_id) 
-    VALUES (?, 'ws-a', 'TestUserA', 'Issue 3', 'task', 'todo', 300000, null)
-  `).run(issue3);
+    INSERT INTO issues (id, workspace_id, reporter_id, title, type, status, position, sprint_id) 
+    VALUES (?, 'ws-a', ?, 'Issue 3', 'task', 'todo', 300000, null)
+  `).run(issue3, reporterId);
 
   // Intentar mover Issue 3 justo entre Issue 1 e Issue 2
   // Dado que la diferencia es 1e-17 (menor a 1e-10), debería disparar rebalance

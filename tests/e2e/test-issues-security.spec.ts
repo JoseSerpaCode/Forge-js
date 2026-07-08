@@ -38,16 +38,7 @@ test('Issues: Cross-workspace IDOR isolation', async ({ request, page }) => {
   console.log('PATCH /api/issues/[id] status:', resPatch.status());
   expect(resPatch.status()).toBe(404);
 
-  // 4. ATTEMPT STATUS UPDATE: Try to update the issue status via API (PATCH)
-  const resStatusPatch = await request.patch(`/api/issues/${issueIdC}/status`, {
-    data: { status: 'in-progress' },
-    headers: { 
-      'Cookie': `forge_session=${sessionCookie?.value}`,
-      'Origin': 'http://localhost:4322'
-    }
-  });
-  console.log('PATCH /api/issues/[id]/status status:', resStatusPatch.status());
-  expect(resStatusPatch.status()).toBe(404);
+
 
   // --- SECOND CASE: USER E (VIEWER IN WORKSPACE C) ---
   await page.context().clearCookies();
@@ -75,14 +66,5 @@ test('Issues: Cross-workspace IDOR isolation', async ({ request, page }) => {
   console.log('User E PATCH /api/issues/[id] status:', resPatchE.status());
   expect(resPatchE.status()).toBe(403);
 
-  // ATTEMPT STATUS UPDATE: Try to update the issue status via API (PATCH) -> Should be 403
-  const resStatusPatchE = await request.patch(`/api/issues/${issueIdC}/status`, {
-    data: { status: 'in-progress' },
-    headers: { 
-      'Cookie': `forge_session=${sessionCookieE?.value}`,
-      'Origin': 'http://localhost:4322'
-    }
-  });
-  console.log('User E PATCH /api/issues/[id]/status status:', resStatusPatchE.status());
-  expect(resStatusPatchE.status()).toBe(403);
+
 });

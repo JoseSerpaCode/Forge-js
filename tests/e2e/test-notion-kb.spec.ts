@@ -19,7 +19,8 @@ test('Knowledge Base: Create, auto-save and cascading delete', async ({ page }) 
   await page.waitForURL(/\/w\/notion-ws-a\/p\/.+/);
   
   // Change title and content
-  const titleInput = page.locator('#page-title');
+  const titleInput = page.locator('#editor-title');
+  await page.waitForTimeout(500);
   await titleInput.fill('My First Page');
   
   await page.waitForSelector('.ce-paragraph');
@@ -37,7 +38,7 @@ test('Knowledge Base: Create, auto-save and cascading delete', async ({ page }) 
   await expect(page.locator('#save-status')).toHaveText('Saved', { timeout: 3000 });
   
   // Verify in DB
-  const pages = db.prepare('SELECT * FROM pages WHERE workspace_id = ?').all('ws-notion-a') as any[];
+  const pages = db.prepare('SELECT * FROM pages WHERE workspace_id = ? ORDER BY created_at DESC').all('ws-notion-a') as any[];
   expect(pages.length).toBe(1);
   expect(pages[0].title).toBe('My First Page');
   expect(pages[0].content_json).toContain('Hello world');

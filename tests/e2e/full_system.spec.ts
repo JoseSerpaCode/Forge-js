@@ -48,7 +48,7 @@ test.describe('Forge OS - Full System Omnibus Validation', () => {
     const targetColumn = page.locator('.board-column[data-status="in_progress"] .column-content');
     
     // Escuchar request de PATCH
-    const patchPromise = page.waitForRequest(req => req.url().includes('/status') && req.method() === 'PATCH');
+    const patchPromise = page.waitForRequest(req => req.url().includes('/api/issues/') && req.method() === 'PATCH');
     await firstCard.dragTo(targetColumn);
     
     const patchReq = await patchPromise;
