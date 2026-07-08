@@ -94,9 +94,27 @@ const { sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.pr
           ))}
         </select>
       </div>
-      <div class="space-y-2">
-        <label class="text-[10px] font-bold text-forge-muted/70 uppercase tracking-widest">Story Points</label>
-        <input type="number" id="modal-issue-points" value="0" class="w-full bg-forge-panel/40 border border-forge-border/50 rounded-lg p-2.5 text-sm text-forge-text focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 transition-all shadow-sm font-mono" />
+      <div class="space-y-2 relative group/sp">
+        <label class="text-[10px] font-bold text-forge-muted/70 uppercase tracking-widest flex justify-between items-center cursor-help">
+          <span>Story Points</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-forge-muted hover:text-forge-secondary transition-colors"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        </label>
+        
+        <div class="absolute bottom-full right-0 mb-2 w-64 bg-forge-panel border border-forge-border p-3 rounded-lg shadow-xl opacity-0 invisible group-hover/sp:opacity-100 group-hover/sp:visible transition-all z-50 text-[11px] text-forge-text font-normal normal-case leading-relaxed">
+          <p class="font-bold mb-1 text-forge-secondary">Fibonacci Estimation (1, 2, 3, 5, 8...)</p>
+          <ul class="space-y-1 text-forge-muted">
+            <li><strong class="text-forge-text">1-2:</strong> Trivial or very simple tasks.</li>
+            <li><strong class="text-forge-text">3-5:</strong> Standard tasks with known scope.</li>
+            <li><strong class="text-forge-text">8-13:</strong> Complex tasks or high uncertainty.</li>
+          </ul>
+        </div>
+        
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-forge-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon><line x1="12" y1="22" x2="12" y2="15.5"></line><polyline points="22 8.5 12 15.5 2 8.5"></polyline><polyline points="2 15.5 12 8.5 22 15.5"></polyline><line x1="12" y1="2" x2="12" y2="8.5"></line></svg>
+          </div>
+          <input type="number" id="modal-issue-points" value="0" min="0" class="w-full bg-forge-bg border border-forge-border/50 rounded-lg py-2.5 pl-9 pr-3 text-sm text-forge-text focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 transition-all shadow-sm font-mono" />
+        </div>
       </div>
     </div>
     

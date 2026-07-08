@@ -36,7 +36,9 @@ const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace
 let issuesQuery = `
   SELECT i.*, 
          u1.username as reporter_username, 
-         u2.username as assignee_username
+         u1.avatar_url as reporter_avatar,
+         u2.username as assignee_username,
+         u2.avatar_url as assignee_avatar
   FROM issues i
   LEFT JOIN users u1 ON i.reporter_id = u1.id
   LEFT JOIN users u2 ON i.assignee_id = u2.id
@@ -87,9 +89,9 @@ const workspaceMembers = db.prepare(`
           ))}
         </select>
         
-        {access.role !== 'viewer' && activeSprintId && currentSprintObj && currentSprintObj.status !== 'completed' && (
-          <button id="btn-toggle-sprint" data-sprint-id={activeSprintId} data-current-status={currentSprintObj.status} class={`font-bold px-4 py-2 rounded text-sm transition-colors ${currentSprintObj.status === 'planned' ? 'bg-green-600 text-white hover:bg-green-500' : 'bg-forge-primary text-forge-bg hover:opacity-90'}`}>
-            {currentSprintObj.status === 'planned' ? 'Start Sprint' : 'Complete Sprint'}
+        {access.role !== 'viewer' && activeSprintId && currentSprintObj && (
+          <button id="btn-toggle-sprint" data-sprint-id={activeSprintId} data-current-status={currentSprintObj.status} class={`font-bold px-4 py-2 rounded text-sm transition-colors ${currentSprintObj.status === 'planned' ? 'bg-green-600 text-white hover:bg-green-500' : currentSprintObj.status === 'active' ? 'bg-forge-primary text-forge-bg hover:opacity-90' : 'bg-forge-secondary text-forge-bg hover:opacity-90'}`}>
+            {currentSprintObj.status === 'planned' ? 'Start Sprint' : currentSprintObj.status === 'active' ? 'Complete Sprint' : 'Reopen Sprint'}
           </button>
         )}
         {access.role !== 'viewer' && activeSprintId && currentSprintObj && currentSprintObj.status === 'active' && (
@@ -258,10 +260,17 @@ const workspaceMembers = db.prepare(`
       if (currentStatus === 'active') newStatus = 'completed';
       if (currentStatus === 'completed') newStatus = 'active'; // Allow reopening if they are looking at a completed sprint
 
-      const actionText = newStatus === 'completed' ? 'complete' : 'start/reopen';
+      let promptText = `Are you sure you want to ${newStatus === 'completed' ? 'complete' : 'start/reopen'} this sprint?`;
+
+      if (newStatus === 'completed') {
+        const incompleteCards = document.querySelectorAll('.board-column:not([data-status="done"]) .issue-card').length;
+        if (incompleteCards > 0) {
+          promptText = `WARNING: There are ${incompleteCards} incomplete task(s). Are you sure you want to complete this sprint anyway?`;
+        }
+      }
       
       // @ts-ignore
-      window.forgeConfirm(`Are you sure you want to ${actionText} this sprint?`, async () => {
+      window.forgeConfirm(promptText, async () => {
         const res = await fetch(`/api/sprints/${sprintId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },

@@ -37,7 +37,7 @@ function getInitials(username: string) {
             description: issue.description,
             type: issue.type,
             story_points: issue.story_points || 0,
-            assignee_initials: getInitials(issue.assignee_username || issue.reporter_username),
+            assignee_avatar: issue.assignee_avatar,
             assignee_username: issue.assignee_username,
             reporter_username: issue.reporter_username,
             assignee_id: issue.assignee_id,

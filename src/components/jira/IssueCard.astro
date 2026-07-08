@@ -6,7 +6,7 @@ interface Props {
     description: string;
     type: string;
     story_points: number;
-    assignee_initials: string;
+    assignee_avatar?: string;
     assignee_username?: string;
     reporter_username?: string;
     assignee_id?: string;
@@ -27,8 +27,12 @@ const { issue } = Astro.props;
   `}>
   <div class="flex justify-between items-start mb-2">
     <span class="font-mono text-[10px] text-forge-secondary uppercase tracking-wider">{issue.id.substring(0,8)}</span>
-    <div class="w-6 h-6 rounded-full bg-forge-bg border border-forge-border flex items-center justify-center text-[10px] text-forge-muted font-bold" title={issue.assignee_username || 'Unassigned'}>
-      {issue.assignee_initials}
+    <div class="w-6 h-6 rounded-full bg-forge-bg border border-forge-border flex items-center justify-center overflow-hidden shrink-0" title={issue.assignee_username || 'Unassigned'}>
+      {issue.assignee_avatar ? (
+        <img src={issue.assignee_avatar} alt={issue.assignee_username} class="w-full h-full object-cover" />
+      ) : (
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-forge-muted"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      )}
     </div>
   </div>
   <h4 class="text-forge-text font-bold text-sm mb-1 group-hover:text-forge-secondary transition-colors">{issue.title}</h4>
