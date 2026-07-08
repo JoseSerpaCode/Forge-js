@@ -1,8 +1,6 @@
 ---
 import MainLayout from '../../../layouts/MainLayout.astro';
 import KanbanBoard from '../../../components/jira/KanbanBoard.astro';
-import BoardColumn from '../../../components/jira/BoardColumn.astro';
-import IssueCard from '../../../components/jira/IssueCard.astro';
 import db from '../../../lib/db';
 import { checkWorkspaceAccess } from '../../../lib/guard';
 
@@ -17,21 +15,272 @@ if (!workspace) return new Response('Workspace Not Found', { status: 404 });
 const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspace.id, 'viewer');
 if (!access.granted) return new Response('Access Denied', { status: 403 });
 
-const issues = db.prepare('SELECT * FROM issues WHERE workspace_id = ? ORDER BY position ASC, id ASC').all(workspace.id) as any[];
+// Read sprint from URL
+const requestedSprintId = Astro.url.searchParams.get('sprint');
+let activeSprintId = null;
+let currentSprintObj = null;
 
-const todoIssues = issues.filter(i => i.status === 'todo');
-const inProgressIssues = issues.filter(i => i.status === 'in_progress');
-const doneIssues = issues.filter(i => i.status === 'done');
+// IDOR Protection: Validate requested sprint belongs to this workspace
+if (requestedSprintId && requestedSprintId !== 'backlog') {
+  const sprintCheck = db.prepare('SELECT workspace_id, status FROM sprints WHERE id = ?').get(requestedSprintId) as any;
+  if (!sprintCheck || sprintCheck.workspace_id !== workspace.id) {
+    return new Response('Sprint Not Found', { status: 404 });
+  }
+  activeSprintId = requestedSprintId;
+  currentSprintObj = sprintCheck;
+}
+
+// Fetch all sprints for the dropdown
+const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace_id = ? ORDER BY start_date DESC, rowid DESC').all(workspace.id) as any[];
+
+let issuesQuery = 'SELECT * FROM issues WHERE workspace_id = ?';
+const queryParams: any[] = [workspace.id];
+
+if (activeSprintId) {
+  issuesQuery += ' AND sprint_id = ?';
+  queryParams.push(activeSprintId);
+} else {
+  issuesQuery += ' AND sprint_id IS NULL';
+}
+
+issuesQuery += ' ORDER BY position ASC, id ASC';
+const issues = db.prepare(issuesQuery).all(...queryParams) as any[];
+
+const activeSprintName = activeSprintId ? sprints.find(s => s.id === activeSprintId)?.name : 'Backlog';
 ---
 
 <MainLayout title={`Board - ${workspace.name}`} workspaceId={workspace.id}>
   <div class="h-full flex flex-col">
-    <header class="mb-6">
-      <h1 class="text-2xl font-bold text-forge-neon">{workspace.name} Board</h1>
+    <header class="mb-6 flex flex-wrap gap-4 justify-between items-center">
+      <div class="flex items-center gap-4">
+        <h1 class="text-2xl font-bold text-forge-text">{workspace.name} Board</h1>
+        
+        {access.role !== 'viewer' && (
+          <button id="btn-new-issue" class="bg-forge-secondary text-forge-bg font-bold px-3 py-1.5 rounded text-sm hover:opacity-90 transition-opacity flex items-center gap-2">
+            <span>+ New Issue</span>
+          </button>
+        )}
+      </div>
+      
+      <!-- Sprint Selector & Actions -->
+      <div class="flex gap-4 items-center">
+        <select id="sprint-selector" class="bg-forge-bg text-forge-text border border-forge-border rounded px-4 py-2 text-sm focus:outline-none focus:border-forge-secondary">
+          <option value="backlog" selected={!activeSprintId}>Backlog</option>
+          {sprints.map(s => (
+            <option value={s.id} selected={activeSprintId === s.id}>{s.name} {s.status === 'active' ? '(Active)' : s.status === 'completed' ? '(Completed)' : ''}</option>
+          ))}
+        </select>
+        
+        {access.role !== 'viewer' && activeSprintId && currentSprintObj && currentSprintObj.status !== 'completed' && (
+          <button id="btn-toggle-sprint" data-sprint-id={activeSprintId} data-current-status={currentSprintObj.status} class={`font-bold px-4 py-2 rounded text-sm transition-colors ${currentSprintObj.status === 'planned' ? 'bg-green-600 text-white hover:bg-green-500' : 'bg-forge-primary text-forge-bg hover:opacity-90'}`}>
+            {currentSprintObj.status === 'planned' ? 'Start Sprint' : 'Complete Sprint'}
+          </button>
+        )}
+        {access.role !== 'viewer' && activeSprintId && currentSprintObj && currentSprintObj.status === 'active' && (
+          <button id="btn-deactivate-sprint" data-sprint-id={activeSprintId} class="font-bold px-4 py-2 rounded text-sm transition-colors bg-forge-panel border border-forge-border text-forge-text hover:bg-forge-bg">
+            Deactivate
+          </button>
+        )}
+
+        {(access.role === 'owner' || access.role === 'editor') && (
+          <button id="btn-new-sprint" class="bg-forge-secondary text-forge-bg font-bold px-4 py-2 rounded text-sm hover:opacity-90 transition-colors">
+            + New Sprint
+          </button>
+        )}
+      </div>
     </header>
 
     <div class="flex-1 overflow-hidden">
-      <KanbanBoard workspaceId={workspace.id} issues={issues} />
+      <!-- Pass sprints to KanbanBoard so IssueDetailsModal can use it -->
+      <KanbanBoard workspaceId={workspace.id} issues={issues} sprints={sprints} currentSprintId={activeSprintId} />
     </div>
   </div>
+
+  <!-- New Sprint Modal -->
+  <dialog id="new-sprint-modal" class="bg-forge-panel border border-forge-border rounded-lg p-6 w-[400px] text-forge-text shadow-xl backdrop:bg-black/50">
+    <h2 class="text-xl font-bold mb-4">Create Sprint</h2>
+    <div class="mb-4">
+      <label class="block text-xs uppercase tracking-wider text-forge-muted mb-1">Name</label>
+      <input type="text" id="sprint-name" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-secondary" placeholder="E.g. Sprint 4">
+    </div>
+    <div class="flex justify-end gap-3 mt-6">
+      <button type="button" class="px-4 py-2 text-forge-muted hover:text-forge-text" onclick="document.getElementById('new-sprint-modal').close()">Cancel</button>
+      <button type="button" id="btn-save-sprint" class="bg-forge-primary text-forge-bg px-4 py-2 rounded font-bold hover:bg-opacity-90 transition-colors">Create</button>
+    </div>
+  </dialog>
+
+  <!-- New Issue Modal -->
+  <dialog id="new-issue-modal" class="bg-forge-panel border border-forge-border rounded-lg p-6 w-[500px] text-forge-text shadow-xl backdrop:bg-black/50">
+    <h2 class="text-xl font-bold mb-4">Create Issue</h2>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs uppercase tracking-wider text-forge-muted mb-1">Title</label>
+        <input type="text" id="new-issue-title" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:border-forge-secondary outline-none" placeholder="What needs to be done?">
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-wider text-forge-muted mb-1">Type</label>
+        <select id="new-issue-type" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:border-forge-secondary outline-none">
+          <option value="task">Task</option>
+          <option value="bug">Bug</option>
+          <option value="story">Story</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-wider text-forge-muted mb-1">Sprint</label>
+        <select id="new-issue-sprint" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:border-forge-secondary outline-none">
+          <option value="">Backlog</option>
+          {sprints.map(s => (
+            <option value={s.id} selected={activeSprintId === s.id}>{s.name}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+    <div class="flex justify-end gap-3 mt-6">
+      <button type="button" class="px-4 py-2 text-forge-muted hover:text-forge-text" onclick="document.getElementById('new-issue-modal').close()">Cancel</button>
+      <button type="button" id="btn-save-issue" class="bg-forge-secondary text-forge-bg px-4 py-2 rounded font-bold hover:opacity-90 transition-opacity">Create</button>
+    </div>
+  </dialog>
+
+  <script>
+    const workspaceId = document.querySelector('.kanban-container')?.getAttribute('data-workspace') || 'default';
+
+    // PERSIST SPRINT SELECTION
+    const urlParams = new URLSearchParams(window.location.search);
+    const sprintParam = urlParams.get('sprint');
+    
+    // If no sprint param is present at all (not even empty), check localStorage
+    if (!window.location.search.includes('sprint=')) {
+      const savedSprint = localStorage.getItem(`forge_last_sprint_${workspaceId}`);
+      if (savedSprint && savedSprint !== 'backlog') {
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.set('sprint', savedSprint);
+        window.location.replace(newUrl.toString());
+      } else if (!savedSprint) {
+        localStorage.setItem(`forge_last_sprint_${workspaceId}`, 'backlog');
+      }
+    } else {
+      // Save current sprint to localStorage
+      localStorage.setItem(`forge_last_sprint_${workspaceId}`, sprintParam || 'backlog');
+    }
+
+    // SPRINT SELECTOR
+    const selector = document.getElementById('sprint-selector') as HTMLSelectElement;
+    selector?.addEventListener('change', (e) => {
+      const val = (e.target as HTMLSelectElement).value;
+      localStorage.setItem(`forge_last_sprint_${workspaceId}`, val);
+      const url = new URL(window.location.href);
+      if (val === 'backlog') {
+        url.searchParams.delete('sprint');
+      } else {
+        url.searchParams.set('sprint', val);
+      }
+      window.location.href = url.toString();
+    });
+
+    // NEW SPRINT MODAL
+    const newSprintBtn = document.getElementById('btn-new-sprint');
+    const sprintModal = document.getElementById('new-sprint-modal') as HTMLDialogElement;
+    const saveSprintBtn = document.getElementById('btn-save-sprint');
+
+    newSprintBtn?.addEventListener('click', () => sprintModal?.showModal());
+
+    saveSprintBtn?.addEventListener('click', async () => {
+      const name = (document.getElementById('sprint-name') as HTMLInputElement).value;
+      if (!name) return alert('Name required');
+      
+      const res = await fetch('/api/sprints', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, workspaceId })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        const url = new URL(window.location.href);
+        url.searchParams.set('sprint', data.id);
+        window.location.href = url.toString();
+      } else {
+        console.error('API Error: ', await res.text());
+      }
+    });
+
+    // NEW ISSUE MODAL
+    const newIssueBtn = document.getElementById('btn-new-issue');
+    const issueModal = document.getElementById('new-issue-modal') as HTMLDialogElement;
+    const saveIssueBtn = document.getElementById('btn-save-issue');
+
+    newIssueBtn?.addEventListener('click', () => issueModal?.showModal());
+
+    saveIssueBtn?.addEventListener('click', async () => {
+      const title = (document.getElementById('new-issue-title') as HTMLInputElement).value;
+      const type = (document.getElementById('new-issue-type') as HTMLSelectElement).value;
+      const sprintId = (document.getElementById('new-issue-sprint') as HTMLSelectElement).value;
+
+      if (!title) return alert('Title is required');
+
+      const res = await fetch('/api/issues', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, type, sprintId: sprintId || null, workspaceId })
+      });
+
+      if (res.ok) {
+        window.location.reload();
+      } else {
+        alert(await res.text());
+      }
+    });
+
+    // SPRINT TOGGLE (START/COMPLETE/REOPEN)
+    const toggleSprintBtn = document.getElementById('btn-toggle-sprint');
+    toggleSprintBtn?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget as HTMLElement;
+      const sprintId = btn.getAttribute('data-sprint-id');
+      const currentStatus = btn.getAttribute('data-current-status');
+      
+      let newStatus = 'active';
+      if (currentStatus === 'active') newStatus = 'completed';
+      if (currentStatus === 'completed') newStatus = 'active'; // Allow reopening if they are looking at a completed sprint
+
+      const actionText = newStatus === 'completed' ? 'complete' : 'start/reopen';
+      
+      // @ts-ignore
+      window.forgeConfirm(`Are you sure you want to ${actionText} this sprint?`, async () => {
+        const res = await fetch(`/api/sprints/${sprintId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus, workspaceId })
+        });
+
+        if (res.ok) {
+          window.location.reload();
+        } else {
+          // @ts-ignore
+          window.showToast(await res.text(), true);
+        }
+      });
+    });
+
+    const deactivateSprintBtn = document.getElementById('btn-deactivate-sprint');
+    deactivateSprintBtn?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget as HTMLElement;
+      const sprintId = btn.getAttribute('data-sprint-id');
+      
+      // @ts-ignore
+      window.forgeConfirm(`Deactivate this sprint? It will return to the planning stage.`, async () => {
+        const res = await fetch(`/api/sprints/${sprintId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'planned', workspaceId })
+        });
+
+        if (res.ok) {
+          window.location.reload();
+        } else {
+          // @ts-ignore
+          window.showToast(await res.text(), true);
+        }
+      });
+    });
+  </script>
 </MainLayout>

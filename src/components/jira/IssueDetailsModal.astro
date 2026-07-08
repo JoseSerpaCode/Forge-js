@@ -1,4 +1,9 @@
 ---
+interface Props {
+  sprints?: any[];
+  currentSprintId?: string | null;
+}
+const { sprints = [], currentSprintId = null } = Astro.props;
 ---
 <!-- Drawer backdrop -->
 <div id="issue-details-backdrop" class="fixed inset-0 bg-black/50 hidden z-40 transition-opacity"></div>
@@ -7,16 +12,27 @@
 <div id="issue-details-modal" class="fixed top-0 right-0 w-[500px] max-w-full h-full bg-forge-bg border-l border-forge-border z-50 transform translate-x-full transition-transform duration-300 ease-in-out shadow-2xl overflow-y-auto flex flex-col">
   <div class="p-4 border-b border-forge-border flex justify-between items-center bg-forge-panel">
     <div class="flex items-center gap-3">
-      <span id="modal-issue-type" class="px-2 py-0.5 rounded text-xs font-mono bg-forge-bg text-forge-neon border border-forge-border uppercase">TASK</span>
+      <select id="modal-issue-type" class="px-2 py-0.5 rounded text-xs font-mono bg-forge-bg text-forge-text border border-forge-border focus:border-forge-secondary focus:outline-none uppercase">
+        <option value="task">TASK</option>
+        <option value="bug">BUG</option>
+        <option value="story">STORY</option>
+      </select>
       <span id="modal-issue-id" class="font-mono text-sm text-forge-muted">ID-XXX</span>
     </div>
-    <button id="close-modal-btn" class="text-forge-muted hover:text-forge-neon transition-colors">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-    </button>
+    <div class="flex items-center gap-2">
+      <button id="btn-delete-issue" class="text-red-400 hover:bg-red-400/10 px-2 py-1 rounded text-xs font-bold transition-colors hidden">
+        Delete
+      </button>
+      <button id="close-modal-btn" class="text-forge-muted hover:text-forge-primary transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
   </div>
   
   <div class="p-6 flex-1 flex flex-col gap-6">
-    <h2 id="modal-issue-title" class="text-xl font-bold text-forge-text">Loading...</h2>
+    <div class="relative">
+      <input type="text" id="modal-issue-title" class="text-xl font-bold text-forge-text bg-transparent border-b border-transparent hover:border-forge-border focus:border-forge-secondary focus:outline-none w-full transition-colors pb-1" value="Loading...">
+    </div>
     
     <div class="grid grid-cols-2 gap-4">
       <div class="space-y-1">
@@ -39,17 +55,26 @@
       <label class="text-xs font-bold text-forge-muted uppercase tracking-wider flex justify-between">
         Description
       </label>
-      <textarea id="modal-issue-desc" rows="5" class="w-full bg-forge-panel border border-forge-border rounded p-3 text-sm text-forge-text focus:outline-none focus:border-forge-neon transition-colors placeholder:text-forge-muted" placeholder="Add a description..."></textarea>
-      <button id="btn-save-desc" class="hidden absolute bottom-2 right-2 bg-forge-neon text-forge-bg text-xs font-bold px-3 py-1 rounded hover:bg-[#99cc00] transition-colors">Save</button>
+      <textarea id="modal-issue-desc" rows="5" class="w-full bg-forge-panel border border-forge-border rounded p-3 text-sm text-forge-text focus:outline-none focus:border-forge-secondary transition-colors placeholder:text-forge-muted" placeholder="Add a description..."></textarea>
+      <button id="btn-save-desc" class="hidden absolute bottom-2 right-2 bg-forge-primary text-forge-bg text-xs font-bold px-3 py-1 rounded hover:bg-forge-primary/90 transition-colors">Save</button>
     </div>
     
     <div class="grid grid-cols-2 gap-4">
       <div class="space-y-1">
+        <label class="text-xs font-bold text-forge-muted uppercase tracking-wider">Sprint</label>
+        <select id="modal-issue-sprint" class="w-full bg-forge-panel border border-forge-border rounded p-2 text-sm text-forge-text focus:outline-none focus:border-forge-secondary transition-colors">
+          <option value="backlog">Backlog</option>
+          {sprints.map((s: any) => (
+            <option value={s.id}>{s.name}</option>
+          ))}
+        </select>
+      </div>
+      <div class="space-y-1">
         <label class="text-xs font-bold text-forge-muted uppercase tracking-wider">Story Points</label>
-        <input type="number" id="modal-issue-points" value="0" class="w-full bg-forge-panel border border-forge-border rounded p-2 text-sm text-forge-text focus:outline-none focus:border-forge-neon transition-colors" />
+        <input type="number" id="modal-issue-points" value="0" class="w-full bg-forge-panel border border-forge-border rounded p-2 text-sm text-forge-text focus:outline-none focus:border-forge-secondary transition-colors" />
       </div>
       <div class="space-y-1 flex flex-col justify-end">
-        <button id="btn-log-work" class="w-full bg-forge-panel border border-forge-border hover:border-forge-neon hover:text-forge-neon text-forge-text py-2 px-4 rounded text-sm font-bold transition-colors flex items-center justify-center gap-2">
+        <button id="btn-log-work" class="w-full bg-forge-panel border border-forge-border hover:border-forge-primary hover:text-forge-primary text-forge-text py-2 px-4 rounded text-sm font-bold transition-colors flex items-center justify-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
           Log Work
         </button>
@@ -58,10 +83,11 @@
     
     <div class="space-y-2 mt-auto pt-6 border-t border-forge-border">
       <label class="text-xs font-bold text-forge-muted uppercase tracking-wider">Attachments</label>
-      <div class="border border-dashed border-forge-border bg-forge-panel/50 rounded-lg p-6 flex flex-col items-center justify-center text-forge-muted hover:text-forge-neon hover:border-forge-neon hover:bg-forge-panel transition-all cursor-pointer">
+      <div id="btn-add-attachment" class="border border-dashed border-forge-border bg-forge-panel/50 rounded-lg p-6 flex flex-col items-center justify-center text-forge-muted hover:text-forge-secondary hover:border-forge-secondary hover:bg-forge-panel transition-all cursor-pointer">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-2"><path d="M21.2 15c.7-1.2 1-2.5.7-3.9-.6-2-2.4-3.5-4.4-3.5h-1.2c-.7-3-3.2-5.2-6.2-5.6-3-.3-5.9 1.3-7.3 4-1.2 2.5-1 6.5.5 8.4"></path><path d="M12 18v-6"></path><path d="M9 15l3-3 3 3"></path></svg>
-        <span class="text-sm font-bold">Drop files here to upload</span>
+        <span class="text-sm font-bold">Click or drop files to upload</span>
       </div>
+      <input type="file" id="file-attachment" class="hidden" />
     </div>
   </div>
 </div>
@@ -82,7 +108,7 @@
   // RBAC validation
   const role = document.body.getAttribute('data-user-role');
   if (role === 'viewer') {
-    const inputs = modal?.querySelectorAll('input, textarea, button') as NodeListOf<HTMLInputElement | HTMLButtonElement | HTMLTextAreaElement>;
+    const inputs = modal?.querySelectorAll('input, textarea, button, select') as NodeListOf<HTMLInputElement | HTMLButtonElement | HTMLTextAreaElement | HTMLSelectElement>;
     inputs?.forEach(el => {
       if (el.id !== 'close-modal-btn') {
         el.disabled = true;
@@ -90,6 +116,44 @@
       }
     });
   }
+
+  // Type change
+  const typeEl = document.getElementById('modal-issue-type') as HTMLSelectElement;
+  typeEl?.addEventListener('change', async () => {
+    const idEl = document.getElementById('modal-issue-id');
+    const issueId = idEl?.getAttribute('data-full-id');
+    if (!issueId) return;
+    try {
+      await fetch(`/api/issues/${issueId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: typeEl.value })
+      });
+      // Optionally reload to update icon on board
+      window.location.reload();
+    } catch (e) {
+      console.error(e);
+    }
+  });
+
+  // Title change
+  const titleEl = document.getElementById('modal-issue-title') as HTMLInputElement;
+  titleEl?.addEventListener('change', async () => {
+    const idEl = document.getElementById('modal-issue-id');
+    const issueId = idEl?.getAttribute('data-full-id');
+    if (!issueId || !titleEl.value) return;
+    try {
+      await fetch(`/api/issues/${issueId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: titleEl.value })
+      });
+      window.location.reload();
+    } catch (e) {
+      console.error(e);
+    }
+  });
+
   // Interaction Logic
   const descEl = document.getElementById('modal-issue-desc') as HTMLTextAreaElement;
   const saveBtn = document.getElementById('btn-save-desc');
@@ -117,13 +181,55 @@
       setTimeout(() => saveBtn.classList.add('hidden'), 1000);
       saveBtn.textContent = 'Save';
     } catch (e) {
-      alert('Error saving');
+      // @ts-ignore
+      window.showToast('Error saving description', true);
       saveBtn.textContent = 'Save';
     }
   });
 
   logWorkBtn?.addEventListener('click', () => {
-    alert('Log Work modal feature coming in next phase.');
+    // @ts-ignore
+    window.showToast('Log Work modal feature coming in next phase.');
+  });
+
+  // Delete Issue
+  const deleteBtn = document.getElementById('btn-delete-issue');
+  deleteBtn?.addEventListener('click', async () => {
+    const idEl = document.getElementById('modal-issue-id');
+    const issueId = idEl?.getAttribute('data-full-id');
+    const workspaceId = document.querySelector('.kanban-container')?.getAttribute('data-workspace');
+    if (!issueId || !workspaceId) return;
+    
+    // @ts-ignore
+    window.forgeConfirm('Are you sure you want to completely delete this issue?', async () => {
+      try {
+        const res = await fetch(`/api/issues/${issueId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ workspaceId })
+        });
+        if (res.ok) {
+          window.location.reload();
+        } else {
+          // @ts-ignore
+          window.showToast('Failed to delete issue', true);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }, 'Delete Issue');
+  });
+
+  // Attachments
+  const attachBtn = document.getElementById('btn-add-attachment');
+  const fileInput = document.getElementById('file-attachment') as HTMLInputElement;
+  
+  attachBtn?.addEventListener('click', () => fileInput?.click());
+  fileInput?.addEventListener('change', () => {
+    if (fileInput.files && fileInput.files.length > 0) {
+      // @ts-ignore
+      window.showToast(`File "${fileInput.files[0].name}" selected! Upload endpoint implementation in next phase.`);
+    }
   });
 
   const pointsEl = document.getElementById('modal-issue-points') as HTMLInputElement;
@@ -142,4 +248,42 @@
       console.error('Failed to update story points', e);
     }
   });
+
+  const sprintEl = document.getElementById('modal-issue-sprint') as HTMLSelectElement;
+  sprintEl?.addEventListener('change', async () => {
+    const idEl = document.getElementById('modal-issue-id');
+    const issueId = idEl?.getAttribute('data-full-id');
+    const workspaceId = document.querySelector('.kanban-container')?.getAttribute('data-workspace');
+    if (!issueId || !workspaceId) return;
+    
+    // To move sprint, we need to preserve status. 
+    // We will find the current status from the card in the DOM.
+    const card = document.getElementById(issueId);
+    if (!card) return;
+    const currentStatus = card.closest('.board-column')?.getAttribute('data-status') || 'todo';
+    
+    const newSprint = sprintEl.value === 'backlog' ? null : sprintEl.value;
+    
+    try {
+      const res = await fetch(`/api/issues/${issueId}/move`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sprint_id: newSprint, status: currentStatus, position: parseFloat(card.getAttribute('data-position') || '0'), workspaceId })
+      });
+      
+      if (res.ok) {
+        // Reload page to reflect new sprint filtering
+        window.location.reload();
+      } else {
+        alert('Error changing sprint');
+      }
+    } catch (e) {
+      console.error('Failed to update sprint', e);
+    }
+  });
+
+  // Need to make the Delete button visible only to non-viewers
+  if (role !== 'viewer') {
+    deleteBtn?.classList.remove('hidden');
+  }
 </script>

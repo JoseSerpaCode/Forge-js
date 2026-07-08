@@ -6,9 +6,11 @@ import IssueDetailsModal from './IssueDetailsModal.astro';
 interface Props {
   issues: any[];
   workspaceId: string;
+  sprints?: any[];
+  currentSprintId?: string | null;
 }
 
-const { issues, workspaceId } = Astro.props;
+const { issues, workspaceId, sprints = [], currentSprintId = null } = Astro.props;
 
 const columns = [
   { id: 'todo', title: 'To Do' },
@@ -35,7 +37,8 @@ function getInitials(username: string) {
             type: issue.type,
             story_points: issue.story_points || 0,
             assignee_initials: getInitials(issue.assignee_username || issue.reporter_username),
-            position: issue.position || 0
+            position: issue.position || 0,
+            sprint_id: issue.sprint_id || 'backlog'
           }} />
         ))}
       </BoardColumn>
@@ -43,7 +46,7 @@ function getInitials(username: string) {
   </div>
 </div>
 
-<IssueDetailsModal />
+<IssueDetailsModal sprints={sprints} currentSprintId={currentSprintId} />
 
 <script>
   const columns = document.querySelectorAll('.board-column');
@@ -73,7 +76,7 @@ function getInitials(username: string) {
       card.classList.remove('opacity-50');
       columns.forEach(c => {
         const content = c.querySelector('.column-content');
-        if (content) content.classList.remove('bg-forge-neon/10');
+        if (content) content.classList.remove('bg-forge-secondary/10');
       });
     });
     
@@ -88,10 +91,24 @@ function getInitials(username: string) {
       if (modal && titleEl && idEl && descEl && pointsEl) {
         idEl.textContent = card.id.substring(0, 8).toUpperCase();
         idEl.setAttribute('data-full-id', card.id);
-        titleEl.textContent = card.querySelector('h4')?.textContent || '';
+        (titleEl as HTMLInputElement).value = card.querySelector('h4')?.textContent || '';
         descEl.value = card.querySelector('p')?.textContent || '';
-        const spStr = card.querySelector('.font-mono')?.textContent || '0';
-        pointsEl.value = spStr.replace(' SP', '').trim();
+        pointsEl.value = card.getAttribute('data-points') || '0';
+        
+        const sprintEl = document.getElementById('modal-issue-sprint') as HTMLSelectElement;
+        if (sprintEl) {
+          sprintEl.value = card.getAttribute('data-sprint-id') || 'backlog';
+        }
+
+        const typeBadge = card.querySelector('.issue-type-badge');
+        const typeEl = document.getElementById('modal-issue-type') as HTMLSelectElement;
+        if (typeBadge && typeEl) {
+          const t = typeBadge.textContent?.toLowerCase().trim();
+          if (t === 'task' || t === 'bug' || t === 'story') {
+             typeEl.value = t;
+          }
+        }
+        
         modal.classList.remove('translate-x-full');
         document.getElementById('issue-details-backdrop')?.classList.remove('hidden');
       }
@@ -118,7 +135,7 @@ function getInitials(username: string) {
     column.addEventListener('dragover', (e: any) => {
       e.preventDefault();
       if (content) {
-        content.classList.add('bg-forge-neon/10');
+        content.classList.add('bg-forge-secondary/10');
         const afterElement = getDragAfterElement(content, e.clientY);
         const draggable = document.querySelector('.opacity-50');
         if (draggable) {
@@ -132,12 +149,12 @@ function getInitials(username: string) {
     });
 
     column.addEventListener('dragleave', () => {
-      if (content) content.classList.remove('bg-forge-neon/10');
+      if (content) content.classList.remove('bg-forge-secondary/10');
     });
 
     column.addEventListener('drop', async (e: any) => {
       e.preventDefault();
-      if (content) content.classList.remove('bg-forge-neon/10');
+      if (content) content.classList.remove('bg-forge-secondary/10');
       
       const issueId = e.dataTransfer.getData('text/plain');
       const card = document.getElementById(issueId);

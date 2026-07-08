@@ -11,7 +11,20 @@ const { title, status } = Astro.props;
     {title}
     <span class="text-xs bg-forge-bg px-2 py-0.5 rounded text-forge-muted font-mono border border-forge-border issue-count">0</span>
   </div>
-  <div class="flex-1 p-2 space-y-2 overflow-y-auto min-h-[150px] transition-colors column-content">
+  <div class="flex-1 p-2 space-y-2 overflow-y-auto min-h-[150px] transition-colors column-content relative group">
+    <div class="empty-state absolute inset-2 flex-col items-center justify-center text-center p-4 border border-dashed border-forge-border/30 rounded bg-forge-panel/20 pointer-events-none hidden group-has-[.issue-card]:hidden">
+      <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 50% 50%, var(--forge-muted) 2px, transparent 2px); background-size: 100% 100%;">
+        <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M 20 20 L 80 80 M 80 20 L 20 80" fill="none" stroke="currentColor" class="text-forge-muted" stroke-dasharray="2,2" stroke-width="0.5" /></svg>
+      </div>
+      <p class="text-forge-muted font-mono text-[10px] relative z-10 opacity-60">VOID</p>
+    </div>
     <slot />
   </div>
 </div>
+
+<style>
+  /* Show empty state when there are no issue cards */
+  .column-content:not(:has(.issue-card)) .empty-state {
+    display: flex;
+  }
+</style>
