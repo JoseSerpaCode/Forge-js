@@ -53,7 +53,7 @@ const myTasks = db.prepare(`
       
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         {workspaces.map(ws => (
-          <a href={`/w/${ws.sys_tag}/board`} class="block bg-forge-panel border border-forge-border p-5 rounded-xl hover:border-forge-secondary hover:shadow-[0_4px_20px_rgba(0,229,255,0.1)] transition-all group flex flex-col h-full cursor-pointer">
+          <div data-href={`/w/${ws.sys_tag}/board`} onclick="if(!event.defaultPrevented) window.location.href=this.getAttribute('data-href')" class="block bg-forge-panel border border-forge-border p-5 rounded-xl hover:border-forge-secondary hover:shadow-[0_4px_20px_rgba(0,229,255,0.1)] transition-all group flex flex-col h-full cursor-pointer relative">
             <div class="flex items-start justify-between mb-6">
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-lg bg-forge-bg border border-forge-border flex items-center justify-center text-forge-secondary font-black text-lg shadow-sm shrink-0">
@@ -82,20 +82,20 @@ const myTasks = db.prepare(`
                 )}
               </div>
               
-              <div class="opacity-0 group-hover:opacity-100 transition-opacity absolute right-0 bg-forge-panel pl-2 flex gap-1">
+              <div class="opacity-0 group-hover:opacity-100 transition-opacity absolute right-0 bg-forge-panel pl-2 flex gap-1 z-20">
                 {(ws.role === 'owner' || ws.role === 'sysadmin') && (
                   <>
-                    <a href={`/w/${ws.sys_tag}/settings`} class="text-xs text-forge-muted hover:text-forge-secondary hover:bg-forge-secondary/10 px-2 py-1.5 rounded transition-colors flex items-center gap-1 cursor-pointer pointer-events-auto" title="Workspace Settings">
+                    <a href={`/w/${ws.sys_tag}/settings`} onclick="event.preventDefault(); event.stopPropagation(); window.location.href=this.href" class="text-xs text-forge-muted hover:text-forge-secondary hover:bg-forge-secondary/10 px-2 py-1.5 rounded transition-colors flex items-center gap-1 cursor-pointer pointer-events-auto" title="Workspace Settings">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                     </a>
-                    <button class="btn-delete-ws text-xs text-forge-muted hover:text-red-400 hover:bg-red-500/10 px-2 py-1.5 rounded transition-colors flex items-center gap-1 cursor-pointer pointer-events-auto" data-id={ws.id} title="Delete Workspace">
+                    <button class="btn-delete-ws text-xs text-forge-muted hover:text-red-400 hover:bg-red-500/10 px-2 py-1.5 rounded transition-colors flex items-center gap-1 cursor-pointer pointer-events-auto" data-id={ws.id} title="Delete Workspace" onclick="event.preventDefault(); event.stopPropagation();">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                     </button>
                   </>
                 )}
               </div>
             </div>
-          </a>
+          </div>
         ))}
         {workspaces.length === 0 && (
           <div class="col-span-full py-16 flex flex-col items-center justify-center text-center relative overflow-hidden border border-dashed border-forge-border rounded-lg bg-forge-panel/30">
