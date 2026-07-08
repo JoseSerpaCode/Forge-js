@@ -26,7 +26,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   const { checkWorkspaceAccess } = await import('../../lib/guard');
   const access = checkWorkspaceAccess(user.id, user.is_sysadmin, entity.workspace_id, 'editor');
-  if (!access.granted) return new Response('Forbidden', { status: 403 });
+  if (!access.granted) {
+    if (access.reason === 'not_member') return new Response('Not Found', { status: 404 });
+    return new Response(access.error || 'Forbidden', { status: 403 });
+  }
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const safeFilename = path.basename(file.name).replace(/[^a-zA-Z0-9.\-_]/g, '_');

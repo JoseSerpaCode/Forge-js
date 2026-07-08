@@ -12,6 +12,7 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
   // Only owner can delete
   const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspaceId, 'owner');
   if (!access.granted) {
+    if (access.reason === 'not_member') return new Response('Not Found', { status: 404 });
     return new Response(access.error || 'Forbidden', { status: 403 });
   }
 
@@ -39,6 +40,7 @@ export const PATCH: APIRoute = async ({ request, params, locals }) => {
   // Only owner can edit
   const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspaceId, 'owner');
   if (!access.granted) {
+    if (access.reason === 'not_member') return new Response('Not Found', { status: 404 });
     return new Response(access.error || 'Forbidden', { status: 403 });
   }
 

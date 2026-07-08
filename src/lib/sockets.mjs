@@ -25,9 +25,9 @@ export function setupSockets(io) {
 
       // 2. Validar que el usuario sea miembro del workspace (Multi-Tenant Guard)
       const isMember = db.prepare('SELECT 1 FROM workspace_members WHERE workspace_id = ? AND user_id = ?').get(channel.workspace_id, socket.userId);
-      const isSysadmin = db.prepare('SELECT is_sysadmin FROM users WHERE id = ?').get(socket.userId);
+      const userRec = db.prepare('SELECT is_sysadmin FROM users WHERE id = ?').get(socket.userId);
 
-      if (isMember || isSysadmin.is_sysadmin === 1) {
+      if (isMember || (userRec && userRec.is_sysadmin === 1)) {
         socket.join(channelId);
         console.log(`User ${socket.userId} joined channel ${channelId}`);
       }

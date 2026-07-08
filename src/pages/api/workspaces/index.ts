@@ -42,7 +42,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       // Update user's last_workspace_id if it's their first workspace
       const count = db.prepare('SELECT COUNT(*) as count FROM workspace_members WHERE user_id = ?').get(user.id) as any;
       if (count && count.count === 1) {
-        db.prepare('UPDATE users SET last_workspace_id = ? WHERE id = ?').run(workspaceId, user.id);
+        db.prepare('UPDATE users SET last_workspace_id = ? WHERE id = ?').run(sys_tag, user.id);
       }
     })();
 

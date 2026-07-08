@@ -35,9 +35,16 @@
     --forge-accent-secondary: #00E5FF;
   }
   
-  [data-theme="orion_neon"] { 
-    /* The primary theme is now Orion's Forge. 
-       Other themes can override these later if needed. */
+  [data-theme="dark"] { 
+    --forge-bg: #0F172A;
+    --forge-panel: #1E293B;
+    --forge-text: #F8FAFC;
+    --forge-muted: #94A3B8;
+    --forge-border: #334155;
+
+    --forge-accent-primary: #3B82F6;
+    --forge-accent-primary-hover: #2563EB;
+    --forge-accent-secondary: #0EA5E9;
   }
 
   [data-theme="light"] {
@@ -47,9 +54,9 @@
     --forge-muted: #64748B;
     --forge-border: #E2E8F0;
     
-    --forge-accent-primary: #FF5D00;
-    --forge-accent-primary-hover: #E05200;
-    --forge-accent-secondary: #0ea5e9;
+    --forge-accent-primary: #3B82F6;
+    --forge-accent-primary-hover: #2563EB;
+    --forge-accent-secondary: #0EA5E9;
   }
   
   body { 
@@ -57,27 +64,6 @@
     color: var(--forge-text);
     font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
-    
-    /* Orion Blueprint Grid */
-    background-image: 
-      linear-gradient(to right, var(--forge-border) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--forge-border) 1px, transparent 1px);
-    background-size: 100px 100px;
-    background-position: center center;
-    background-blend-mode: multiply;
-  }
-  
-  /* Apply pseudo-element for subtle grid to avoid repeating intensely */
-  body::before {
-    content: "";
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-image: 
-      linear-gradient(to right, rgba(100, 116, 139, 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(100, 116, 139, 0.05) 1px, transparent 1px);
-    background-size: 40px 40px;
-    z-index: -1;
-    pointer-events: none;
   }
   
   .font-mono {

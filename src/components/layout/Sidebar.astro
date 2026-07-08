@@ -5,7 +5,16 @@ interface Props {
 }
 const { workspaceId, workspaceName } = Astro.props;
 const user = Astro.locals.user;
-const sys_tag = Astro.params.sys_tag || Astro.props.workspaceId || user?.last_workspace_id;
+import db from '../../../lib/db';
+
+let sys_tag = Astro.params.sys_tag;
+if (!sys_tag && user?.last_workspace_id) {
+  const ws = db.prepare('SELECT sys_tag FROM workspaces WHERE id = ?').get(user.last_workspace_id) as any;
+  if (ws) {
+    sys_tag = ws.sys_tag;
+  }
+}
+
 const currentPath = Astro.url.pathname;
 ---
 <aside id="app-sidebar" class="w-64 bg-forge-panel border-r border-forge-border flex flex-col h-full shrink-0 transition-all duration-300 ease-in-out">

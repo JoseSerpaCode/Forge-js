@@ -45,7 +45,7 @@ const memberships = db.prepare(`
           <div>
             <label class="block text-sm font-bold text-forge-muted uppercase mb-1">Theme</label>
             <select id="theme-selector" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-secondary">
-              <option value="orion_neon">Orion Neon (Dark)</option>
+              <option value="dark">Dark Theme</option>
               <option value="light">Light Mode</option>
             </select>
           </div>
@@ -131,7 +131,7 @@ const memberships = db.prepare(`
   // Restore theme dropdown from localStorage
   const themeSelector = document.getElementById('theme-selector') as HTMLSelectElement;
   if (themeSelector) {
-    const currentTheme = localStorage.getItem('forge_theme') || 'orion_neon';
+    const currentTheme = localStorage.getItem('forge_theme') || 'dark';
     themeSelector.value = currentTheme;
     
     // Apply theme immediately

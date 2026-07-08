@@ -17,7 +17,7 @@ test.describe('Upload API Security', () => {
 
     // Create a page
     const newPageRes = await page.request.post('/api/pages', {
-      data: { title: 'Security Test Page' },
+      data: { title: 'Security Test Page', workspace_id: 'ws-jose-test' },
       headers: { 'Origin': 'http://localhost:4322' }
     });
     

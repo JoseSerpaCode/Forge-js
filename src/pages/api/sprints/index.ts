@@ -8,13 +8,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!user) return new Response('Unauthorized', { status: 401 });
 
   try {
-    const data = await request.json();
-    const { name, workspaceId, start_date, end_date } = data;
-    
-    if (!name || !workspaceId) return new Response('Missing name or workspaceId', { status: 400 });
+    const { name, workspaceId, start_date, end_date } = await request.json();
+
+    if (!name || !workspaceId) {
+      return new Response('Name and workspaceId are required', { status: 400 });
+    }
 
     const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspaceId, 'editor');
-    if (!access.granted) return new Response(access.error, { status: 403 });
+    if (!access.granted) {
+      if (access.reason === 'not_member') return new Response('Not Found', { status: 404 });
+      return new Response(access.error || 'Forbidden', { status: 403 });
+    }
 
     const newId = crypto.randomUUID();
     

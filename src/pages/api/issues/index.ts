@@ -8,13 +8,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!user) return new Response('Unauthorized', { status: 401 });
 
   const { title, type, workspaceId, sprintId } = await request.json();
-
+  
   if (!title || !workspaceId) {
     return new Response('Title and workspaceId are required', { status: 400 });
   }
 
   const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspaceId, 'editor');
   if (!access.granted) {
+    if (access.reason === 'not_member') return new Response('Not Found', { status: 404 });
     return new Response(access.error || 'Forbidden', { status: 403 });
   }
 

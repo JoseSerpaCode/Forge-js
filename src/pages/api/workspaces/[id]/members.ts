@@ -8,9 +8,11 @@ export const POST: APIRoute = async ({ request, params, locals }) => {
   const workspaceId = params.id;
   if (!user) return new Response('Unauthorized', { status: 401 });
 
-  // Only owner can add members (or sysadmin)
   const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspaceId as string, 'owner');
-  if (!access.granted) return new Response('Forbidden', { status: 403 });
+  if (!access.granted) {
+    if (access.reason === 'not_member') return new Response('Not Found', { status: 404 });
+    return new Response(access.error || 'Forbidden', { status: 403 });
+  }
 
   try {
     const { username, role } = await request.json();
@@ -36,7 +38,10 @@ export const PATCH: APIRoute = async ({ request, params, locals }) => {
   if (!user) return new Response('Unauthorized', { status: 401 });
 
   const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspaceId as string, 'owner');
-  if (!access.granted) return new Response('Forbidden', { status: 403 });
+  if (!access.granted) {
+    if (access.reason === 'not_member') return new Response('Not Found', { status: 404 });
+    return new Response(access.error || 'Forbidden', { status: 403 });
+  }
 
   try {
     const { userId, role } = await request.json();
@@ -73,7 +78,10 @@ export const DELETE: APIRoute = async ({ request, params, locals }) => {
     // A user can remove themselves, or an owner can remove someone else.
     if (user.id !== userIdToRemove) {
       const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspaceId as string, 'owner');
-      if (!access.granted) return new Response('Forbidden', { status: 403 });
+      if (!access.granted) {
+        if (access.reason === 'not_member') return new Response('Not Found', { status: 404 });
+        return new Response(access.error || 'Forbidden', { status: 403 });
+      }
     }
 
     const currentRole = db.prepare('SELECT ws_role FROM workspace_members WHERE workspace_id = ? AND user_id = ?').get(workspaceId, userIdToRemove) as any;

@@ -56,6 +56,7 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
 
     const access = checkWorkspaceAccess(user.id, user.is_sysadmin, issue.workspace_id, 'editor');
     if (!access.granted) {
+      if (access.reason === 'not_member') return new Response('Not Found', { status: 404 });
       return new Response(access.error || 'Forbidden', { status: 403 });
     }
 

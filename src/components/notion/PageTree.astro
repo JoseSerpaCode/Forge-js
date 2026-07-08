@@ -33,7 +33,7 @@ for (const p of pages) {
 }
 ---
 
-<aside id="page-tree-aside" class="w-64 bg-forge-panel border border-forge-border rounded-lg m-4 flex flex-col h-[calc(100%-2rem)] shrink-0 transition-all duration-300 relative">
+<aside id="page-tree-aside" data-workspace-id={workspaceId} class="w-64 bg-forge-panel border border-forge-border rounded-lg m-4 flex flex-col h-[calc(100%-2rem)] shrink-0 transition-all duration-300 relative">
   <div class="p-4 border-b border-forge-border flex items-center justify-between">
     <h2 class="font-bold text-forge-text uppercase tracking-widest text-sm flex items-center gap-2 transition-opacity duration-300" id="page-tree-title">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-forge-secondary"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path></svg>
@@ -77,8 +77,11 @@ for (const p of pages) {
       e.stopPropagation();
       const parentLi = btn.closest('li');
       const childrenUl = parentLi?.querySelector('ul');
+      const icon = btn.querySelector('svg');
       if (childrenUl && parentLi) {
         parentLi.classList.toggle('expanded');
+        childrenUl.classList.toggle('hidden');
+        if (icon) icon.classList.toggle('rotate-90');
       }
     }
   });
@@ -89,16 +92,28 @@ for (const p of pages) {
     let parent = activeLink.parentElement?.parentElement; // li
     while (parent && parent.tagName === 'LI') {
       parent.classList.add('expanded');
+      const ul = parent.querySelector(':scope > ul');
+      if (ul) ul.classList.remove('hidden');
+      const icon = parent.querySelector(':scope > div button[aria-label="Toggle"] svg');
+      if (icon) icon.classList.add('rotate-90');
+      
       parent = parent.parentElement?.parentElement; // go up to next li
     }
   }
 
   // Create page logic
   async function createPage(parentId: string | null) {
+    const sysTagMatch = window.location.pathname.match(/^\/w\/([^/]+)/);
+    const sysTag = sysTagMatch ? sysTagMatch[1] : '';
+    
+    // We need the workspace UUID. We can get it from the dataset.
+    const aside = document.getElementById('page-tree-aside');
+    const workspaceId = aside?.getAttribute('data-workspace-id');
+
     const res = await fetch('/api/pages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: 'Untitled', parent_page_id: parentId })
+      body: JSON.stringify({ title: 'Untitled', parent_page_id: parentId, workspace_id: workspaceId })
     });
     if (res.ok) {
       const data = await res.json();

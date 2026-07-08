@@ -8,15 +8,18 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   try {
     const data = await request.json();
-    
-    // 1. Resolve workspace_id from user's current sys_tag context
-    const ws = db.prepare('SELECT id FROM workspaces WHERE sys_tag = ?').get(user.last_workspace_id) as any;
-    if (!ws) return new Response('Workspace not found', { status: 404 });
-    const workspaceId = ws.id;
+    const workspaceId = data.workspace_id;
 
-    // 2. Validate Permissions (Editor required for POST)
+    if (!workspaceId) {
+      return new Response('Workspace ID is required', { status: 400 });
+    }
+
+    // Validate Permissions (Editor required for POST)
     const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspaceId, 'editor');
-    if (!access.granted) return new Response(access.error, { status: 403 });
+    if (!access.granted) {
+      if (access.reason === 'not_member') return new Response('Not Found', { status: 404 });
+      return new Response(access.error || 'Forbidden', { status: 403 });
+    }
 
     // 3. If parent_page_id is provided, validate it belongs to the SAME workspace
     if (data.parent_page_id) {
