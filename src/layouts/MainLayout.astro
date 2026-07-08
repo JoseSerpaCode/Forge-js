@@ -10,21 +10,111 @@ interface Props {
 
 const { title, workspaceId } = Astro.props;
 const user = Astro.locals.user;
+
+import db from '../lib/db';
+let workspaceName = '';
+if (workspaceId) {
+  const ws = db.prepare('SELECT name FROM workspaces WHERE id = ?').get(workspaceId) as any;
+  if (ws) workspaceName = ws.name;
+}
 ---
 
 <html lang="en" data-theme={user?.theme_preference || 'orion_neon'}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <title>{title} | Forge OS</title>
+    <script is:inline>
+      const savedTheme = localStorage.getItem('forge_theme');
+      if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+    </script>
   </head>
   <body class="bg-forge-bg text-forge-text flex h-screen overflow-hidden" data-user-role={user?.role} data-is-sysadmin={user?.is_sysadmin}>
-    <Sidebar workspaceId={workspaceId} />
+    <Sidebar workspaceId={workspaceId} workspaceName={workspaceName} />
     <div class="flex-1 flex flex-col min-w-0">
-      <TopBar />
-      <main class="flex-1 overflow-auto p-6">
-        <slot />
+      <TopBar title={title} workspaceName={workspaceName} />
+      <main class="flex-1 overflow-auto">
+        <div class="max-w-[1440px] mx-auto px-6 py-6 h-full">
+          <slot />
+        </div>
       </main>
     </div>
+    
+    <!-- Global UI Components -->
+    <div id="forge-toast" class="fixed bottom-4 right-4 bg-forge-panel border border-forge-secondary text-forge-text px-6 py-3 rounded shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 z-[100] flex items-center gap-3">
+      <span id="forge-toast-icon" class="text-forge-secondary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
+      </span>
+      <span id="forge-toast-msg" class="text-sm font-bold"></span>
+    </div>
+
+    <dialog id="forge-confirm-modal" class="bg-forge-panel border border-forge-border rounded-lg p-6 w-[400px] text-forge-text shadow-xl backdrop:bg-black/50 z-[100]">
+      <h2 class="text-xl font-bold mb-2 text-forge-text" id="forge-confirm-title">Confirm</h2>
+      <p class="text-sm text-forge-muted mb-6" id="forge-confirm-msg">Are you sure you want to proceed?</p>
+      <div class="flex justify-end gap-3">
+        <button id="btn-forge-confirm-cancel" class="px-4 py-2 text-forge-muted hover:text-forge-text rounded transition-colors bg-forge-bg border border-forge-border cursor-pointer">Cancel</button>
+        <button id="btn-forge-confirm-ok" class="bg-forge-primary text-forge-bg px-4 py-2 rounded font-bold hover:bg-opacity-90 transition-colors cursor-pointer">Confirm</button>
+      </div>
+    </dialog>
+
+    <script is:inline>
+      window.showToast = function(msg, isError = false) {
+        const toast = document.getElementById('forge-toast');
+        const text = document.getElementById('forge-toast-msg');
+        if (toast && text) {
+          text.textContent = msg;
+          if (isError) {
+             toast.classList.replace('border-forge-secondary', 'border-red-500');
+          } else {
+             toast.classList.replace('border-red-500', 'border-forge-secondary');
+          }
+          toast.classList.remove('translate-y-20', 'opacity-0');
+          setTimeout(() => {
+            toast.classList.add('translate-y-20', 'opacity-0');
+          }, 3000);
+        }
+      };
+
+      window.forgeConfirm = function(msg, callback, title = "Confirm") {
+        const modal = document.getElementById('forge-confirm-modal');
+        const titleEl = document.getElementById('forge-confirm-title');
+        const msgEl = document.getElementById('forge-confirm-msg');
+        const btnCancel = document.getElementById('btn-forge-confirm-cancel');
+        const btnOk = document.getElementById('btn-forge-confirm-ok');
+        
+        if (modal && titleEl && msgEl && btnCancel && btnOk) {
+          titleEl.textContent = title;
+          msgEl.textContent = msg;
+          
+          const handleCancel = () => {
+             modal.close();
+             cleanup();
+          };
+          const handleOk = () => {
+             modal.close();
+             cleanup();
+             callback();
+          };
+          
+          btnCancel.addEventListener('click', handleCancel);
+          btnOk.addEventListener('click', handleOk);
+          
+          const cleanup = () => {
+             btnCancel.removeEventListener('click', handleCancel);
+             btnOk.removeEventListener('click', handleOk);
+          };
+          
+          modal.showModal();
+        } else {
+          if (confirm(msg)) callback();
+        }
+      };
+    </script>
   </body>
 </html>

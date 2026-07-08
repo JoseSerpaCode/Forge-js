@@ -1,29 +1,97 @@
 ---
 const user = Astro.locals.user;
+interface Props {
+  title?: string;
+  workspaceName?: string;
+}
+const { title, workspaceName } = Astro.props;
 ---
-<header class="h-14 bg-forge-panel border-b border-forge-border flex items-center justify-between px-6 shrink-0 relative">
+<header class="h-14 bg-forge-panel/80 backdrop-blur-md border-b border-forge-border flex items-center justify-between px-6 shrink-0 relative z-40">
   {user?.is_sysadmin === 1 && (
-    <div class="absolute top-0 left-0 w-full h-1 bg-forge-neon animate-pulse shadow-[0_0_10px_var(--forge-accent)]" title="Privacy Mode (Sysadmin Bypass Active)"></div>
+    <div class="absolute top-0 left-0 w-full h-1 bg-forge-primary animate-pulse shadow-[0_0_10px_var(--forge-accent-primary)]" title="Privacy Mode (Sysadmin Bypass Active)"></div>
   )}
-  <div class="flex items-center">
-    <div class="relative">
-      <input type="text" id="global-search" placeholder="Search (Press '/')" class="bg-forge-bg border border-forge-border rounded text-sm px-3 py-1.5 w-64 focus:outline-none focus:border-forge-neon text-forge-text placeholder:text-forge-muted transition-colors" />
-      <span class="absolute right-2 top-1.5 text-xs text-forge-muted font-mono border border-forge-border rounded px-1">/</span>
+  <div class="flex items-center gap-4 flex-1">
+    <div class="flex items-center gap-2">
+      <button id="btn-toggle-sidebar" class="text-forge-muted hover:text-forge-secondary transition-colors p-1.5 rounded hover:bg-forge-bg" title="Toggle Sidebar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+      
+      {title && (
+        <div class="hidden sm:flex items-center gap-2 text-sm text-forge-muted font-medium ml-1 select-none">
+          {workspaceName && (
+            <>
+              <span class="text-forge-text truncate max-w-[150px]">{workspaceName}</span>
+              <span class="text-forge-border">/</span>
+            </>
+          )}
+          <span class={workspaceName ? 'text-forge-secondary' : 'text-forge-text'}>{title.split(' - ')[0]}</span>
+        </div>
+      )}
+    </div>
+    <div class="relative w-full max-w-md hidden md:block">
+      <svg class="absolute left-3 top-2 w-4 h-4 text-forge-muted" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <input type="text" id="global-search" placeholder="Search across Forge (Press '/')" class="w-full bg-forge-bg/50 border border-forge-border rounded-lg text-sm pl-9 pr-12 py-1.5 focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 text-forge-text placeholder:text-forge-muted transition-all" />
+      <span class="absolute right-2 top-1.5 text-[10px] text-forge-muted font-mono border border-forge-border rounded px-1.5 py-0.5 bg-forge-panel">/</span>
+      
       <!-- Search Dropdown -->
-      <div id="search-dropdown" class="hidden absolute top-full mt-2 w-80 bg-forge-bg/90 backdrop-blur-md border border-forge-border rounded-lg shadow-2xl z-50 overflow-hidden">
+      <div id="search-dropdown" class="hidden absolute top-full left-0 mt-2 w-full bg-forge-bg/95 backdrop-blur-md border border-forge-border rounded-lg shadow-2xl overflow-hidden">
         <ul id="search-results" class="max-h-64 overflow-y-auto p-2">
            <!-- Dynamic results -->
         </ul>
       </div>
     </div>
   </div>
-  <div class="flex items-center gap-4">
-    <button id="btn-notifications" class="text-forge-muted hover:text-forge-neon transition-colors relative group">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:scale-110 transition-transform"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-      <span id="notif-badge" class="hidden absolute top-0 right-0 w-2 h-2 bg-forge-neon rounded-full animate-ping"></span>
+  <div class="flex items-center gap-3">
+    <button id="btn-show-docs" class="text-forge-muted hover:text-forge-secondary transition-colors p-1.5 rounded hover:bg-forge-bg hidden sm:block" title="Documentation">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
     </button>
+    {workspaceName && (
+      <a href={`/w/${Astro.params.sys_tag}/board`} class="text-forge-muted hover:text-forge-secondary transition-colors p-1.5 rounded hover:bg-forge-bg hidden sm:block" title="Workspace Settings">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </a>
+    )}
+    <div class="h-5 w-px bg-forge-border hidden sm:block"></div>
+    <div class="relative">
+      <button id="btn-notifications" class="text-forge-muted hover:text-forge-secondary transition-colors relative group p-1.5 rounded hover:bg-forge-bg">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:scale-110 transition-transform"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        <span id="notif-badge" class="hidden absolute top-1 right-1 w-2 h-2 bg-forge-primary rounded-full animate-ping"></span>
+      </button>
+      
+      <div id="notif-dropdown" class="hidden absolute right-0 top-full mt-2 w-80 bg-forge-panel border border-forge-border rounded-lg shadow-2xl z-50 overflow-hidden">
+        <div class="p-3 border-b border-forge-border flex justify-between items-center bg-forge-bg/50">
+          <span class="text-xs font-bold uppercase tracking-widest text-forge-text">Notifications</span>
+          <button class="text-[10px] text-forge-secondary hover:underline">Mark all as read</button>
+        </div>
+        <ul id="notif-list" class="max-h-80 overflow-y-auto">
+          <!-- Dynamic notifications -->
+        </ul>
+      </div>
+    </div>
   </div>
 </header>
+
+<!-- Docs Modal -->
+<dialog id="docs-modal" class="bg-forge-panel border border-forge-border rounded-lg p-6 w-[500px] text-forge-text shadow-xl backdrop:bg-black/50">
+  <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-forge-secondary"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+    System Information
+  </h2>
+  <div class="space-y-4 text-sm text-forge-muted">
+    <p><strong>Forge OS (Build 2.1)</strong></p>
+    <ul class="list-disc pl-5 space-y-1">
+      <li><strong>Kanban:</strong> Issues can be dragged, edited, deleted and sprint-managed.</li>
+      <li><strong>Knowledge Base:</strong> Create nested pages, utilize slash commands (like '/image') in the editor.</li>
+      <li><strong>Workspaces:</strong> Keep teams separate with Role Based Access Control (RBAC).</li>
+      <li><strong>Themes:</strong> Switch themes in your User Settings. (Light mode coming soon).</li>
+    </ul>
+    <p class="text-forge-muted italic mt-4">For extended technical documentation, refer to the GitHub repository README.md.</p>
+  </div>
+  <div class="mt-6 flex justify-end">
+    <button type="button" class="bg-forge-bg border border-forge-border text-forge-text px-4 py-2 rounded font-bold hover:bg-forge-panel transition-colors cursor-pointer" onclick="document.getElementById('docs-modal').close()">Close</button>
+  </div>
+</dialog>
 
 <script>
   // Event listener for / key
@@ -56,7 +124,7 @@ const user = Astro.locals.user;
            searchResults.innerHTML = '<li class="p-2 text-forge-muted text-sm text-center">No results found</li>';
         } else {
            data.forEach((item: any) => {
-             searchResults.innerHTML += `<li data-id="${item.id || item.title}" class="search-item p-2 hover:bg-forge-panel rounded cursor-pointer text-sm text-forge-text border-l-2 border-transparent hover:border-forge-neon transition-all">${item.title}</li>`;
+             searchResults.innerHTML += `<li data-id="${item.id || item.title}" class="search-item p-2 hover:bg-forge-panel rounded cursor-pointer text-sm text-forge-text border-l-2 border-transparent hover:border-forge-secondary transition-all">${item.title}</li>`;
            });
         }
       }
@@ -65,9 +133,85 @@ const user = Astro.locals.user;
     }
   });
 
+  const notifDropdown = document.getElementById('notif-dropdown');
+  const notifBtn = document.getElementById('btn-notifications');
+  const notifBadge = document.getElementById('notif-badge');
+  const notifList = document.getElementById('notif-list');
+  
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch('/api/user/notifications');
+      const data = await res.json();
+      
+      if (data.unread > 0) {
+        notifBadge?.classList.remove('hidden');
+      } else {
+        notifBadge?.classList.add('hidden');
+      }
+      
+      if (notifList) {
+        if (data.notifications.length === 0) {
+          notifList.innerHTML = `
+            <li class="p-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
+              <div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(circle at 50% 50%, var(--forge-muted) 2px, transparent 2px); background-size: 100% 100%;">
+                <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><circle cx="50" cy="50" r="20" fill="none" stroke="currentColor" class="text-forge-muted" stroke-dasharray="2,2" stroke-width="0.5" /></svg>
+              </div>
+              <p class="text-forge-muted font-mono mb-2 relative z-10 text-xs">SILENT_COMM</p>
+              <p class="text-forge-text relative z-10 text-xs">No new notifications.</p>
+            </li>
+          `;
+        } else {
+          notifList.innerHTML = '';
+          data.notifications.forEach((n: any) => {
+            const date = new Date(n.created_at.includes('Z') ? n.created_at : n.created_at.replace(' ', 'T') + 'Z').toLocaleString();
+            notifList.innerHTML += `
+              <li class="p-3 border-b border-forge-border hover:bg-forge-panel transition-colors ${n.is_read ? 'opacity-60' : 'bg-forge-bg'}">
+                <a href="${n.link_url || '#'}" class="block">
+                  <div class="flex justify-between items-start mb-1">
+                    <span class="text-xs font-bold ${n.is_read ? 'text-forge-muted' : 'text-forge-secondary'}">${n.title}</span>
+                    <span class="text-[10px] text-forge-muted">${date}</span>
+                  </div>
+                  <p class="text-xs text-forge-text break-words">${n.message}</p>
+                </a>
+              </li>
+            `;
+          });
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Initial fetch
+  fetchNotifications();
+
+  notifBtn?.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    notifDropdown?.classList.toggle('hidden');
+    
+    // If opening, maybe refresh and mark visible
+    if (!notifDropdown?.classList.contains('hidden')) {
+      fetchNotifications();
+    }
+  });
+
+  document.querySelector('#notif-dropdown button')?.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    await fetch('/api/user/notifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'mark_all_read' })
+    });
+    fetchNotifications();
+  });
+
   document.addEventListener('click', (e: any) => {
     if (!searchInput?.contains(e.target) && !searchDropdown?.contains(e.target)) {
       searchDropdown?.classList.add('hidden');
+    }
+    if (!notifBtn?.contains(e.target) && !notifDropdown?.contains(e.target)) {
+      notifDropdown?.classList.add('hidden');
     }
   });
 
@@ -79,11 +223,17 @@ const user = Astro.locals.user;
     }
   });
 
-  document.getElementById('btn-notifications')?.addEventListener('click', async () => {
-    const res = await fetch('/api/notifications');
-    const data = await res.json();
-    if (data.length === 0) {
-      alert('No hay notificaciones');
+  // Sidebar Toggle
+  document.getElementById('btn-toggle-sidebar')?.addEventListener('click', () => {
+    const sidebar = document.getElementById('app-sidebar');
+    if (sidebar) {
+      sidebar.classList.toggle('-ml-64');
     }
+  });
+
+  // Docs Modal
+  document.getElementById('btn-show-docs')?.addEventListener('click', () => {
+    const modal = document.getElementById('docs-modal') as HTMLDialogElement;
+    modal?.showModal();
   });
 </script>

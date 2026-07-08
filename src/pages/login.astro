@@ -13,17 +13,17 @@ if (user) return Astro.redirect('/');
 </head>
 <body class="bg-forge-bg text-forge-text font-sans h-screen flex flex-col items-center justify-center">
   <div class="bg-forge-panel border border-forge-border p-8 rounded-lg shadow-xl w-96">
-    <h1 class="text-2xl font-bold text-forge-neon mb-6">System Login</h1>
+    <h1 class="text-2xl font-bold text-forge-text mb-6">System Login</h1>
     <form id="login-form" class="flex flex-col gap-4">
       <div>
         <label class="block text-xs font-mono text-forge-text mb-1 uppercase">Username</label>
-        <input type="text" name="username" class="w-full bg-forge-bg border border-forge-border p-2 rounded text-white focus:outline-none focus:border-forge-neon" required />
+        <input type="text" name="username" class="w-full bg-forge-bg border border-forge-border p-2 rounded text-forge-text focus:outline-none focus:border-forge-secondary" required />
       </div>
-      <div>
-        <label class="block text-xs font-mono text-forge-text mb-1 uppercase">Password</label>
-        <input type="password" name="password" class="w-full bg-forge-bg border border-forge-border p-2 rounded text-white focus:outline-none focus:border-forge-neon" required />
+      <div class="mb-6">
+        <label class="block text-sm font-bold text-forge-muted uppercase tracking-widest mb-1">Password</label>
+        <input type="password" name="password" class="w-full bg-forge-bg border border-forge-border p-2 rounded text-forge-text focus:outline-none focus:border-forge-secondary" required />
       </div>
-      <button type="submit" class="mt-4 bg-forge-neon text-black font-bold uppercase tracking-widest py-2 rounded hover:bg-forge-neon/80 transition-colors">Submit</button>
+      <button type="submit" class="mt-4 bg-forge-primary text-forge-bg font-bold uppercase tracking-widest py-2 rounded hover:bg-forge-primary/80 transition-colors">Submit</button>
       <p id="error-msg" class="text-red-500 text-sm mt-2 hidden"></p>
     </form>
   </div>

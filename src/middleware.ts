@@ -15,7 +15,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // Validación de Sesión contra Base de Datos Real
   const sessionData = db.prepare(`
-    SELECT u.id, u.username, u.is_sysadmin, u.theme_preference, u.last_workspace_id, s.expires_at 
+    SELECT u.id, u.username, u.avatar_url, u.is_sysadmin, u.theme_preference, u.last_workspace_id, s.expires_at 
     FROM sessions s 
     JOIN users u ON s.user_id = u.id 
     WHERE s.id = ?

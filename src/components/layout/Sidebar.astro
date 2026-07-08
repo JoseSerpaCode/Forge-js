@@ -1,41 +1,67 @@
 ---
 interface Props {
   workspaceId?: string;
+  workspaceName?: string;
 }
-const { workspaceId } = Astro.props;
+const { workspaceId, workspaceName } = Astro.props;
 const user = Astro.locals.user;
 const sys_tag = Astro.params.sys_tag || Astro.props.workspaceId || user?.last_workspace_id;
 const currentPath = Astro.url.pathname;
 ---
-<aside class="w-64 bg-forge-panel border-r border-forge-border flex flex-col h-full shrink-0">
-  <div class="p-4 border-b border-forge-border flex items-center gap-2">
-    <div class="w-8 h-8 bg-forge-neon rounded shadow-[0_0_10px_var(--forge-accent)] flex items-center justify-center text-forge-bg font-black">
+<aside id="app-sidebar" class="w-64 bg-forge-panel border-r border-forge-border flex flex-col h-full shrink-0 transition-all duration-300 ease-in-out">
+  <a href="/" class="h-14 px-4 border-b border-forge-border flex items-center gap-2 hover:bg-forge-bg transition-colors shrink-0">
+    <div class="w-8 h-8 bg-forge-primary rounded shadow-[0_0_10px_var(--forge-accent-primary)] flex items-center justify-center text-forge-bg font-black">
       F
     </div>
     <span class="font-bold text-forge-text text-lg tracking-wider">FORGE OS</span>
-  </div>
+  </a>
   <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-    <div class="text-xs font-bold text-forge-muted uppercase tracking-widest mb-2">Workspace</div>
-    {sys_tag ? (
+    {workspaceName && (
+      <a href="/" class="flex items-center justify-between mb-4 px-3 py-2 rounded border border-forge-border/50 bg-transparent hover:border-forge-secondary hover:bg-forge-bg/50 transition-colors group">
+        <div class="flex-1 min-w-0">
+          <div class="text-[10px] text-forge-muted font-bold tracking-widest uppercase mb-0.5">CURRENT WORKSPACE</div>
+          <span class="text-sm font-bold text-forge-text truncate group-hover:text-forge-secondary transition-colors">{workspaceName}</span>
+        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-forge-muted"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
+      </a>
+    )}
+    {!workspaceName && <div class="text-xs font-bold text-forge-muted uppercase tracking-widest mb-2">Workspace</div>}
+    
+    {sys_tag ? (() => {
+      const isDash = currentPath === `/w/${sys_tag}` || currentPath === `/w/${sys_tag}/`;
+      const isBoard = currentPath.endsWith('/board') || currentPath.includes('/board/');
+      const isKB = currentPath.endsWith('/p') || currentPath.includes('/p/');
+      return (
       <>
-        <a href={`/w/${sys_tag}`} class={`block px-3 py-2 text-sm rounded transition-colors border ${currentPath === `/w/${sys_tag}` ? 'text-forge-neon bg-forge-bg border-forge-border shadow-inner' : 'text-forge-text hover:bg-forge-bg border-transparent hover:border-forge-border'}`}>Dashboard</a>
-        <a href={`/w/${sys_tag}/board`} class={`block px-3 py-2 text-sm rounded transition-colors border ${currentPath.includes('/board') ? 'text-forge-neon bg-forge-bg border-forge-border shadow-inner' : 'text-forge-text hover:bg-forge-bg border-transparent hover:border-forge-border'}`}>Kanban Board</a>
-        <a href={`/w/${sys_tag}/p/home`} class={`block px-3 py-2 text-sm rounded transition-colors border ${currentPath.includes('/p/') ? 'text-forge-neon bg-forge-bg border-forge-border shadow-inner' : 'text-forge-text hover:bg-forge-bg border-transparent hover:border-forge-border'}`}>Knowledge Base</a>
+        <a href={`/w/${sys_tag}`} class={`block px-3 py-2 text-sm rounded transition-colors border ${isDash ? 'text-forge-secondary bg-forge-bg border-forge-border shadow-inner' : 'text-forge-text hover:text-forge-secondary hover:bg-forge-bg border-transparent'}`}>Dashboard</a>
+        <a href={`/w/${sys_tag}/board`} class={`block px-3 py-2 text-sm rounded transition-colors border ${isBoard ? 'text-forge-secondary bg-forge-bg border-forge-border shadow-inner' : 'text-forge-text hover:text-forge-secondary hover:bg-forge-bg border-transparent'}`}>Kanban Board</a>
+        <a href={`/w/${sys_tag}/p`} class={`block px-3 py-2 text-sm rounded transition-colors border ${isKB ? 'text-forge-secondary bg-forge-bg border-forge-border shadow-inner' : 'text-forge-text hover:text-forge-secondary hover:bg-forge-bg border-transparent'}`}>Knowledge Base</a>
       </>
-    ) : (
-      <div class="p-3 text-sm text-forge-muted border border-dashed border-forge-border rounded bg-forge-bg/50">
-        <p class="mb-2">No active workspace.</p>
-        <a href="/" class="text-forge-neon hover:underline block text-center border border-forge-neon rounded p-1">Select Workspace</a>
+      );
+    })() : (
+      <div class="p-4 text-sm text-center border border-dashed border-forge-border rounded bg-forge-panel/30 relative overflow-hidden">
+        <!-- Constellation nodes -->
+        <div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(circle at 30% 30%, var(--forge-muted) 2px, transparent 2px), radial-gradient(circle at 70% 70%, var(--forge-muted) 2px, transparent 2px); background-size: 100% 100%;">
+          <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M 30 30 L 70 70" fill="none" stroke="currentColor" class="text-forge-muted" stroke-dasharray="2,2" stroke-width="1" /></svg>
+        </div>
+        <p class="mb-3 text-forge-text relative z-10">No active workspace.</p>
+        <a href="/" class="text-forge-primary hover:bg-forge-primary/10 transition-colors block text-center border border-forge-primary rounded p-1.5 font-bold relative z-10">Select</a>
       </div>
     )}
   </nav>
   <div class="p-4 border-t border-forge-border">
     <a href="/settings" class="flex items-center justify-between hover:bg-forge-bg p-2 -mx-2 rounded transition-colors" id="btn-settings">
       <div class="flex items-center gap-3">
-        <img src={user?.avatar_url || '/default-avatar.svg'} class="w-8 h-8 rounded-full border border-forge-border bg-forge-bg" alt="Avatar" />
-        <div>
-          <div class="text-sm font-bold">{user?.username || 'Guest'}</div>
-          <div class="text-xs text-forge-neon font-mono uppercase">{user?.role || 'Viewer'}</div>
+        {user?.avatar_url ? (
+          <img src={user.avatar_url} class="w-8 h-8 rounded-full border border-forge-border bg-forge-bg object-cover" alt="Avatar" />
+        ) : (
+          <div class="w-8 h-8 rounded-full border border-forge-border bg-forge-bg flex items-center justify-center text-forge-secondary shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+        )}
+        <div class="ml-3 flex-1 overflow-hidden">
+          <div class="text-sm font-bold text-forge-text group-hover:text-forge-secondary transition-colors">{user?.username || 'Guest'}</div>
+          <div class="text-[10px] text-forge-secondary font-mono uppercase truncate">{user?.role || 'Guest'}</div>
         </div>
       </div>
     </a>

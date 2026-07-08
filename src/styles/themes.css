@@ -4,39 +4,88 @@
 @theme {
   --color-forge-bg: var(--forge-bg);
   --color-forge-panel: var(--forge-panel);
-  --color-forge-neon: var(--forge-accent);
-  --color-forge-border: #333333;
-  --color-forge-text: #e5e7eb;
-  --color-forge-muted: #9ca3af;
+  
+  /* Accent Colors */
+  --color-forge-primary: var(--forge-accent-primary);
+  --color-forge-accent: var(--forge-accent-primary);
+  --color-forge-accent-hover: var(--forge-accent-primary-hover);
+  
+  /* State Colors */
+  --color-forge-secondary: var(--forge-accent-secondary);
+  --color-forge-success: #10B981;
+  --color-forge-error: #EF4444;
+
+  /* Typography & Structure */
+  --color-forge-border: var(--forge-border);
+  --color-forge-text: var(--forge-text);
+  --color-forge-muted: var(--forge-muted);
 }
 
 @layer base {
   :root { 
-    --forge-bg: #050505; 
-    --forge-panel: #111111; 
+    --forge-bg: #090A0F;
+    --forge-panel: #161821;
+    --forge-text: #E2E8F0;
+    --forge-muted: #94A3B8;
+    --forge-border: #2B3548;
+
+    /* Orion's Forge Identity */
+    --forge-accent-primary: #FF5D00;
+    --forge-accent-primary-hover: #E05200;
+    --forge-accent-secondary: #00E5FF;
   }
   
   [data-theme="orion_neon"] { 
-    --forge-accent: #bfff00; 
-    --forge-accent-hover: #99cc00; 
+    /* The primary theme is now Orion's Forge. 
+       Other themes can override these later if needed. */
   }
-  [data-theme="cyberpunk"] { 
-    --forge-accent: #d946ef; 
-    --forge-accent-hover: #c026d3; 
-  }
-  [data-theme="terminal_amber"] { 
-    --forge-accent: #f59e0b; 
-    --forge-accent-hover: #d97706; 
-  }
-  [data-theme="deep_core"] { 
-    --forge-accent: #06b6d4; 
-    --forge-accent-hover: #0891b2; 
+
+  [data-theme="light"] {
+    --forge-bg: #F8FAFC;
+    --forge-panel: #FFFFFF;
+    --forge-text: #0F172A;
+    --forge-muted: #64748B;
+    --forge-border: #E2E8F0;
+    
+    --forge-accent-primary: #FF5D00;
+    --forge-accent-primary-hover: #E05200;
+    --forge-accent-secondary: #0ea5e9;
   }
   
   body { 
     background-color: var(--forge-bg);
-    color: #e5e7eb;
-    font-family: ui-sans-serif, system-ui, sans-serif;
+    color: var(--forge-text);
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
+    
+    /* Orion Blueprint Grid */
+    background-image: 
+      linear-gradient(to right, var(--forge-border) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--forge-border) 1px, transparent 1px);
+    background-size: 100px 100px;
+    background-position: center center;
+    background-blend-mode: multiply;
+  }
+  
+  /* Apply pseudo-element for subtle grid to avoid repeating intensely */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: 
+      linear-gradient(to right, rgba(100, 116, 139, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(100, 116, 139, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+    z-index: -1;
+    pointer-events: none;
+  }
+  
+  .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  }
+  
+  dialog {
+    margin: auto;
   }
 }
+
