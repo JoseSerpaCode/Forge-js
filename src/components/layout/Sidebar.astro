@@ -9,9 +9,11 @@ const sys_tag = Astro.params.sys_tag || Astro.props.workspaceId || user?.last_wo
 const currentPath = Astro.url.pathname;
 ---
 <aside id="app-sidebar" class="w-64 bg-forge-panel border-r border-forge-border flex flex-col h-full shrink-0 transition-all duration-300 ease-in-out">
-  <a href="/" class="h-14 px-4 border-b border-forge-border flex items-center gap-2 hover:bg-forge-bg transition-colors shrink-0">
-    <img src="/logo.jpg" alt="Forge OS Logo" class="w-8 h-8 object-contain rounded-md shadow-lg" />
-    <span class="font-bold text-forge-text text-lg tracking-wider">FORGE OS</span>
+  <a href="/" class="h-14 px-4 border-b border-forge-border flex items-center gap-2 hover:bg-forge-bg transition-colors shrink-0 group">
+    <div class="w-8 h-8 rounded border-2 border-forge-secondary flex items-center justify-center font-black text-forge-secondary text-sm bg-forge-secondary/10 shadow-[0_0_10px_var(--forge-accent-secondary)] transition-transform group-hover:scale-105">
+      F
+    </div>
+    <span class="font-black text-lg tracking-wider text-forge-text drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">FORGE OS</span>
   </a>
   <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
     {workspaceName && (
