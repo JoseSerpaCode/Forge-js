@@ -4,46 +4,237 @@ import db from '../lib/db';
 
 const user = Astro.locals.user;
 if (!user) return Astro.redirect('/login');
+
+const memberships = db.prepare(`
+  SELECT w.id, w.name, w.sys_tag, w.icon, wm.ws_role 
+  FROM workspace_members wm
+  JOIN workspaces w ON w.id = wm.workspace_id
+  WHERE wm.user_id = ?
+`).all(user.id) as any[];
 ---
 
 <MainLayout title="Settings">
-  <div class="max-w-xl mx-auto mt-10 p-6 bg-forge-panel border border-forge-border rounded-lg shadow-lg">
-    <h1 class="text-2xl font-bold text-forge-neon mb-6">User Settings</h1>
+  <div class="max-w-4xl mx-auto mt-10 p-6 space-y-8">
     
-    <div class="space-y-4">
-      <div>
-        <label class="block text-sm font-bold text-forge-muted uppercase mb-1">Username</label>
-        <input type="text" id="username-input" value={user.username} class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-neon" />
+    <!-- User Settings -->
+    <div class="bg-forge-panel border border-forge-border rounded-lg shadow-lg p-6">
+      <div class="flex items-center gap-6 mb-6">
+        <div class="relative group cursor-pointer w-20 h-20 rounded-full border-2 border-forge-border bg-forge-bg flex items-center justify-center shrink-0 overflow-hidden" id="avatar-preview-container">
+          {user.avatar_url ? (
+            <img src={user.avatar_url} class="w-full h-full object-cover" id="avatar-preview-img" />
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-forge-secondary" id="avatar-preview-default"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          )}
+          <div class="absolute inset-0 bg-black/60 hidden group-hover:flex items-center justify-center transition-all z-10">
+            <span class="text-[10px] font-bold text-white uppercase tracking-widest">Change</span>
+          </div>
+          <input type="file" id="avatar-file-input" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer z-20" title="Upload new avatar" />
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-forge-text">User Settings</h1>
+          <p class="text-forge-muted text-sm mt-1">Manage your profile and preferences</p>
+        </div>
       </div>
       
-      <div>
-        <label class="block text-sm font-bold text-forge-muted uppercase mb-1">Theme</label>
-        <select disabled class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text opacity-50 cursor-not-allowed">
-          <option>Orion Neon (Active)</option>
-        </select>
+      <div class="space-y-4 max-w-xl">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-bold text-forge-muted uppercase mb-1">Username</label>
+            <input type="text" id="username-input" value={user.username} class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-secondary" />
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-forge-muted uppercase mb-1">Theme</label>
+            <select id="theme-selector" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-secondary">
+              <option value="orion_neon">Orion Neon (Dark)</option>
+              <option value="light">Light Mode</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="border-t border-forge-border pt-4 mt-4">
+          <h3 class="text-sm font-bold text-forge-text mb-4">Change Password</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-forge-muted uppercase mb-1">Current Password</label>
+              <input type="password" id="current-password" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-secondary" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-forge-muted uppercase mb-1">New Password</label>
+              <input type="password" id="new-password" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-secondary" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-forge-muted uppercase mb-1">Confirm New</label>
+              <input type="password" id="confirm-password" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-secondary" />
+            </div>
+          </div>
+        </div>
+        
+        <div class="flex justify-start pt-2">
+          <button id="btn-save-settings" class="bg-forge-primary text-forge-bg font-bold py-2 px-6 rounded hover:bg-forge-primary/90 transition-colors mt-4">
+            Save Changes
+          </button>
+        </div>
       </div>
-      
-      <button id="btn-save-settings" class="bg-forge-neon text-forge-bg font-bold py-2 px-6 rounded hover:bg-[#99cc00] transition-colors mt-4">
-        Save Changes
-      </button>
     </div>
+
+    <!-- Workspace Management -->
+    <div class="bg-forge-panel border border-forge-border rounded-lg shadow-lg p-6">
+      <h2 class="text-2xl font-bold text-forge-text mb-6">Workspaces</h2>
+      
+      <div class="grid grid-cols-1 gap-6">
+        
+        <!-- My Workspaces List -->
+        <div>
+          <h3 class="text-lg font-bold text-forge-secondary mb-4">My Memberships</h3>
+          {memberships.length === 0 ? (
+            <p class="text-forge-muted italic text-sm">You are not a member of any workspace.</p>
+          ) : (
+            <ul class="space-y-3">
+              {memberships.map((ws) => (
+                <li class="bg-forge-bg border border-forge-border rounded p-3 flex items-center justify-between">
+                  <div>
+                    <div class="font-bold text-forge-text">{ws.name}</div>
+                    <div class="text-xs text-forge-muted flex items-center gap-2 mt-1">
+                      <span class="bg-forge-panel px-1.5 py-0.5 rounded font-mono">#{ws.sys_tag}</span>
+                      <span class="text-forge-secondary uppercase">{ws.ws_role}</span>
+                    </div>
+                  </div>
+                  
+                  {ws.ws_role === 'owner' ? (
+                    <div class="flex gap-2">
+                      <a href={`/w/${ws.sys_tag}/settings`} class="text-xs text-forge-muted hover:text-forge-secondary border border-transparent hover:border-forge-secondary/30 bg-forge-panel hover:bg-forge-secondary/10 px-3 py-1.5 rounded transition-colors flex items-center gap-1 cursor-pointer" title="Workspace Settings">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                        Settings
+                      </a>
+                      <button class="btn-delete-ws text-xs bg-red-500/10 text-red-400 border border-red-500/30 px-3 py-1.5 rounded hover:bg-red-500/20 transition-colors" data-id={ws.id}>
+                        Delete
+                      </button>
+                    </div>
+                  ) : (
+                    <button class="btn-leave-ws text-xs bg-forge-panel text-forge-muted border border-forge-border px-3 py-1.5 rounded hover:text-forge-text transition-colors" data-id={ws.id}>
+                      Leave
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+      </div>
+    </div>
+    
   </div>
 </MainLayout>
 
 <script>
+  // Restore theme dropdown from localStorage
+  const themeSelector = document.getElementById('theme-selector') as HTMLSelectElement;
+  if (themeSelector) {
+    const currentTheme = localStorage.getItem('forge_theme') || 'orion_neon';
+    themeSelector.value = currentTheme;
+    
+    // Apply theme immediately
+    themeSelector.addEventListener('change', () => {
+      const selected = themeSelector.value;
+      localStorage.setItem('forge_theme', selected);
+      document.documentElement.setAttribute('data-theme', selected);
+    });
+  }
+
+  let newAvatarBase64: string | null = null;
+  const avatarInput = document.getElementById('avatar-file-input') as HTMLInputElement;
+  
+  avatarInput?.addEventListener('change', (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        // @ts-ignore
+        return window.showToast('Image must be less than 2MB', true);
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        newAvatarBase64 = ev.target?.result as string;
+        let avatarPreview = document.getElementById('avatar-preview-img') as HTMLImageElement;
+        
+        if (avatarPreview) {
+          avatarPreview.src = newAvatarBase64;
+        } else {
+          // If using the default SVG, replace it with an img
+          const container = document.getElementById('avatar-preview-container');
+          const defaultIcon = document.getElementById('avatar-preview-default');
+          if (defaultIcon) defaultIcon.style.display = 'none';
+          
+          const img = document.createElement('img');
+          img.src = newAvatarBase64;
+          img.id = 'avatar-preview-img';
+          img.className = 'w-full h-full object-cover z-0';
+          container?.insertBefore(img, container.firstChild);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // User settings save
   document.getElementById('btn-save-settings')?.addEventListener('click', async () => {
     const newUsername = (document.getElementById('username-input') as HTMLInputElement).value;
+    const currentPassword = (document.getElementById('current-password') as HTMLInputElement).value;
+    const newPassword = (document.getElementById('new-password') as HTMLInputElement).value;
+    const confirmPassword = (document.getElementById('confirm-password') as HTMLInputElement).value;
+
+    if (newPassword && newPassword !== confirmPassword) {
+      // @ts-ignore
+      return window.showToast('New passwords do not match!', true);
+    }
+
+    const payload: any = { username: newUsername };
+    if (newAvatarBase64) {
+      payload.avatar_url = newAvatarBase64;
+    }
+    if (currentPassword && newPassword) {
+      payload.current_password = currentPassword;
+      payload.new_password = newPassword;
+    }
+
     const res = await fetch('/api/user/settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: newUsername })
+      body: JSON.stringify(payload)
     });
     
     if (res.ok) {
-      alert('Settings updated!');
-      window.location.reload();
+      // @ts-ignore
+      window.showToast('Settings updated successfully!');
+      setTimeout(() => window.location.reload(), 1500);
     } else {
-      alert('Failed to update settings');
+      // @ts-ignore
+      window.showToast('Failed to update settings: ' + await res.text(), true);
     }
+  });
+
+  // Delete Workspace
+  document.querySelectorAll('.btn-delete-ws').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+      // @ts-ignore
+      window.forgeConfirm('DANGER: Are you sure you want to completely delete this workspace and ALL its contents? This cannot be undone.', async () => {
+        const res = await fetch(`/api/workspaces/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          window.location.reload();
+        } else {
+          // @ts-ignore
+          window.showToast('Failed to delete: ' + await res.text(), true);
+        }
+      });
+    });
+  });
+
+  // Leave Workspace (placeholder alert)
+  document.querySelectorAll('.btn-leave-ws').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // @ts-ignore
+      window.showToast('Leaving workspaces requires a separate endpoint that is pending. For now, only owners can delete.');
+    });
   });
 </script>

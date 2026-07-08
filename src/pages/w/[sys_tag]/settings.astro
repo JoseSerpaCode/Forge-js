@@ -1,0 +1,297 @@
+---
+import MainLayout from '../../../layouts/MainLayout.astro';
+import db from '../../../lib/db';
+import { checkWorkspaceAccess } from '../../../lib/guard';
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/login');
+
+const { sys_tag } = Astro.params;
+
+const ws = db.prepare('SELECT * FROM workspaces WHERE sys_tag = ?').get(sys_tag) as any;
+if (!ws) return Astro.redirect('/404');
+
+const access = checkWorkspaceAccess(user.id, user.is_sysadmin, ws.id, 'owner');
+if (!access.granted) return Astro.redirect(`/w/${sys_tag}`); // Only owners can access settings
+
+const members = db.prepare(`
+  SELECT u.id, u.username, u.avatar_url, wm.ws_role, wm.joined_at
+  FROM workspace_members wm
+  JOIN users u ON wm.user_id = u.id
+  WHERE wm.workspace_id = ?
+  ORDER BY wm.joined_at ASC
+`).all(ws.id) as any[];
+---
+
+<MainLayout title={`Settings - ${ws.name}`} workspaceId={ws.id}>
+  <div class="max-w-4xl mx-auto mt-10 p-6 space-y-8">
+    <div class="flex items-center justify-between">
+      <h1 class="text-3xl font-bold text-forge-text">Workspace Settings</h1>
+      <a href={`/w/${sys_tag}`} class="text-forge-muted hover:text-forge-text text-sm hover:underline">Back to Dashboard</a>
+    </div>
+
+    <!-- General Settings -->
+    <div class="bg-forge-panel border border-forge-border rounded-lg shadow-lg p-6">
+      <h2 class="text-xl font-bold text-forge-text mb-6">General</h2>
+      
+      <div class="flex items-start gap-8">
+        <div class="relative group cursor-pointer w-24 h-24 rounded-xl border-2 border-forge-border bg-forge-bg flex items-center justify-center shrink-0 overflow-hidden" id="ws-icon-preview-container">
+          {ws.icon && ws.icon.startsWith('data:image') ? (
+            <img src={ws.icon} class="w-full h-full object-cover" id="ws-icon-preview-img" />
+          ) : (
+            <div class="text-4xl font-black text-forge-secondary" id="ws-icon-preview-text">
+              {ws.icon || ws.name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div class="absolute inset-0 bg-black/60 hidden group-hover:flex items-center justify-center transition-all z-10 flex-col">
+            <span class="text-[10px] font-bold text-white uppercase tracking-widest text-center px-2">Upload Image</span>
+          </div>
+          <input type="file" id="ws-icon-file-input" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer z-20" title="Upload image icon" />
+        </div>
+        
+        <div class="flex-1 space-y-4">
+          <div>
+            <label class="block text-sm font-bold text-forge-muted uppercase mb-1">Workspace Name</label>
+            <input type="text" id="ws-name-input" value={ws.name} class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-secondary" />
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-forge-muted uppercase mb-1">System Tag (URL)</label>
+            <input type="text" id="ws-tag-input" value={ws.sys_tag} class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-secondary" />
+          </div>
+          <button id="btn-save-general" class="bg-forge-primary text-forge-bg font-bold py-2 px-6 rounded hover:bg-forge-primary/90 transition-colors mt-2" data-ws-id={ws.id}>
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Members -->
+    <div class="bg-forge-panel border border-forge-border rounded-lg shadow-lg p-6">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-bold text-forge-text">Members</h2>
+        <button id="btn-add-member" class="bg-forge-bg border border-forge-border text-forge-text px-3 py-1.5 text-sm rounded hover:border-forge-secondary transition-colors">
+          + Add Member
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        {members.map((m) => (
+          <div class="flex items-center justify-between bg-forge-bg border border-forge-border p-3 rounded">
+            <div class="flex items-center gap-3">
+              {m.avatar_url ? (
+                <img src={m.avatar_url} class="w-8 h-8 rounded-full border border-forge-border object-cover" />
+              ) : (
+                <div class="w-8 h-8 rounded-full border border-forge-border flex items-center justify-center text-forge-secondary shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+              )}
+              <span class="font-bold text-forge-text">{m.username}</span>
+            </div>
+            
+            <div class="flex items-center gap-3">
+              <select class="role-select bg-forge-panel border border-forge-border text-forge-muted text-sm rounded p-1 focus:outline-none focus:border-forge-secondary" data-user-id={m.id} data-ws-id={ws.id}>
+                <option value="owner" selected={m.ws_role === 'owner'}>Owner</option>
+                <option value="editor" selected={m.ws_role === 'editor'}>Editor</option>
+                <option value="commenter" selected={m.ws_role === 'commenter'}>Commenter</option>
+                <option value="viewer" selected={m.ws_role === 'viewer'}>Viewer</option>
+              </select>
+              
+              <button class="btn-remove-member text-forge-muted hover:text-red-400 p-1 rounded hover:bg-red-500/10 transition-colors" data-user-id={m.id} data-ws-id={ws.id} title="Remove User">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+    
+    <!-- Danger Zone -->
+    <div class="bg-red-500/5 border border-red-500/20 rounded-lg shadow-lg p-6">
+      <h2 class="text-xl font-bold text-red-500 mb-2">Danger Zone</h2>
+      <p class="text-forge-muted text-sm mb-4">Once you delete a workspace, there is no going back. Please be certain.</p>
+      <button id="btn-delete-workspace" class="bg-red-500/10 text-red-500 border border-red-500/30 px-4 py-2 rounded font-bold hover:bg-red-500 hover:text-white transition-colors" data-ws-id={ws.id}>
+        Delete Workspace
+      </button>
+    </div>
+
+  </div>
+
+  <dialog id="add-member-modal" class="bg-forge-panel border border-forge-border rounded-lg p-6 w-[400px] text-forge-text shadow-xl backdrop:bg-black/50">
+    <h2 class="text-xl font-bold mb-4">Add Member</h2>
+    <div class="mb-4">
+      <label class="block text-xs uppercase tracking-wider text-forge-muted mb-1">Username</label>
+      <input type="text" id="add-member-username" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:border-forge-secondary focus:outline-none" placeholder="Exact username">
+    </div>
+    <div class="mb-4">
+      <label class="block text-xs uppercase tracking-wider text-forge-muted mb-1">Role</label>
+      <select id="add-member-role" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:border-forge-secondary focus:outline-none">
+        <option value="viewer">Viewer</option>
+        <option value="commenter">Commenter</option>
+        <option value="editor">Editor</option>
+        <option value="owner">Owner</option>
+      </select>
+    </div>
+    <div class="flex justify-end gap-3 mt-6">
+      <button type="button" class="px-4 py-2 text-forge-muted hover:text-forge-text" onclick="(document.getElementById('add-member-modal') as HTMLDialogElement).close()">Cancel</button>
+      <button type="button" id="btn-confirm-add" class="bg-forge-secondary text-forge-bg px-4 py-2 rounded font-bold hover:opacity-90 transition-opacity" data-ws-id={ws.id}>Add</button>
+    </div>
+  </dialog>
+
+</MainLayout>
+
+<script>
+  let newIconBase64: string | null = null;
+  const iconInput = document.getElementById('ws-icon-file-input') as HTMLInputElement;
+  
+  iconInput?.addEventListener('change', (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        // @ts-ignore
+        return window.showToast('Image must be less than 2MB', true);
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        newIconBase64 = ev.target?.result as string;
+        
+        let imgPreview = document.getElementById('ws-icon-preview-img') as HTMLImageElement;
+        const textPreview = document.getElementById('ws-icon-preview-text');
+        
+        if (textPreview) textPreview.style.display = 'none';
+        
+        if (imgPreview) {
+          imgPreview.src = newIconBase64;
+        } else {
+          const container = document.getElementById('ws-icon-preview-container');
+          const img = document.createElement('img');
+          img.src = newIconBase64;
+          img.id = 'ws-icon-preview-img';
+          img.className = 'w-full h-full object-cover z-0';
+          container?.insertBefore(img, container.firstChild);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  document.getElementById('btn-save-general')?.addEventListener('click', async (e) => {
+    const wsId = (e.currentTarget as HTMLElement).getAttribute('data-ws-id');
+    const name = (document.getElementById('ws-name-input') as HTMLInputElement).value;
+    const tag = (document.getElementById('ws-tag-input') as HTMLInputElement).value;
+    
+    let finalIcon = newIconBase64;
+    if (!finalIcon) {
+       const existingImg = document.getElementById('ws-icon-preview-img') as HTMLImageElement;
+       if (existingImg) finalIcon = existingImg.src;
+       else {
+         const existingText = document.getElementById('ws-icon-preview-text');
+         if (existingText && existingText.textContent && existingText.textContent.trim().length <= 2) {
+            finalIcon = existingText.textContent.trim();
+         }
+       }
+    }
+
+    const res = await fetch(`/api/workspaces/${wsId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, sys_tag: tag, icon: finalIcon })
+    });
+    
+    if (res.ok) {
+      // @ts-ignore
+      window.showToast('Workspace updated!');
+      if (tag !== window.location.pathname.split('/')[2]) {
+         window.location.href = `/w/${tag}/settings`;
+      }
+    } else {
+      // @ts-ignore
+      window.showToast(await res.text(), true);
+    }
+  });
+
+  // Members
+  document.querySelectorAll('.role-select').forEach(select => {
+    select.addEventListener('change', async (e) => {
+      const el = e.currentTarget as HTMLSelectElement;
+      const userId = el.getAttribute('data-user-id');
+      const wsId = el.getAttribute('data-ws-id');
+      const role = el.value;
+
+      const res = await fetch(`/api/workspaces/${wsId}/members`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, role })
+      });
+      if (res.ok) {
+        // @ts-ignore
+        window.showToast('Role updated');
+      } else {
+        // @ts-ignore
+        window.showToast(await res.text(), true);
+        window.location.reload(); // reset select
+      }
+    });
+  });
+
+  document.querySelectorAll('.btn-remove-member').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const el = e.currentTarget as HTMLElement;
+      const userId = el.getAttribute('data-user-id');
+      const wsId = el.getAttribute('data-ws-id');
+      
+      // @ts-ignore
+      window.forgeConfirm('Remove this user from the workspace?', async () => {
+        const res = await fetch(`/api/workspaces/${wsId}/members`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId })
+        });
+        if (res.ok) {
+          el.closest('div')?.parentElement?.remove();
+          // @ts-ignore
+          window.showToast('User removed');
+        } else {
+          // @ts-ignore
+          window.showToast(await res.text(), true);
+        }
+      });
+    });
+  });
+
+  document.getElementById('btn-add-member')?.addEventListener('click', () => {
+    (document.getElementById('add-member-modal') as HTMLDialogElement).showModal();
+  });
+
+  document.getElementById('btn-confirm-add')?.addEventListener('click', async (e) => {
+    const wsId = (e.currentTarget as HTMLElement).getAttribute('data-ws-id');
+    const username = (document.getElementById('add-member-username') as HTMLInputElement).value;
+    const role = (document.getElementById('add-member-role') as HTMLSelectElement).value;
+    
+    const res = await fetch(`/api/workspaces/${wsId}/members`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, role })
+    });
+    if (res.ok) {
+      window.location.reload();
+    } else {
+      // @ts-ignore
+      window.showToast(await res.text(), true);
+    }
+  });
+
+  // Danger
+  document.getElementById('btn-delete-workspace')?.addEventListener('click', async (e) => {
+    const wsId = (e.currentTarget as HTMLElement).getAttribute('data-ws-id');
+    // @ts-ignore
+    window.forgeConfirm('DANGER: Delete this workspace entirely?', async () => {
+      const res = await fetch(`/api/workspaces/${wsId}`, { method: 'DELETE' });
+      if (res.ok) {
+        window.location.href = '/';
+      } else {
+        // @ts-ignore
+        window.showToast(await res.text(), true);
+      }
+    });
+  });
+</script>

@@ -1,0 +1,38 @@
+import type { APIRoute } from 'astro';
+import db from '../../../../lib/db';
+
+export const GET: APIRoute = async ({ locals }) => {
+  const user = locals.user;
+  if (!user) return new Response('Unauthorized', { status: 401 });
+
+  try {
+    const notifs = db.prepare('SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50').all(user.id);
+    const unreadCount = db.prepare('SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0').get(user.id) as any;
+    
+    return new Response(JSON.stringify({
+      notifications: notifs,
+      unread: unreadCount.count
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  } catch (err: any) {
+    return new Response(err.message, { status: 500 });
+  }
+};
+
+export const POST: APIRoute = async ({ request, locals }) => {
+  const user = locals.user;
+  if (!user) return new Response('Unauthorized', { status: 401 });
+
+  try {
+    const { action, id } = await request.json();
+    
+    if (action === 'mark_all_read') {
+      db.prepare('UPDATE notifications SET is_read = 1 WHERE user_id = ?').run(user.id);
+    } else if (action === 'mark_read' && id) {
+      db.prepare('UPDATE notifications SET is_read = 1 WHERE user_id = ? AND id = ?').run(user.id, id);
+    }
+    
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
+  } catch (err: any) {
+    return new Response(err.message, { status: 500 });
+  }
+};
