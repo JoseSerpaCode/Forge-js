@@ -7,6 +7,10 @@ interface Props {
     type: string;
     story_points: number;
     assignee_initials: string;
+    assignee_username?: string;
+    reporter_username?: string;
+    assignee_id?: string;
+    reporter_id?: string;
     position: number;
     sprint_id?: string;
   };
@@ -15,14 +19,19 @@ interface Props {
 const { issue } = Astro.props;
 ---
 <!-- Componente IssueCard.astro -->
-<div id={issue.id} draggable="true" data-points={issue.story_points} data-position={issue.position} data-sprint-id={issue.sprint_id || 'backlog'} class="issue-card group bg-forge-panel border border-forge-border p-4 rounded-md shadow-lg hover:border-forge-secondary transition-all cursor-grab active:cursor-grabbing mb-2">
+<div id={issue.id} draggable="true" data-points={issue.story_points} data-position={issue.position} data-sprint-id={issue.sprint_id || 'backlog'} data-assignee-id={issue.assignee_id || ''} data-reporter-id={issue.reporter_id || ''} data-assignee={issue.assignee_username || 'Unassigned'} data-reporter={issue.reporter_username || 'System'} 
+  class={`issue-card group bg-forge-panel border-l-4 p-4 rounded-md shadow-lg hover:-translate-y-0.5 hover:shadow-xl transition-all cursor-grab active:cursor-grabbing mb-3 
+    ${issue.type === 'bug' ? 'border-l-red-500 border-t-forge-border border-r-forge-border border-b-forge-border' : 
+      issue.type === 'story' ? 'border-l-green-500 border-t-forge-border border-r-forge-border border-b-forge-border' : 
+      'border-l-blue-500 border-t-forge-border border-r-forge-border border-b-forge-border'}
+  `}>
   <div class="flex justify-between items-start mb-2">
-    <span class="font-mono text-[10px] text-forge-secondary uppercase">{issue.id}</span>
-    <div class="w-6 h-6 rounded-full bg-forge-bg border border-forge-border flex items-center justify-center text-[10px] text-forge-muted font-bold">
+    <span class="font-mono text-[10px] text-forge-secondary uppercase tracking-wider">{issue.id.substring(0,8)}</span>
+    <div class="w-6 h-6 rounded-full bg-forge-bg border border-forge-border flex items-center justify-center text-[10px] text-forge-muted font-bold" title={issue.assignee_username || 'Unassigned'}>
       {issue.assignee_initials}
     </div>
   </div>
-  <h4 class="text-forge-text font-bold text-sm mb-1">{issue.title}</h4>
+  <h4 class="text-forge-text font-bold text-sm mb-1 group-hover:text-forge-secondary transition-colors">{issue.title}</h4>
   <p class="text-forge-muted text-xs line-clamp-2 mb-3">{issue.description || 'No description provided.'}</p>
   <div class="flex items-center gap-2">
     <span class="issue-type-badge px-2 py-0.5 rounded text-[10px] font-mono bg-forge-bg text-forge-muted border border-forge-border uppercase">

@@ -29,6 +29,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       db.prepare('UPDATE notifications SET is_read = 1 WHERE user_id = ?').run(user.id);
     } else if (action === 'mark_read' && id) {
       db.prepare('UPDATE notifications SET is_read = 1 WHERE user_id = ? AND id = ?').run(user.id, id);
+    } else if (action === 'delete' && id) {
+      db.prepare('DELETE FROM notifications WHERE user_id = ? AND id = ?').run(user.id, id);
     }
     
     return new Response(JSON.stringify({ success: true }), { status: 200 });

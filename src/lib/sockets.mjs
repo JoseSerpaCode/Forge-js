@@ -38,6 +38,18 @@ export function setupSockets(io) {
       // Validar presencia en el room
       if (!socket.rooms.has(channelId)) return;
 
+      const channel = db.prepare('SELECT workspace_id FROM channels WHERE id = ?').get(channelId);
+      if (!channel) return;
+
+      const roleRow = db.prepare('SELECT ws_role FROM workspace_members WHERE workspace_id = ? AND user_id = ?').get(channel.workspace_id, socket.userId);
+      const userRec = db.prepare('SELECT is_sysadmin FROM users WHERE id = ?').get(socket.userId);
+      const isSysadmin = userRec && userRec.is_sysadmin === 1;
+
+      // Un viewer o alguien sin acceso no puede escribir (revocación de sesión persistente)
+      if (!isSysadmin && (!roleRow || roleRow.ws_role === 'viewer')) {
+        return;
+      }
+
       const msgId = crypto.randomUUID();
       db.prepare('INSERT INTO messages (id, channel_id, user_id, content) VALUES (?, ?, ?, ?)').run(msgId, channelId, socket.userId, content);
 
@@ -49,10 +61,38 @@ export function setupSockets(io) {
         created_at: new Date().toISOString()
       });
 
-      // TRIGGER INTERNO: Si mencionan a Janus, emitir evento para la IA
       if (content.includes('@Janus')) {
         process.emit('janus_mentioned', { channelId, content, userId: socket.userId });
       }
     });
+  });
+
+  process.on('system_notification', ({ channelId, content }) => {
+    const msgId = crypto.randomUUID();
+    // System message user_id is hardcoded as 'system'
+    try {
+      db.prepare('INSERT INTO messages (id, channel_id, user_id, content) VALUES (?, ?, ?, ?)').run(msgId, channelId, 'system', content);
+      
+      io.to(channelId).emit('new_message', {
+        id: msgId,
+        channel_id: channelId,
+        user_id: 'system',
+        content,
+        created_at: new Date().toISOString()
+      });
+    } catch(e) { console.error('Failed to send system notification', e) }
+  });
+
+  // Escuchar expulsiones de workspaces para matar sockets zombies
+  process.on('user_removed_from_workspace', ({ userId, workspaceId }) => {
+    try {
+      const channels = db.prepare('SELECT id FROM channels WHERE workspace_id = ?').all(workspaceId);
+      for (const [socketId, socket] of io.sockets.sockets) {
+        if (socket.userId === userId) {
+          channels.forEach(c => socket.leave(c.id));
+          // También podemos forzar desconexión si queremos ser más estrictos, pero con sacarlo de los rooms basta.
+        }
+      }
+    } catch(e) {}
   });
 }

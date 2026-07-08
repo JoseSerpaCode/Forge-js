@@ -45,8 +45,9 @@ test.describe('Upload API Security', () => {
     
     expect(json.url).toBeTruthy();
 
-    const fileName = path.basename(json.url);
-    const expectedPath = path.join(process.cwd(), 'public', 'storage', fileName);
+    const url = json.url;
+    const actualName = url.split('/').pop();
+    const expectedPath = path.join(process.cwd(), '.data', 'storage', actualName!);
     
     // Check if file exists safely
     expect(fs.existsSync(expectedPath)).toBe(true);

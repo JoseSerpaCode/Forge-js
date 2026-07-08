@@ -19,6 +19,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return new Response(access.error || 'Forbidden', { status: 403 });
   }
 
+  if (sprintId) {
+    const sprint = db.prepare('SELECT id FROM sprints WHERE id = ? AND workspace_id = ?').get(sprintId, workspaceId);
+    if (!sprint) {
+      return new Response('Sprint not found or belongs to another workspace', { status: 400 });
+    }
+  }
+
   const issueId = crypto.randomUUID();
   // Status starts as 'todo' by default, or 'backlog' depending on logic
   // Let's use 'todo' so it appears in the first column
@@ -36,6 +43,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
       INSERT INTO issues (id, workspace_id, sprint_id, title, type, status, reporter_id, position)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(issueId, workspaceId, sprintId || null, title, type || 'task', status, user.id, position);
+
+    const generalChannel = db.prepare("SELECT id FROM channels WHERE workspace_id = ? AND name = 'general'").get(workspaceId) as any;
+    if (generalChannel) {
+      process.emit('system_notification', { channelId: generalChannel.id, content: `🆕 New issue created: **${title}** (${type})` });
+    }
 
     return new Response(JSON.stringify({ id: issueId }), { status: 200 });
   } catch (err: any) {

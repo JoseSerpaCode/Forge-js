@@ -33,20 +33,36 @@ if (requestedSprintId && requestedSprintId !== 'backlog') {
 // Fetch all sprints for the dropdown
 const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace_id = ? ORDER BY start_date DESC, rowid DESC').all(workspace.id) as any[];
 
-let issuesQuery = 'SELECT * FROM issues WHERE workspace_id = ?';
+let issuesQuery = `
+  SELECT i.*, 
+         u1.username as reporter_username, 
+         u2.username as assignee_username
+  FROM issues i
+  LEFT JOIN users u1 ON i.reporter_id = u1.id
+  LEFT JOIN users u2 ON i.assignee_id = u2.id
+  WHERE i.workspace_id = ?
+`;
 const queryParams: any[] = [workspace.id];
 
 if (activeSprintId) {
-  issuesQuery += ' AND sprint_id = ?';
+  issuesQuery += ' AND i.sprint_id = ?';
   queryParams.push(activeSprintId);
 } else {
-  issuesQuery += ' AND sprint_id IS NULL';
+  issuesQuery += ' AND i.sprint_id IS NULL';
 }
 
-issuesQuery += ' ORDER BY position ASC, id ASC';
+issuesQuery += ' ORDER BY i.position ASC, i.id ASC';
 const issues = db.prepare(issuesQuery).all(...queryParams) as any[];
 
 const activeSprintName = activeSprintId ? sprints.find(s => s.id === activeSprintId)?.name : 'Backlog';
+
+// Fetch workspace members for assignee/reporter dropdowns
+const workspaceMembers = db.prepare(`
+  SELECT u.id, u.username 
+  FROM workspace_members wm 
+  JOIN users u ON wm.user_id = u.id 
+  WHERE wm.workspace_id = ?
+`).all(workspace.id) as any[];
 ---
 
 <MainLayout title={`Board - ${workspace.name}`} workspaceId={workspace.id}>
@@ -92,7 +108,7 @@ const activeSprintName = activeSprintId ? sprints.find(s => s.id === activeSprin
 
     <div class="flex-1 overflow-hidden">
       <!-- Pass sprints to KanbanBoard so IssueDetailsModal can use it -->
-      <KanbanBoard workspaceId={workspace.id} issues={issues} sprints={sprints} currentSprintId={activeSprintId} />
+      <KanbanBoard workspaceId={workspace.id} issues={issues} sprints={sprints} currentSprintId={activeSprintId} workspaceMembers={workspaceMembers} />
     </div>
   </div>
 

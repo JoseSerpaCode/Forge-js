@@ -17,6 +17,9 @@ export const POST: APIRoute = async ({ request, params, locals }) => {
   try {
     const { username, role } = await request.json();
     if (!username || !role) return new Response('Username and role required', { status: 400 });
+    
+    const VALID_ROLES = ['owner', 'editor', 'commenter', 'viewer'];
+    if (!VALID_ROLES.includes(role)) return new Response('Invalid role', { status: 400 });
 
     const targetUser = db.prepare('SELECT id FROM users WHERE username = ?').get(username) as any;
     if (!targetUser) return new Response('User not found', { status: 404 });
@@ -47,9 +50,12 @@ export const PATCH: APIRoute = async ({ request, params, locals }) => {
     const { userId, role } = await request.json();
     if (!userId || !role) return new Response('User ID and role required', { status: 400 });
 
+    const VALID_ROLES = ['owner', 'editor', 'commenter', 'viewer'];
+    if (!VALID_ROLES.includes(role)) return new Response('Invalid role', { status: 400 });
+
     // Prevent removing the last owner
     if (role !== 'owner') {
-      const owners = db.prepare('SELECT COUNT(*) as count FROM workspace_members WHERE workspace_id = ? AND ws_role = "owner"').get(workspaceId) as any;
+      const owners = db.prepare("SELECT COUNT(*) as count FROM workspace_members WHERE workspace_id = ? AND ws_role = 'owner'").get(workspaceId) as any;
       const currentRole = db.prepare('SELECT ws_role FROM workspace_members WHERE workspace_id = ? AND user_id = ?').get(workspaceId, userId) as any;
       
       if (currentRole && currentRole.ws_role === 'owner' && owners.count <= 1) {
@@ -86,7 +92,7 @@ export const DELETE: APIRoute = async ({ request, params, locals }) => {
 
     const currentRole = db.prepare('SELECT ws_role FROM workspace_members WHERE workspace_id = ? AND user_id = ?').get(workspaceId, userIdToRemove) as any;
     if (currentRole && currentRole.ws_role === 'owner') {
-      const owners = db.prepare('SELECT COUNT(*) as count FROM workspace_members WHERE workspace_id = ? AND ws_role = "owner"').get(workspaceId) as any;
+      const owners = db.prepare("SELECT COUNT(*) as count FROM workspace_members WHERE workspace_id = ? AND ws_role = 'owner'").get(workspaceId) as any;
       if (owners.count <= 1) {
         return new Response('Cannot remove the last owner. Delete the workspace or promote someone else first.', { status: 400 });
       }
@@ -95,7 +101,13 @@ export const DELETE: APIRoute = async ({ request, params, locals }) => {
     db.prepare('DELETE FROM workspace_members WHERE workspace_id = ? AND user_id = ?').run(workspaceId, userIdToRemove);
     
     // If they were pointing to this workspace, clear it
-    db.prepare('UPDATE users SET last_workspace_id = NULL WHERE id = ? AND last_workspace_id = ?').run(userIdToRemove, workspaceId);
+    const ws = db.prepare('SELECT sys_tag FROM workspaces WHERE id = ?').get(workspaceId) as any;
+    if (ws) {
+      db.prepare('UPDATE users SET last_workspace_id = NULL WHERE id = ? AND last_workspace_id = ?').run(userIdToRemove, ws.sys_tag);
+    }
+
+    // Kill Zombie sockets
+    process.emit('user_removed_from_workspace', { userId: userIdToRemove, workspaceId });
 
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (err: any) {

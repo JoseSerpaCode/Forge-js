@@ -56,7 +56,14 @@ export const PATCH: APIRoute = async ({ request, params, locals }) => {
     const existing = db.prepare('SELECT id FROM workspaces WHERE sys_tag = ? AND id != ?').get(sys_tag, workspaceId);
     if (existing) return new Response('System tag already in use', { status: 400 });
     
+    const oldWs = db.prepare('SELECT sys_tag FROM workspaces WHERE id = ?').get(workspaceId) as any;
+    
     db.prepare('UPDATE workspaces SET name = ?, sys_tag = ?, icon = ? WHERE id = ?').run(name, sys_tag, icon || null, workspaceId);
+    
+    if (oldWs && oldWs.sys_tag !== sys_tag) {
+      db.prepare('UPDATE users SET last_workspace_id = ? WHERE last_workspace_id = ?').run(sys_tag, oldWs.sys_tag);
+    }
+
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (err: any) {
     return new Response(err.message, { status: 500 });

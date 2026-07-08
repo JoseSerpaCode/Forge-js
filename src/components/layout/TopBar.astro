@@ -165,16 +165,33 @@ const { title, workspaceName } = Astro.props;
           data.notifications.forEach((n: any) => {
             const date = new Date(n.created_at.includes('Z') ? n.created_at : n.created_at.replace(' ', 'T') + 'Z').toLocaleString();
             notifList.innerHTML += `
-              <li class="p-3 border-b border-forge-border hover:bg-forge-panel transition-colors ${n.is_read ? 'opacity-60' : 'bg-forge-bg'}">
-                <a href="${n.link_url || '#'}" class="block">
+              <li class="relative group/notif p-3 border-b border-forge-border hover:bg-forge-panel transition-colors ${n.is_read ? 'opacity-60' : 'bg-forge-bg'}">
+                <a href="${n.link_url || '#'}" class="block pr-6">
                   <div class="flex justify-between items-start mb-1">
-                    <span class="text-xs font-bold ${n.is_read ? 'text-forge-muted' : 'text-forge-secondary'}">${n.title}</span>
-                    <span class="text-[10px] text-forge-muted">${date}</span>
+                    <span class="text-xs font-bold ${n.is_read ? 'text-forge-muted' : 'text-forge-secondary'} truncate">${n.title}</span>
+                    <span class="text-[10px] text-forge-muted shrink-0 ml-2">${date}</span>
                   </div>
                   <p class="text-xs text-forge-text break-words">${n.message}</p>
                 </a>
+                <button class="absolute top-2 right-2 text-forge-muted hover:text-red-500 opacity-0 group-hover/notif:opacity-100 transition-opacity p-1 delete-notif-btn bg-forge-panel rounded" data-id="${n.id}" title="Delete notification">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
               </li>
             `;
+          });
+          
+          notifList.querySelectorAll('.delete-notif-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const id = btn.getAttribute('data-id');
+              await fetch('/api/user/notifications', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'delete', id })
+              });
+              fetchNotifications();
+            });
           });
         }
       }

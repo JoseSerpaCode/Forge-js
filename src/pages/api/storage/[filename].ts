@@ -1,0 +1,56 @@
+import type { APIRoute } from 'astro';
+import db from '../../../lib/db';
+import { checkWorkspaceAccess } from '../../../lib/guard';
+import fs from 'fs';
+import path from 'path';
+
+export const GET: APIRoute = async ({ params, request, locals }) => {
+  const { filename } = params;
+  if (!filename) return new Response('Bad Request', { status: 400 });
+
+  const user = locals.user;
+  if (!user) return new Response('Unauthorized', { status: 401 });
+
+  // 1. Find the attachment record to get entity context
+  const fileUrl = `/api/storage/${filename}`;
+  const attachment = db.prepare('SELECT entity_type, entity_id, mime_type FROM attachments WHERE file_path = ?').get(fileUrl) as any;
+  
+  if (!attachment) {
+    return new Response('File not found', { status: 404 });
+  }
+
+  // 2. Resolve workspace ID based on entity type
+  const table = attachment.entity_type === 'issue' ? 'issues' : 'pages';
+  const entity = db.prepare(`SELECT workspace_id FROM ${table} WHERE id = ?`).get(attachment.entity_id) as any;
+  
+  if (!entity) {
+    return new Response('Entity not found', { status: 404 });
+  }
+
+  // 3. Enforce Workspace Access (viewer role is sufficient to view files)
+  const access = checkWorkspaceAccess(user.id, user.is_sysadmin, entity.workspace_id, 'viewer');
+  if (!access.granted) {
+    if (access.reason === 'not_member') return new Response('Not Found', { status: 404 });
+    return new Response(access.error || 'Forbidden', { status: 403 });
+  }
+
+  // 4. Serve the file securely
+  const safeFilename = path.basename(filename);
+  const filePath = path.join(process.cwd(), '.data', 'storage', safeFilename);
+
+  if (!fs.existsSync(filePath)) {
+    return new Response('File not found on disk', { status: 404 });
+  }
+
+  const stat = fs.statSync(filePath);
+  const fileStream = fs.createReadStream(filePath);
+
+  return new Response(fileStream as any, {
+    status: 200,
+    headers: {
+      'Content-Type': attachment.mime_type || 'application/octet-stream',
+      'Content-Length': stat.size.toString(),
+      'Cache-Control': 'private, max-age=86400', // Private cache, valid for 1 day
+    }
+  });
+};

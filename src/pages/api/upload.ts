@@ -34,12 +34,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const buffer = Buffer.from(await file.arrayBuffer());
   const safeFilename = path.basename(file.name).replace(/[^a-zA-Z0-9.\-_]/g, '_');
   const fileName = `${crypto.randomUUID()}-${safeFilename}`;
-  const uploadDir = path.join(process.cwd(), 'public', 'storage');
+  
+  // SECURE STORAGE: Store outside of the public/ directory to prevent unauthorized static access
+  const uploadDir = path.join(process.cwd(), '.data', 'storage');
 
   await fs.mkdir(uploadDir, { recursive: true });
   await fs.writeFile(path.join(uploadDir, fileName), buffer);
 
-  const fileUrl = `/storage/${fileName}`;
+  // Serve through a secure API endpoint
+  const fileUrl = `/api/storage/${fileName}`;
 
   db.prepare('INSERT INTO attachments (id, entity_type, entity_id, file_name, file_path, mime_type, size_bytes, uploaded_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
     crypto.randomUUID(), entityType, entityId, file.name, fileUrl, file.type, file.size, user.id

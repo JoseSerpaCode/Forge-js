@@ -3,7 +3,7 @@ import db from './lib/db';
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const sessionId = context.cookies.get('forge_session')?.value;
-  const isPublicRoute = context.url.pathname === '/login' || context.url.pathname.startsWith('/api/auth');
+  const isPublicRoute = context.url.pathname === '/login' || context.url.pathname === '/register' || context.url.pathname.startsWith('/api/auth');
 
   if (!sessionId) {
     context.locals.user = null;
@@ -45,12 +45,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // Always use guard.ts (checkWorkspaceAccess) which queries the DB directly.
   const currentWsTag = sessionData.last_workspace_id;
   if (sessionData.is_sysadmin === 1) {
-    sessionData.role = 'owner';
+    sessionData.role = 'sysadmin';
   } else if (currentWsTag) {
     const roleQuery = db.prepare('SELECT wm.ws_role FROM workspace_members wm JOIN workspaces w ON w.id = wm.workspace_id WHERE w.sys_tag = ? AND wm.user_id = ?').get(currentWsTag, sessionData.id) as any;
-    sessionData.role = roleQuery ? roleQuery.ws_role : 'viewer';
+    sessionData.role = roleQuery ? roleQuery.ws_role : 'user';
   } else {
-    sessionData.role = 'viewer';
+    sessionData.role = 'user';
   }
 
   // Inyectar usuario

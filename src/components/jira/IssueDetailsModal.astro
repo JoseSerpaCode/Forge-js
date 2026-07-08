@@ -2,90 +2,123 @@
 interface Props {
   sprints?: any[];
   currentSprintId?: string | null;
+  workspaceMembers?: any[];
 }
-const { sprints = [], currentSprintId = null } = Astro.props;
+const { sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.props;
 ---
 <!-- Drawer backdrop -->
-<div id="issue-details-backdrop" class="fixed inset-0 bg-black/50 hidden z-40 transition-opacity"></div>
+<div id="issue-details-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-40 transition-opacity"></div>
 
 <!-- Drawer container -->
-<div id="issue-details-modal" class="fixed top-0 right-0 w-[500px] max-w-full h-full bg-forge-bg border-l border-forge-border z-50 transform translate-x-full transition-transform duration-300 ease-in-out shadow-2xl overflow-y-auto flex flex-col">
-  <div class="p-4 border-b border-forge-border flex justify-between items-center bg-forge-panel">
+<div id="issue-details-modal" class="fixed top-0 right-0 w-[550px] max-w-full h-full bg-forge-bg/95 backdrop-blur-md border-l border-forge-border/40 z-50 transform translate-x-full transition-transform duration-300 ease-out shadow-2xl shadow-black/50 overflow-y-auto flex flex-col">
+  
+  <!-- Header -->
+  <div class="px-6 py-4 border-b border-forge-border/30 flex justify-between items-center bg-gradient-to-r from-forge-panel to-forge-bg sticky top-0 z-10">
     <div class="flex items-center gap-3">
-      <select id="modal-issue-type" class="px-2 py-0.5 rounded text-xs font-mono bg-forge-bg text-forge-text border border-forge-border focus:border-forge-secondary focus:outline-none uppercase">
+      <select id="modal-issue-type" class="px-2 py-1 rounded-md text-[11px] font-bold tracking-wider bg-forge-bg/50 text-forge-text border border-forge-border/50 focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/50 focus:outline-none uppercase transition-all shadow-sm">
         <option value="task">TASK</option>
         <option value="bug">BUG</option>
         <option value="story">STORY</option>
       </select>
-      <span id="modal-issue-id" class="font-mono text-sm text-forge-muted">ID-XXX</span>
+      <span id="modal-issue-id" class="font-mono text-[13px] text-forge-muted/80 tracking-wide font-medium">ID-XXX</span>
     </div>
-    <div class="flex items-center gap-2">
-      <button id="btn-delete-issue" class="text-red-400 hover:bg-red-400/10 px-2 py-1 rounded text-xs font-bold transition-colors hidden">
+    <div class="flex items-center gap-3">
+      <button id="btn-delete-issue" class="text-red-400 hover:bg-red-400/10 hover:text-red-300 px-3 py-1.5 rounded-md text-xs font-bold transition-all hidden border border-transparent hover:border-red-400/20">
         Delete
       </button>
-      <button id="close-modal-btn" class="text-forge-muted hover:text-forge-primary transition-colors">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      <button id="close-modal-btn" class="text-forge-muted hover:text-forge-text hover:bg-forge-panel p-1.5 rounded-md transition-colors border border-transparent hover:border-forge-border/30">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </button>
     </div>
   </div>
   
-  <div class="p-6 flex-1 flex flex-col gap-6">
-    <div class="relative">
-      <input type="text" id="modal-issue-title" class="text-xl font-bold text-forge-text bg-transparent border-b border-transparent hover:border-forge-border focus:border-forge-secondary focus:outline-none w-full transition-colors pb-1" value="Loading...">
+  <!-- Content -->
+  <div class="p-8 flex-1 flex flex-col gap-8">
+    <div class="relative group">
+      <input type="text" id="modal-issue-title" class="text-2xl font-black text-forge-text bg-transparent border-b-2 border-transparent hover:border-forge-border/50 focus:border-forge-secondary focus:outline-none w-full transition-all pb-1 tracking-tight" value="Loading...">
     </div>
     
-    <div class="grid grid-cols-2 gap-4">
-      <div class="space-y-1">
-        <label class="text-xs font-bold text-forge-muted uppercase tracking-wider">Assignee</label>
-        <div class="flex items-center gap-2 p-2 bg-forge-panel border border-forge-border rounded">
-          <div class="w-6 h-6 rounded-full bg-forge-bg flex items-center justify-center text-xs font-bold text-forge-muted">U</div>
-          <span class="text-sm">Unassigned</span>
+    <div class="grid grid-cols-2 gap-6">
+      <div class="space-y-2 relative">
+        <label class="text-[10px] font-bold text-forge-muted/70 uppercase tracking-widest flex items-center gap-1.5">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          Assignee
+        </label>
+        <select id="modal-issue-assignee" class="w-full appearance-none bg-forge-panel/30 border border-forge-border/40 hover:border-forge-secondary/30 rounded-lg p-2.5 text-sm font-medium text-forge-text focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 transition-colors cursor-pointer">
+          <option value="">Unassigned</option>
+          {workspaceMembers.map(m => (
+            <option value={m.id}>{m.username}</option>
+          ))}
+        </select>
+        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 pt-6 text-forge-muted">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
         </div>
       </div>
-      <div class="space-y-1">
-        <label class="text-xs font-bold text-forge-muted uppercase tracking-wider">Reporter</label>
-        <div class="flex items-center gap-2 p-2 bg-forge-panel border border-forge-border rounded">
-          <div class="w-6 h-6 rounded-full bg-forge-bg flex items-center justify-center text-xs font-bold text-forge-muted">S</div>
-          <span class="text-sm">System</span>
+      <div class="space-y-2 relative">
+        <label class="text-[10px] font-bold text-forge-muted/70 uppercase tracking-widest flex items-center gap-1.5">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+          Reporter
+        </label>
+        <select id="modal-issue-reporter" class="w-full appearance-none bg-forge-panel/30 border border-forge-border/40 rounded-lg p-2.5 text-sm font-medium text-forge-muted focus:outline-none cursor-pointer">
+          <option value="system">System</option>
+          {workspaceMembers.map(m => (
+            <option value={m.id}>{m.username}</option>
+          ))}
+        </select>
+        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 pt-6 text-forge-muted">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
         </div>
       </div>
     </div>
     
-    <div class="space-y-1 relative">
-      <label class="text-xs font-bold text-forge-muted uppercase tracking-wider flex justify-between">
-        Description
+    <div class="space-y-2 relative">
+      <label class="text-[10px] font-bold text-forge-muted/70 uppercase tracking-widest flex justify-between items-center">
+        <span class="flex items-center gap-1.5">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="3" x2="21" y2="7"></line><polyline points="21 3 17 7 21 11"></polyline><path d="M3 13h10V3H3v10z"></path><path d="M3 21h18V13H3v8z"></path></svg>
+          Description
+        </span>
       </label>
-      <textarea id="modal-issue-desc" rows="5" class="w-full bg-forge-panel border border-forge-border rounded p-3 text-sm text-forge-text focus:outline-none focus:border-forge-secondary transition-colors placeholder:text-forge-muted" placeholder="Add a description..."></textarea>
-      <button id="btn-save-desc" class="hidden absolute bottom-2 right-2 bg-forge-primary text-forge-bg text-xs font-bold px-3 py-1 rounded hover:bg-forge-primary/90 transition-colors">Save</button>
+      <div class="relative group">
+        <textarea id="modal-issue-desc" rows="6" class="w-full bg-forge-panel/40 border border-forge-border/50 rounded-xl p-4 text-[13px] leading-relaxed text-forge-text/90 focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 transition-all placeholder:text-forge-muted/50 resize-y shadow-inner" placeholder="Add a detailed description..."></textarea>
+        <button id="btn-save-desc" class="hidden absolute bottom-3 right-3 bg-forge-primary text-forge-bg text-[11px] uppercase tracking-wider font-bold px-4 py-1.5 rounded-lg hover:bg-forge-primary/90 hover:scale-105 active:scale-95 transition-all shadow-md shadow-forge-primary/20">Save</button>
+      </div>
     </div>
     
-    <div class="grid grid-cols-2 gap-4">
-      <div class="space-y-1">
-        <label class="text-xs font-bold text-forge-muted uppercase tracking-wider">Sprint</label>
-        <select id="modal-issue-sprint" class="w-full bg-forge-panel border border-forge-border rounded p-2 text-sm text-forge-text focus:outline-none focus:border-forge-secondary transition-colors">
+    <div class="grid grid-cols-2 gap-6">
+      <div class="space-y-2">
+        <label class="text-[10px] font-bold text-forge-muted/70 uppercase tracking-widest">Sprint</label>
+        <select id="modal-issue-sprint" class="w-full bg-forge-panel/40 border border-forge-border/50 rounded-lg p-2.5 text-sm text-forge-text focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 transition-all shadow-sm">
           <option value="backlog">Backlog</option>
           {sprints.map((s: any) => (
             <option value={s.id}>{s.name}</option>
           ))}
         </select>
       </div>
-      <div class="space-y-1">
-        <label class="text-xs font-bold text-forge-muted uppercase tracking-wider">Story Points</label>
-        <input type="number" id="modal-issue-points" value="0" class="w-full bg-forge-panel border border-forge-border rounded p-2 text-sm text-forge-text focus:outline-none focus:border-forge-secondary transition-colors" />
-      </div>
-      <div class="space-y-1 flex flex-col justify-end">
-        <button id="btn-log-work" class="w-full bg-forge-panel border border-forge-border hover:border-forge-primary hover:text-forge-primary text-forge-text py-2 px-4 rounded text-sm font-bold transition-colors flex items-center justify-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-          Log Work
-        </button>
+      <div class="space-y-2">
+        <label class="text-[10px] font-bold text-forge-muted/70 uppercase tracking-widest">Story Points</label>
+        <input type="number" id="modal-issue-points" value="0" class="w-full bg-forge-panel/40 border border-forge-border/50 rounded-lg p-2.5 text-sm text-forge-text focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 transition-all shadow-sm font-mono" />
       </div>
     </div>
     
-    <div class="space-y-2 mt-auto pt-6 border-t border-forge-border">
-      <label class="text-xs font-bold text-forge-muted uppercase tracking-wider">Attachments</label>
-      <div id="btn-add-attachment" class="border border-dashed border-forge-border bg-forge-panel/50 rounded-lg p-6 flex flex-col items-center justify-center text-forge-muted hover:text-forge-secondary hover:border-forge-secondary hover:bg-forge-panel transition-all cursor-pointer">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-2"><path d="M21.2 15c.7-1.2 1-2.5.7-3.9-.6-2-2.4-3.5-4.4-3.5h-1.2c-.7-3-3.2-5.2-6.2-5.6-3-.3-5.9 1.3-7.3 4-1.2 2.5-1 6.5.5 8.4"></path><path d="M12 18v-6"></path><path d="M9 15l3-3 3 3"></path></svg>
-        <span class="text-sm font-bold">Click or drop files to upload</span>
+    <div class="space-y-2 mt-auto pt-6 border-t border-forge-border/30">
+      <div class="flex justify-between items-center">
+        <label class="text-[10px] font-bold text-forge-muted/70 uppercase tracking-widest flex items-center gap-1.5">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+          Attachments
+        </label>
+        <button id="btn-add-attachment-compact" class="hidden text-forge-secondary hover:bg-forge-secondary/10 p-1.5 rounded transition-colors" title="Add Attachment">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+      </div>
+      
+      <div id="attachments-list" class="space-y-2 mb-2 empty:hidden"></div>
+
+      <div id="btn-add-attachment" class="border-2 border-dashed border-forge-border/40 bg-forge-panel/20 rounded-xl p-8 flex flex-col items-center justify-center text-forge-muted hover:text-forge-secondary hover:border-forge-secondary/60 hover:bg-forge-secondary/5 transition-all cursor-pointer group">
+        <div class="bg-forge-bg p-3 rounded-full border border-forge-border/40 group-hover:border-forge-secondary/30 group-hover:scale-110 transition-transform mb-3 shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.2 15c.7-1.2 1-2.5.7-3.9-.6-2-2.4-3.5-4.4-3.5h-1.2c-.7-3-3.2-5.2-6.2-5.6-3-.3-5.9 1.3-7.3 4-1.2 2.5-1 6.5.5 8.4"></path><path d="M12 18v-6"></path><path d="M9 15l3-3 3 3"></path></svg>
+        </div>
+        <span class="text-sm font-bold tracking-tight">Click or drag files here</span>
+        <span class="text-[10px] text-forge-muted/60 mt-1">PNG, JPG, PDF up to 20MB</span>
       </div>
       <input type="file" id="file-attachment" class="hidden" />
     </div>
@@ -147,6 +180,40 @@ const { sprints = [], currentSprintId = null } = Astro.props;
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: titleEl.value })
+      });
+      window.location.reload();
+    } catch (e) {
+      console.error(e);
+    }
+  });
+
+  const assigneeEl = document.getElementById('modal-issue-assignee') as HTMLSelectElement;
+  assigneeEl?.addEventListener('change', async () => {
+    const idEl = document.getElementById('modal-issue-id');
+    const issueId = idEl?.getAttribute('data-full-id');
+    if (!issueId) return;
+    try {
+      await fetch(`/api/issues/${issueId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignee_id: assigneeEl.value || null })
+      });
+      window.location.reload();
+    } catch (e) {
+      console.error(e);
+    }
+  });
+
+  const reporterEl = document.getElementById('modal-issue-reporter') as HTMLSelectElement;
+  reporterEl?.addEventListener('change', async () => {
+    const idEl = document.getElementById('modal-issue-id');
+    const issueId = idEl?.getAttribute('data-full-id');
+    if (!issueId) return;
+    try {
+      await fetch(`/api/issues/${issueId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reporter_id: reporterEl.value === 'system' ? null : reporterEl.value })
       });
       window.location.reload();
     } catch (e) {
@@ -222,13 +289,151 @@ const { sprints = [], currentSprintId = null } = Astro.props;
 
   // Attachments
   const attachBtn = document.getElementById('btn-add-attachment');
+  const attachBtnCompact = document.getElementById('btn-add-attachment-compact');
   const fileInput = document.getElementById('file-attachment') as HTMLInputElement;
+  const attachmentsList = document.getElementById('attachments-list');
   
-  attachBtn?.addEventListener('click', () => fileInput?.click());
+  const triggerUpload = () => fileInput?.click();
+  attachBtn?.addEventListener('click', triggerUpload);
+  attachBtnCompact?.addEventListener('click', triggerUpload);
+  
+  // Expose a global function to load attachments so KanbanBoard can call it when opening a card
+  // @ts-ignore
+  window.loadIssueAttachments = async (issueId) => {
+    if (!attachmentsList || !attachBtn || !attachBtnCompact) return;
+    attachmentsList.innerHTML = '<span class="text-[10px] text-forge-muted/70">Loading...</span>';
+    
+    try {
+      const res = await fetch(`/api/attachments/issue/${issueId}`);
+      if (res.ok) {
+        const data = await res.json();
+        renderAttachments(data);
+      } else {
+        attachmentsList.innerHTML = '<span class="text-[10px] text-red-400">Failed to load</span>';
+      }
+    } catch (e) {
+      attachmentsList.innerHTML = '';
+    }
+  };
+
+  const renderAttachments = (data: any[]) => {
+    if (!attachmentsList || !attachBtn || !attachBtnCompact) return;
+    attachmentsList.innerHTML = '';
+    
+    if (data.length > 0) {
+      attachBtn.classList.add('hidden');
+      attachBtnCompact.classList.remove('hidden');
+      
+      data.forEach(att => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between p-2.5 bg-forge-panel/30 border border-forge-border/40 rounded-lg group';
+        div.innerHTML = `
+          <a href="/api/storage/${att.file_path.split('/').pop()}" target="_blank" class="text-[12px] font-mono text-forge-text hover:text-forge-secondary hover:underline truncate max-w-[80%] flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.2 15c.7-1.2 1-2.5.7-3.9-.6-2-2.4-3.5-4.4-3.5h-1.2c-.7-3-3.2-5.2-6.2-5.6-3-.3-5.9 1.3-7.3 4-1.2 2.5-1 6.5.5 8.4"></path><path d="M12 18v-6"></path><path d="M9 15l3-3 3 3"></path></svg>
+            ${att.file_name}
+          </a>
+          <button class="delete-attachment-btn hidden text-red-400 hover:text-red-300 hover:bg-red-400/10 p-1.5 rounded transition-all opacity-0 group-hover:opacity-100" data-id="${att.id}" title="Delete file">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          </button>
+        `;
+        attachmentsList.appendChild(div);
+      });
+      
+      if (role !== 'viewer') {
+        document.querySelectorAll('.delete-attachment-btn').forEach(btn => {
+          btn.classList.remove('hidden');
+          btn.addEventListener('click', async (e) => {
+            const attId = (e.currentTarget as HTMLElement).getAttribute('data-id');
+            // @ts-ignore
+            window.forgeConfirm('Delete this attachment?', async () => {
+              await fetch(`/api/attachments/${attId}`, { method: 'DELETE' });
+              // @ts-ignore
+              const issueId = document.getElementById('modal-issue-id')?.getAttribute('data-full-id');
+              // @ts-ignore
+              window.loadIssueAttachments(issueId);
+            });
+          });
+        });
+      }
+    } else {
+      attachBtn.classList.remove('hidden');
+      attachBtnCompact.classList.add('hidden');
+    }
+  };
+
   fileInput?.addEventListener('change', () => {
-    if (fileInput.files && fileInput.files.length > 0) {
-      // @ts-ignore
-      window.showToast(`File "${fileInput.files[0].name}" selected! Upload endpoint implementation in next phase.`);
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    
+    const idEl = document.getElementById('modal-issue-id');
+    const issueId = idEl?.getAttribute('data-full-id');
+    if (!issueId) return;
+
+    if (attachBtn) attachBtn.innerHTML = '<span class="text-sm font-bold text-forge-secondary animate-pulse">Processing...</span>';
+    
+    const formData = new FormData();
+    formData.append('entity_type', 'issue');
+    formData.append('entity_id', issueId);
+    
+    const uploadFile = async (blobToUpload: Blob, filename: string) => {
+      if (attachBtn) attachBtn.innerHTML = '<span class="text-sm font-bold text-forge-secondary animate-pulse">Uploading...</span>';
+      formData.append('file', blobToUpload, filename);
+      try {
+        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+        if (res.ok) {
+          // @ts-ignore
+          window.showToast('File uploaded successfully!');
+          // @ts-ignore
+          window.loadIssueAttachments(issueId);
+        } else {
+          // @ts-ignore
+          window.showToast('Failed to upload', true);
+        }
+      } catch (e) {
+        // @ts-ignore
+        window.showToast('Upload error', true);
+      } finally {
+        fileInput.value = ''; 
+      }
+    };
+
+    // WebP Compression for images
+    if (file.type.startsWith('image/') && !file.type.includes('svg')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX = 1920; 
+          let w = img.width;
+          let h = img.height;
+          
+          if (w > h && w > MAX) { h *= MAX/w; w = MAX; }
+          else if (h > MAX) { w *= MAX/h; h = MAX; }
+          
+          canvas.width = w; 
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          if (ctx) ctx.drawImage(img, 0, 0, w, h);
+          
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const baseName = file.name.replace(/\\.[^/.]+$/, "");
+              uploadFile(blob, baseName + '.webp');
+            }
+          }, 'image/webp', 0.8);
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      if (file.size > 20 * 1024 * 1024) {
+         // @ts-ignore
+         window.showToast('Max file size is 20MB', true);
+         attachBtn.innerHTML = originalText;
+         return;
+      }
+      uploadFile(file, file.name);
     }
   });
 

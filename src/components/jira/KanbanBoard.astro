@@ -8,9 +8,10 @@ interface Props {
   workspaceId: string;
   sprints?: any[];
   currentSprintId?: string | null;
+  workspaceMembers?: any[];
 }
 
-const { issues, workspaceId, sprints = [], currentSprintId = null } = Astro.props;
+const { issues, workspaceId, sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.props;
 
 const columns = [
   { id: 'todo', title: 'To Do' },
@@ -37,6 +38,10 @@ function getInitials(username: string) {
             type: issue.type,
             story_points: issue.story_points || 0,
             assignee_initials: getInitials(issue.assignee_username || issue.reporter_username),
+            assignee_username: issue.assignee_username,
+            reporter_username: issue.reporter_username,
+            assignee_id: issue.assignee_id,
+            reporter_id: issue.reporter_id,
             position: issue.position || 0,
             sprint_id: issue.sprint_id || 'backlog'
           }} />
@@ -46,7 +51,7 @@ function getInitials(username: string) {
   </div>
 </div>
 
-<IssueDetailsModal sprints={sprints} currentSprintId={currentSprintId} />
+<IssueDetailsModal sprints={sprints} currentSprintId={currentSprintId} workspaceMembers={workspaceMembers} />
 
 <script>
   const columns = document.querySelectorAll('.board-column');
@@ -82,35 +87,57 @@ function getInitials(username: string) {
     
     // Modal logic
     card.addEventListener('click', () => {
-      const modal = document.getElementById('issue-details-modal');
-      const titleEl = document.getElementById('modal-issue-title');
-      const idEl = document.getElementById('modal-issue-id');
-      const descEl = document.getElementById('modal-issue-desc') as HTMLTextAreaElement;
-      const pointsEl = document.getElementById('modal-issue-points') as HTMLInputElement;
-      
-      if (modal && titleEl && idEl && descEl && pointsEl) {
-        idEl.textContent = card.id.substring(0, 8).toUpperCase();
-        idEl.setAttribute('data-full-id', card.id);
-        (titleEl as HTMLInputElement).value = card.querySelector('h4')?.textContent || '';
-        descEl.value = card.querySelector('p')?.textContent || '';
-        pointsEl.value = card.getAttribute('data-points') || '0';
+      try {
+        const modal = document.getElementById('issue-details-modal');
+        const titleEl = document.getElementById('modal-issue-title');
+        const idEl = document.getElementById('modal-issue-id');
+        const descEl = document.getElementById('modal-issue-desc') as HTMLTextAreaElement;
+        const pointsEl = document.getElementById('modal-issue-points') as HTMLInputElement;
         
-        const sprintEl = document.getElementById('modal-issue-sprint') as HTMLSelectElement;
-        if (sprintEl) {
-          sprintEl.value = card.getAttribute('data-sprint-id') || 'backlog';
+        if (!modal || !titleEl || !idEl || !descEl || !pointsEl) {
+          alert('Missing elements: ' + [modal, titleEl, idEl, descEl, pointsEl].map(e => !!e).join(', '));
+          return;
         }
 
-        const typeBadge = card.querySelector('.issue-type-badge');
-        const typeEl = document.getElementById('modal-issue-type') as HTMLSelectElement;
-        if (typeBadge && typeEl) {
-          const t = typeBadge.textContent?.toLowerCase().trim();
-          if (t === 'task' || t === 'bug' || t === 'story') {
-             typeEl.value = t;
+        if (modal && titleEl && idEl && descEl && pointsEl) {
+          idEl.textContent = card.id.substring(0, 8).toUpperCase();
+          idEl.setAttribute('data-full-id', card.id);
+          (titleEl as HTMLInputElement).value = card.querySelector('h4')?.textContent || '';
+          descEl.value = card.querySelector('p')?.textContent || '';
+          pointsEl.value = card.getAttribute('data-points') || '0';
+          
+          const sprintEl = document.getElementById('modal-issue-sprint') as HTMLSelectElement;
+          if (sprintEl) {
+            sprintEl.value = card.getAttribute('data-sprint-id') || 'backlog';
           }
+
+          const typeBadge = card.querySelector('.issue-type-badge');
+          const typeEl = document.getElementById('modal-issue-type') as HTMLSelectElement;
+          if (typeBadge && typeEl) {
+            const t = typeBadge.textContent?.toLowerCase().trim();
+            if (t === 'task' || t === 'bug' || t === 'story') {
+               typeEl.value = t;
+            }
+          }
+          
+          // Update Assignee and Reporter
+          const assigneeId = card.getAttribute('data-assignee-id');
+          const reporterId = card.getAttribute('data-reporter-id');
+          
+          const assigneeSelect = document.getElementById('modal-issue-assignee') as HTMLSelectElement;
+          const reporterSelect = document.getElementById('modal-issue-reporter') as HTMLSelectElement;
+          
+          if (assigneeSelect) assigneeSelect.value = assigneeId || '';
+          if (reporterSelect) reporterSelect.value = reporterId || 'system';
+          
+          // @ts-ignore
+          if (window.loadIssueAttachments) window.loadIssueAttachments(card.id);
+
+          modal.classList.remove('translate-x-full');
+          document.getElementById('issue-details-backdrop')?.classList.remove('hidden');
         }
-        
-        modal.classList.remove('translate-x-full');
-        document.getElementById('issue-details-backdrop')?.classList.remove('hidden');
+      } catch (err: any) {
+        alert('Error opening modal: ' + err.message + '\n' + err.stack);
       }
     });
   });

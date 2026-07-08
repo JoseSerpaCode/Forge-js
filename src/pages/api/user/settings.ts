@@ -28,6 +28,23 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
     
     if (avatar_url !== undefined) {
+      if (typeof avatar_url !== 'string') {
+        return new Response('Invalid avatar format', { status: 400 });
+      }
+      
+      // Size limit ~2.5MB base64 string
+      if (avatar_url.length > 2.8 * 1024 * 1024) {
+        return new Response('Avatar size exceeds 2MB limit', { status: 413 });
+      }
+
+      if (avatar_url !== '' && !avatar_url.startsWith('http://') && !avatar_url.startsWith('https://') && !avatar_url.startsWith('data:image/')) {
+        return new Response('Invalid avatar source. Must be HTTP/S or data:image', { status: 400 });
+      }
+
+      if (avatar_url.startsWith('data:image/svg+xml')) {
+        return new Response('SVG uploads are not permitted for security reasons', { status: 400 });
+      }
+
       db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').run(avatar_url, user.id);
     }
     

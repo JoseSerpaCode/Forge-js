@@ -21,7 +21,7 @@ const memberships = db.prepare(`
       <div class="flex items-center gap-6 mb-6">
         <div class="relative group cursor-pointer w-20 h-20 rounded-full border-2 border-forge-border bg-forge-bg flex items-center justify-center shrink-0 overflow-hidden" id="avatar-preview-container">
           {user.avatar_url ? (
-            <img src={user.avatar_url} class="w-full h-full object-cover" id="avatar-preview-img" />
+            <img src={user.avatar_url} class="w-full h-full object-cover" id="avatar-preview-img" alt="User Avatar" loading="lazy" />
           ) : (
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-forge-secondary" id="avatar-preview-default"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           )}
@@ -45,7 +45,8 @@ const memberships = db.prepare(`
           <div>
             <label class="block text-sm font-bold text-forge-muted uppercase mb-1">Theme</label>
             <select id="theme-selector" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-secondary">
-              <option value="dark">Dark Theme</option>
+              <option value="dark">Forge Dark (Orange)</option>
+              <option value="ocean">Ocean Dark (Blue)</option>
               <option value="light">Light Mode</option>
             </select>
           </div>
@@ -111,7 +112,7 @@ const memberships = db.prepare(`
                       </button>
                     </div>
                   ) : (
-                    <button class="btn-leave-ws text-xs bg-forge-panel text-forge-muted border border-forge-border px-3 py-1.5 rounded hover:text-forge-text transition-colors" data-id={ws.id}>
+                    <button class="btn-leave-ws text-xs bg-forge-panel text-forge-muted border border-forge-border px-3 py-1.5 rounded hover:text-forge-text transition-colors" data-id={ws.id} data-user-id={user.id}>
                       Leave
                     </button>
                   )}
@@ -148,29 +149,52 @@ const memberships = db.prepare(`
   avatarInput?.addEventListener('change', (e) => {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
+      if (file.size > 10 * 1024 * 1024) {
         // @ts-ignore
-        return window.showToast('Image must be less than 2MB', true);
+        return window.showToast('Image is too massive, keep it under 10MB', true);
       }
+      
       const reader = new FileReader();
-      reader.onload = (ev) => {
-        newAvatarBase64 = ev.target?.result as string;
-        let avatarPreview = document.getElementById('avatar-preview-img') as HTMLImageElement;
-        
-        if (avatarPreview) {
-          avatarPreview.src = newAvatarBase64;
-        } else {
-          // If using the default SVG, replace it with an img
-          const container = document.getElementById('avatar-preview-container');
-          const defaultIcon = document.getElementById('avatar-preview-default');
-          if (defaultIcon) defaultIcon.style.display = 'none';
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_SIZE = 512;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height && width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          } else if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) ctx.drawImage(img, 0, 0, width, height);
+
+          // Magia: Convertir a WebP con calidad del 80%
+          newAvatarBase64 = canvas.toDataURL('image/webp', 0.8);
           
-          const img = document.createElement('img');
-          img.src = newAvatarBase64;
-          img.id = 'avatar-preview-img';
-          img.className = 'w-full h-full object-cover z-0';
-          container?.insertBefore(img, container.firstChild);
-        }
+          let avatarPreview = document.getElementById('avatar-preview-img') as HTMLImageElement;
+          if (avatarPreview) {
+            avatarPreview.src = newAvatarBase64;
+          } else {
+            const container = document.getElementById('avatar-preview-container');
+            const defaultIcon = document.getElementById('avatar-preview-default');
+            if (defaultIcon) defaultIcon.style.display = 'none';
+            
+            const newImg = document.createElement('img');
+            newImg.src = newAvatarBase64;
+            newImg.id = 'avatar-preview-img';
+            newImg.className = 'w-full h-full object-cover z-0';
+            container?.insertBefore(newImg, container.firstChild);
+          }
+        };
+        img.src = e.target?.result as string;
       };
       reader.readAsDataURL(file);
     }
@@ -230,11 +254,27 @@ const memberships = db.prepare(`
     });
   });
 
-  // Leave Workspace (placeholder alert)
+  // Leave Workspace
   document.querySelectorAll('.btn-leave-ws').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async (e) => {
+      const wsId = (e.currentTarget as HTMLElement).getAttribute('data-id');
+      const userId = (e.currentTarget as HTMLElement).getAttribute('data-user-id');
+      
       // @ts-ignore
-      window.showToast('Leaving workspaces requires a separate endpoint that is pending. For now, only owners can delete.');
+      window.forgeConfirm('Are you sure you want to leave this workspace?', async () => {
+        const res = await fetch(`/api/workspaces/${wsId}/members`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId })
+        });
+        
+        if (res.ok) {
+          window.location.reload();
+        } else {
+          // @ts-ignore
+          window.showToast('Failed to leave: ' + await res.text(), true);
+        }
+      });
     });
   });
 </script>

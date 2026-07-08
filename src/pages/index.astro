@@ -58,7 +58,7 @@ const myTasks = db.prepare(`
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-lg bg-forge-bg border border-forge-border flex items-center justify-center text-forge-secondary font-black text-lg shadow-sm shrink-0 overflow-hidden">
                   {ws.icon && ws.icon.startsWith('data:image') ? (
-                    <img src={ws.icon} class="w-full h-full object-cover" />
+                    <img src={ws.icon} class="w-full h-full object-cover" alt={`${ws.name} Icon`} loading="lazy" />
                   ) : (
                     ws.icon ? ws.icon : ws.name.charAt(0).toUpperCase()
                   )}
