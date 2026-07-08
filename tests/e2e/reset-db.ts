@@ -18,8 +18,11 @@ export default function resetDb() {
   // Since db is already loaded, we can't delete the file, we just clear tables.
   
   db.exec(`
-    DELETE FROM workspace_members;
+    DELETE FROM attachments;
+    DELETE FROM pages;
     DELETE FROM issues;
+    DELETE FROM sprints;
+    DELETE FROM workspace_members;
     DELETE FROM workspaces;
     DELETE FROM sessions;
     DELETE FROM users;
