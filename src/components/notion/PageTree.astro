@@ -125,6 +125,33 @@ for (const p of pages) {
     });
   });
 
+  document.querySelectorAll('.delete-tree-page-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = btn.getAttribute('data-id');
+      if (!id) return;
+      
+      // @ts-ignore
+      window.forgeConfirm('Are you sure you want to delete this page and all its subpages?', async () => {
+        const res = await fetch(`/api/pages/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          // Check if we are currently on the deleted page
+          const sysTagMatch = window.location.pathname.match(/^\/w\/([^/]+)/);
+          const sysTag = sysTagMatch ? sysTagMatch[1] : '';
+          if (window.location.pathname.includes(`/p/${id}`)) {
+            window.location.href = `/w/${sysTag}/p`;
+          } else {
+            window.location.reload();
+          }
+        } else {
+          // @ts-ignore
+          window.showToast('Failed to delete: ' + await res.text(), true);
+        }
+      });
+    });
+  });
+
   // Toggle PageTree Sidebar logic
   const toggleBtn = document.getElementById('btn-toggle-tree');
   const aside = document.getElementById('page-tree-aside');
