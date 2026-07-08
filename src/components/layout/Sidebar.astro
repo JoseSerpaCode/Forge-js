@@ -9,7 +9,7 @@ import db from '../../lib/db';
 
 let sys_tag = Astro.params.sys_tag;
 if (!sys_tag && user?.last_workspace_id) {
-  const ws = db.prepare('SELECT sys_tag FROM workspaces WHERE id = ?').get(user.last_workspace_id) as any;
+  const ws = db.prepare('SELECT sys_tag FROM workspaces WHERE sys_tag = ?').get(user.last_workspace_id) as any;
   if (ws) {
     sys_tag = ws.sys_tag;
   }

@@ -18,11 +18,15 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
 
   try {
     // Relying on CASCADE in SQLite schema to delete pages, issues, etc.
+    const ws = db.prepare('SELECT sys_tag FROM workspaces WHERE id = ?').get(workspaceId) as any;
+    
     // Let's explicitly trigger a delete
     db.prepare('DELETE FROM workspaces WHERE id = ?').run(workspaceId);
     
     // Clear last_workspace_id if users were pointing to it
-    db.prepare('UPDATE users SET last_workspace_id = NULL WHERE last_workspace_id = ?').run(workspaceId);
+    if (ws) {
+      db.prepare('UPDATE users SET last_workspace_id = NULL WHERE last_workspace_id = ?').run(ws.sys_tag);
+    }
     
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (err: any) {
