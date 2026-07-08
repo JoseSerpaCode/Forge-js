@@ -17,6 +17,10 @@ if (workspaceId) {
   const ws = db.prepare('SELECT name FROM workspaces WHERE id = ?').get(workspaceId) as any;
   if (ws) workspaceName = ws.name;
 }
+
+// Prevent BFCache and caching to ensure data is always fresh and 404s trigger correctly
+Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+Astro.response.headers.set('Pragma', 'no-cache');
 ---
 
 <html lang="en" data-theme={user?.theme_preference || 'dark'}>
