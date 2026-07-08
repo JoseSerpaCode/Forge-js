@@ -42,7 +42,7 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
     if (data.assignee_id !== undefined) {
       db.prepare('UPDATE issues SET assignee_id = ? WHERE id = ?').run(data.assignee_id, id);
       
-      if (data.assignee_id && data.assignee_id !== user.id) {
+      if (data.assignee_id) {
         const ws = db.prepare('SELECT sys_tag FROM workspaces WHERE id = ?').get(issue.workspace_id) as any;
         if (ws) {
           const crypto = require('crypto');
@@ -55,7 +55,7 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
             'Task Assigned', 
             `${user.username} assigned you to issue ${id.substring(0,8)}`, 
             'info', 
-            `/w/${ws.sys_tag}/board`
+            `/w/${ws.sys_tag}/board?issue=${id}`
           );
         }
       }
