@@ -14,8 +14,10 @@ test('Kanban: Positional rebalancing resolves collisions in Backlog (sprint_id I
   const cookies = await page.context().cookies();
   const cookieHeader = cookies.map(c => `${c.name}=${c.value}`).join('; ');
 
-  // 2. Limpiar issues existentes en ws-jose-test y crear dos issues en backlog (sprint_id = null)
-  db.prepare("DELETE FROM issues WHERE workspace_id = 'ws-jose-test'").run();
+  // 2. Crear un workspace dedicado para evitar colisiones con test-kanban-security
+  db.prepare("INSERT OR IGNORE INTO workspaces (id, name, sys_tag, created_by) VALUES ('ws-rebalance', 'Rebalance WS', 'ws-rebalance', 'test-user-jose')").run();
+  db.prepare("INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, ws_role) VALUES ('ws-rebalance', 'test-user-jose', 'owner')").run();
+  db.prepare("DELETE FROM issues WHERE workspace_id = 'ws-rebalance'").run();
   
   const reporter = db.prepare("SELECT id FROM users WHERE username = 'jose'").get() as { id: string };
   const reporterId = reporter?.id || 'unknown';
@@ -27,17 +29,17 @@ test('Kanban: Positional rebalancing resolves collisions in Backlog (sprint_id I
   // Insert issue 1 and 2 extremely close to each other to exhaust precision
   db.prepare(`
     INSERT INTO issues (id, workspace_id, reporter_id, title, type, status, position, sprint_id) 
-    VALUES (?, 'ws-jose-test', ?, 'Issue 1', 'task', 'todo', 100000.0000001, null)
+    VALUES (?, 'ws-rebalance', ?, 'Issue 1', 'task', 'todo', 100000.0000001, null)
   `).run(issue1, reporterId);
 
   db.prepare(`
     INSERT INTO issues (id, workspace_id, reporter_id, title, type, status, position, sprint_id) 
-    VALUES (?, 'ws-jose-test', ?, 'Issue 2', 'task', 'todo', 100000.0000002, null)
+    VALUES (?, 'ws-rebalance', ?, 'Issue 2', 'task', 'todo', 100000.0000002, null)
   `).run(issue2, reporterId);
 
   db.prepare(`
     INSERT INTO issues (id, workspace_id, reporter_id, title, type, status, position, sprint_id) 
-    VALUES (?, 'ws-jose-test', ?, 'Issue 3', 'task', 'todo', 300000, null)
+    VALUES (?, 'ws-rebalance', ?, 'Issue 3', 'task', 'todo', 300000, null)
   `).run(issue3, reporterId);
 
   // Intentar mover Issue 3 justo entre Issue 1 e Issue 2
@@ -53,7 +55,7 @@ test('Kanban: Positional rebalancing resolves collisions in Backlog (sprint_id I
   expect(res.status()).toBe(200);
 
   // 3. Verificar en base de datos si ocurrió el rebalanceo
-  const issues = db.prepare(`SELECT id, position FROM issues WHERE workspace_id = 'ws-jose-test' ORDER BY position ASC`).all() as any[];
+  const issues = db.prepare(`SELECT id, position FROM issues WHERE workspace_id = 'ws-rebalance' ORDER BY position ASC`).all() as any[];
   
   // El rebalanceo debería haber asignado 100000, 200000 y 300000 limpios
   expect(issues.length).toBe(3);

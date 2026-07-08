@@ -59,7 +59,7 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
     // Check if the requested position is too close to any neighbor
     let needsRebalance = false;
     for (const neighbor of neighbors) {
-      if (Math.abs(neighbor.position - position) < 1e-10) {
+      if (Math.abs(neighbor.position - position) < 1e-5) {
         needsRebalance = true;
         break;
       }

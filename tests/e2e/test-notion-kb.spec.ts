@@ -21,11 +21,7 @@ test('Knowledge Base: Create, auto-save and cascading delete', async ({ page }) 
   // Change title and content
   const titleInput = page.locator('#editor-title');
   await page.waitForTimeout(500);
-  await titleInput.click();
-  // Clear the title if any
-  await page.keyboard.press('Control+A');
-  await page.keyboard.press('Backspace');
-  await page.keyboard.type('My First Page');
+  await titleInput.fill('My First Page');
   
   await page.waitForSelector('.ce-paragraph');
   await page.locator('.ce-paragraph').first().click();

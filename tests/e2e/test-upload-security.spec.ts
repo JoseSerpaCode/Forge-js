@@ -15,18 +15,13 @@ test.describe('Upload API Security', () => {
     await page.goto('/w/test-workspace/board');
     await page.waitForLoadState('networkidle');
 
-    // Grab the cookie for API requests
-    const cookies = await page.context().cookies();
-    const sessionCookie = cookies.find(c => c.name === 'forge_session');
-
     // Create a page
-    const newPageRes = await request.post('/api/pages', {
+    const newPageRes = await page.request.post('/api/pages', {
       data: { title: 'Security Test Page' },
-      headers: { 
-        'Cookie': `forge_session=${sessionCookie?.value}`,
-        'Origin': 'http://localhost:4322'
-      }
+      headers: { 'Origin': 'http://localhost:4322' }
     });
+    
+    expect(newPageRes.status()).toBe(200);
     const newPage = await newPageRes.json();
     const entityId = newPage.id;
     expect(entityId).toBeTruthy();
@@ -35,9 +30,10 @@ test.describe('Upload API Security', () => {
     const boundary = '----WebKitFormBoundary7MA4YWxkTrZu0gW';
     const payload = `--${boundary}\r\nContent-Disposition: form-data; name="entity_type"\r\n\r\npage\r\n--${boundary}\r\nContent-Disposition: form-data; name="entity_id"\r\n\r\n${entityId}\r\n--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="../../../malicious.txt"\r\nContent-Type: text/plain\r\n\r\nMALICIOUS CONTENT\r\n--${boundary}--`;
 
-    const res = await request.post('/api/upload', {
+    const res = await page.request.post('/api/upload', {
       headers: {
-        'Content-Type': `multipart/form-data; boundary=${boundary}`
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        'Origin': 'http://localhost:4322'
       },
       data: payload
     });
