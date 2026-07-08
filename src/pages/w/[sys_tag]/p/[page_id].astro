@@ -10,7 +10,7 @@ if (!user) return Astro.redirect('/login');
 
 const { sys_tag, page_id } = Astro.params;
 const ws = db.prepare('SELECT id FROM workspaces WHERE sys_tag = ?').get(sys_tag) as any;
-if (!ws) return new Response('Workspace not found', { status: 404 });
+if (!ws) return Astro.redirect('/404');
 
 // Guard check for read access
 const access = checkWorkspaceAccess(user.id, user.is_sysadmin, ws.id, 'viewer');

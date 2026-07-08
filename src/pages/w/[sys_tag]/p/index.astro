@@ -8,7 +8,7 @@ if (!user) return Astro.redirect('/login');
 
 const { sys_tag } = Astro.params;
 const ws = db.prepare('SELECT id FROM workspaces WHERE sys_tag = ?').get(sys_tag) as any;
-if (!ws) return new Response('Workspace not found', { status: 404 });
+if (!ws) return Astro.redirect('/404');
 
 const firstPage = db.prepare('SELECT id FROM pages WHERE workspace_id = ? ORDER BY created_at ASC LIMIT 1').get(ws.id) as any;
 

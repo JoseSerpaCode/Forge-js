@@ -1,0 +1,26 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout title="Page Not Found | Forge OS">
+  <div class="flex-1 flex flex-col items-center justify-center h-full text-center px-4">
+    <div class="w-32 h-32 mb-8 relative">
+      <div class="absolute inset-0 bg-forge-primary/20 blur-2xl rounded-full"></div>
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-full h-full text-forge-primary relative z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+        <path d="M12 9v4"/>
+        <path d="M12 17h.01"/>
+      </svg>
+    </div>
+    
+    <h1 class="text-6xl font-black text-forge-text mb-4 tracking-tighter drop-shadow-[0_0_15px_rgba(255,93,0,0.3)]">404</h1>
+    <h2 class="text-2xl font-bold text-forge-text mb-4">Workspace or Page Not Found</h2>
+    <p class="text-forge-muted max-w-md mb-8">
+      The project you are looking for does not exist, was deleted, or you don't have permissions to view it.
+    </p>
+    
+    <a href="/" class="px-6 py-3 bg-forge-primary hover:bg-forge-accent-hover text-forge-bg font-bold rounded-lg shadow-[0_0_15px_var(--forge-accent-primary)] transition-all transform hover:-translate-y-1">
+      Return to Hub
+    </a>
+  </div>
+</MainLayout>
