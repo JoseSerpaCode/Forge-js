@@ -132,7 +132,7 @@ const members = db.prepare(`
       </select>
     </div>
     <div class="flex justify-end gap-3 mt-6">
-      <button type="button" class="px-4 py-2 text-forge-muted hover:text-forge-text" onclick="(document.getElementById('add-member-modal') as HTMLDialogElement).close()">Cancel</button>
+      <button type="button" class="px-4 py-2 text-forge-muted hover:text-forge-text" onclick="document.getElementById('add-member-modal').close()">Cancel</button>
       <button type="button" id="btn-confirm-add" class="bg-forge-secondary text-forge-bg px-4 py-2 rounded font-bold hover:opacity-90 transition-opacity" data-ws-id={ws.id}>Add</button>
     </div>
   </dialog>

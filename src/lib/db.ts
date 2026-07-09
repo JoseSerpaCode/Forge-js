@@ -232,6 +232,7 @@ CREATE TABLE IF NOT EXISTS notifications (
  user_id TEXT NOT NULL,
  title TEXT NOT NULL,
  message TEXT NOT NULL,
+ type TEXT DEFAULT 'info',
  is_read BOOLEAN DEFAULT 0 CHECK(is_read IN (0, 1)),
  link_url TEXT,
  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
