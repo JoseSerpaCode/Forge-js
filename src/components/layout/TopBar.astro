@@ -128,9 +128,15 @@ const { title, workspaceName } = Astro.props;
             } else {
                let html = '';
                data.forEach((item: any) => {
-                 const icon = item.type === 'workspace' ? '🏢' : item.type === 'user' ? '👤' : item.type === 'issue' ? '📋' : '📄';
-                 const action = item.type === 'user' ? `onclick="window.showToast('User profiles coming soon'); event.preventDefault()"` : '';
-                 html += `<li><a href="${item.url}" ${action} class="search-item p-2 hover:bg-forge-panel rounded cursor-pointer text-sm text-forge-text border-l-2 border-transparent hover:border-forge-secondary transition-all flex items-center gap-2"><span class="text-xs opacity-70">${icon}</span> <span class="truncate flex-1 font-medium">${item.title}</span> <span class="text-[10px] text-forge-muted uppercase tracking-wider">${item.type}</span></a></li>`;
+                 const isHint = item.type === 'hint';
+                 const icon = isHint ? '⚡' : (item.type === 'workspace' ? '🏢' : item.type === 'user' ? '👤' : item.type === 'issue' ? '📋' : '📄');
+                 let action = '';
+                 if (isHint) {
+                    action = `onclick="event.preventDefault(); const s = document.getElementById('global-search'); s.value = '${item.insert}'; s.dispatchEvent(new Event('input'))"`;
+                 } else if (item.type === 'user') {
+                    action = `onclick="window.showToast('User profiles coming soon'); event.preventDefault()"`;
+                 }
+                 html += `<li><a href="${item.url || '#'}" ${action} class="search-item p-2 hover:bg-forge-panel rounded cursor-pointer text-sm text-forge-text border-l-2 border-transparent hover:border-forge-secondary transition-all flex items-center gap-2"><span class="text-xs opacity-70">${icon}</span> <span class="truncate flex-1 font-medium">${item.title}</span> <span class="text-[10px] text-forge-muted uppercase tracking-wider">${item.type}</span></a></li>`;
                });
                searchResults.innerHTML = html;
             }
