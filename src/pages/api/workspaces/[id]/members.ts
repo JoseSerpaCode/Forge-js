@@ -19,7 +19,7 @@ export const POST: APIRoute = async ({ request, params, locals }) => {
     const { username, role } = await request.json();
     if (!username || !role) return new Response('Username and role required', { status: 400 });
     
-    const VALID_ROLES = ['owner', 'editor', 'commenter', 'viewer'];
+    const VALID_ROLES = ['owner', 'editor', 'viewer'];
     if (!VALID_ROLES.includes(role)) return new Response('Invalid role', { status: 400 });
 
     const targetUser = db.prepare('SELECT id FROM users WHERE username = ?').get(username) as any;
@@ -28,8 +28,24 @@ export const POST: APIRoute = async ({ request, params, locals }) => {
     const existing = db.prepare('SELECT * FROM workspace_members WHERE workspace_id = ? AND user_id = ?').get(workspaceId, targetUser.id);
     if (existing) return new Response('User is already a member', { status: 400 });
 
-    const existingInvite = db.prepare("SELECT id FROM notifications WHERE user_id = ? AND type = 'invite' AND link_url LIKE ?").get(targetUser.id, `%"ws_id":"${workspaceId}"%`);
-    if (existingInvite) return new Response('An invitation is already pending', { status: 400 });
+    // [M-3 FIX] More robust duplicate check using a dedicated column approach
+    // Check if user already has a pending invite to THIS workspace
+    const existingInvites = db.prepare("SELECT id, link_url FROM notifications WHERE user_id = ? AND type = 'invite'").all(targetUser.id) as any[];
+    const hasPendingInvite = existingInvites.some(notif => {
+      try {
+        const payload = JSON.parse(notif.link_url);
+        return payload.ws_id === workspaceId;
+      } catch { return false; }
+    });
+    if (hasPendingInvite) return new Response('An invitation is already pending for this user', { status: 400 });
+
+    // Rate limit: max 20 invites sent by this owner in the last 24 hours
+    const recentInviteCount = db.prepare(
+      "SELECT COUNT(*) as count FROM notifications WHERE type = 'invite' AND created_at >= datetime('now', '-1 day') AND message LIKE ?"
+    ).get(`%${user.username} has invited%`) as any;
+    if (recentInviteCount.count >= 20) {
+      return new Response('Too many invitations sent today. Please try again tomorrow.', { status: 429 });
+    }
 
     const wsInfo = db.prepare('SELECT name FROM workspaces WHERE id = ?').get(workspaceId) as any;
     db.prepare(`
@@ -46,7 +62,8 @@ export const POST: APIRoute = async ({ request, params, locals }) => {
 
     return new Response(JSON.stringify({ success: true, invited: true }), { status: 200 });
   } catch (err: any) {
-    return new Response(err.message, { status: 500 });
+    console.error('[members POST] Unhandled error:', err);
+    return new Response('Internal Server Error', { status: 500 });
   }
 };
 
@@ -66,7 +83,7 @@ export const PATCH: APIRoute = async ({ request, params, locals }) => {
     const { userId, role } = await request.json();
     if (!userId || !role) return new Response('User ID and role required', { status: 400 });
 
-    const VALID_ROLES = ['owner', 'editor', 'commenter', 'viewer'];
+    const VALID_ROLES = ['owner', 'editor', 'viewer'];
     if (!VALID_ROLES.includes(role)) return new Response('Invalid role', { status: 400 });
 
     // Prevent removing the last owner
@@ -82,7 +99,8 @@ export const PATCH: APIRoute = async ({ request, params, locals }) => {
     db.prepare('UPDATE workspace_members SET ws_role = ? WHERE workspace_id = ? AND user_id = ?').run(role, workspaceId, userId);
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (err: any) {
-    return new Response(err.message, { status: 500 });
+    console.error('[members PATCH] Unhandled error:', err);
+    return new Response('Internal Server Error', { status: 500 });
   }
 };
 
@@ -127,6 +145,7 @@ export const DELETE: APIRoute = async ({ request, params, locals }) => {
 
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (err: any) {
-    return new Response(err.message, { status: 500 });
+    console.error('[members DELETE] Unhandled error:', err);
+    return new Response('Internal Server Error', { status: 500 });
   }
 };

@@ -50,7 +50,7 @@ db.exec(`
 CREATE TABLE IF NOT EXISTS workspace_members (
  workspace_id TEXT NOT NULL,
  user_id TEXT NOT NULL,
- ws_role TEXT NOT NULL CHECK(ws_role IN ('owner', 'editor', 'commenter', 'viewer')),
+ ws_role TEXT NOT NULL CHECK(ws_role IN ('owner', 'editor', 'viewer')),
  joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
  PRIMARY KEY (workspace_id, user_id),
  FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
@@ -239,5 +239,67 @@ CREATE TABLE IF NOT EXISTS notifications (
  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 `);
+
+// 6. KB ↔ Kanban Integration: Bidirectional links + shared labels
+db.exec(`
+CREATE TABLE IF NOT EXISTS labels (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  color TEXT NOT NULL DEFAULT '#00E5FF',
+  FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_labels_workspace ON labels(workspace_id);
+
+CREATE TABLE IF NOT EXISTS issue_labels (
+  issue_id TEXT NOT NULL,
+  label_id TEXT NOT NULL,
+  PRIMARY KEY (issue_id, label_id),
+  FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE,
+  FOREIGN KEY (label_id) REFERENCES labels(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS page_labels (
+  page_id TEXT NOT NULL,
+  label_id TEXT NOT NULL,
+  PRIMARY KEY (page_id, label_id),
+  FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE,
+  FOREIGN KEY (label_id) REFERENCES labels(id) ON DELETE CASCADE
+);
+
+-- Bidirectional Issue ↔ Page links (KB integration)
+CREATE TABLE IF NOT EXISTS issue_page_links (
+  issue_id TEXT NOT NULL,
+  page_id TEXT NOT NULL,
+  linked_by TEXT NOT NULL,
+  linked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (issue_id, page_id),
+  FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE,
+  FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE,
+  FOREIGN KEY (linked_by) REFERENCES users(id)
+);
+
+-- Milestones for roadmap view
+CREATE TABLE IF NOT EXISTS milestones (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  target_date DATETIME,
+  status TEXT CHECK(status IN ('planned', 'achieved', 'missed')) DEFAULT 'planned',
+  description TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_milestones_workspace ON milestones(workspace_id);
+`);
+
+// Add sprint goal column if not already present (safe migration)
+try {
+  db.exec(`ALTER TABLE sprints ADD COLUMN goal TEXT`);
+} catch {}
+// Add priority column to issues if not present
+try {
+  db.exec(`ALTER TABLE issues ADD COLUMN due_date DATETIME`);
+} catch {}
 
 export default db;

@@ -4,29 +4,20 @@ import { checkWorkspaceAccess } from '../../../lib/guard';
 import { sanitizeEditorBlocks } from '../../../lib/sanitizer';
 
 // Helper to resolve workspace and check permissions
-function authorize(user: any, requiredRole: 'owner' | 'editor' | 'commenter' | 'viewer', pageId: string) {
-  if (!user || !user.last_workspace_id) return { error: new Response('Unauthorized', { status: 401 }) };
+function authorize(user: any, requiredRole: 'owner' | 'editor' | 'viewer', pageId: string) {
+  if (!user) return { error: new Response('Unauthorized', { status: 401 }) };
 
-  const ws = db.prepare('SELECT id FROM workspaces WHERE sys_tag = ?').get(user.last_workspace_id) as any;
-  if (!ws) return { error: new Response('Workspace not found', { status: 404 }) };
-  const workspaceId = ws.id;
-
-  // 1. & 2. Explicitly verify the page exists AND belongs to this workspace FIRST
+  // [A-3 FIX] Look up the page first to get its actual workspace_id from DB
+  // Never rely on user.last_workspace_id which can be stale with multiple tabs
   const page = db.prepare('SELECT id, workspace_id FROM pages WHERE id = ?').get(pageId) as any;
-  if (!page || page.workspace_id !== workspaceId) {
-    return { error: new Response('Page not found or belongs to another workspace', { status: 404 }) }; // 404 prevents leaking existence
-  }
+  if (!page) return { error: new Response('Not Found', { status: 404 }) };
 
-  // 3. Solo si la página pertenece al workspace correcto, invocar al Guard para validar el rol
-  const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspaceId, requiredRole);
+  const access = checkWorkspaceAccess(user.id, user.is_sysadmin, page.workspace_id, requiredRole);
   if (!access.granted) {
-    if (access.reason === 'not_member') {
-      return { error: new Response('Page not found or belongs to another workspace', { status: 404 }) };
-    }
-    return { error: new Response(access.error, { status: 403 }) };
+    return { error: new Response('Not Found', { status: 404 }) }; // Use 404 to avoid leaking existence
   }
 
-  return { workspaceId, page };
+  return { workspaceId: page.workspace_id, page };
 }
 
 export const GET: APIRoute = async ({ params, locals }) => {
@@ -92,7 +83,8 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
     }
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    console.error('[pages/[id] PUT] Unhandled error:', err);
+    return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 };
 
@@ -100,9 +92,8 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
   const { id } = params;
   if (!id) return new Response('Bad Request', { status: 400 });
 
-  // Technical Debt Note: Using 'owner' role for DELETE since there is no soft-delete. 
-  // Should be re-evaluated to 'editor' when soft-delete (deleted_at) is implemented.
-  const auth = authorize(locals.user, 'owner', id);
+  // [B-2 FIX] Editors can delete pages; previously required 'owner' which was overly restrictive
+  const auth = authorize(locals.user, 'editor', id);
   if (auth.error) return auth.error;
 
   // Explicit IDOR mitigation: AND workspace_id = ?

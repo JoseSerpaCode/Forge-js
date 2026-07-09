@@ -2,10 +2,20 @@ import type { APIRoute } from 'astro';
 import db from '../../../lib/db';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { checkRateLimit } from '../../../lib/rateLimit';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     const { username, password } = await request.json();
+
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || request.headers.get('cf-connecting-ip') || 'unknown';
+    const rateCheck = checkRateLimit(ip);
+    if (!rateCheck.allowed) {
+      return new Response(JSON.stringify({ error: `Too many attempts. Please try again in ${rateCheck.retryAfter} seconds.` }), {
+        status: 429,
+        headers: { 'Retry-After': String(rateCheck.retryAfter), 'Content-Type': 'application/json' }
+      });
+    }
     
     if (!username || !password) {
       return new Response(JSON.stringify({ error: 'Faltan credenciales' }), { status: 400 });

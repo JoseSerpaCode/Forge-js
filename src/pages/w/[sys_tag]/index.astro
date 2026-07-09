@@ -1,4 +1,5 @@
 ---
+// src/pages/w/[sys_tag]/index.astro — Redesigned Dashboard
 import MainLayout from '../../../layouts/MainLayout.astro';
 import db from '../../../lib/db';
 import { checkWorkspaceAccess } from '../../../lib/guard';
@@ -8,54 +9,556 @@ const user = Astro.locals.user;
 
 if (!user) return Astro.redirect('/login');
 
-const workspace = db.prepare('SELECT id, name FROM workspaces WHERE sys_tag = ?').get(sys_tag) as any;
+const workspace = db.prepare('SELECT id, name, icon, description FROM workspaces WHERE sys_tag = ?').get(sys_tag) as any;
 if (!workspace) return Astro.redirect('/404');
 
 const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspace.id, 'viewer');
 if (!access.granted) return new Response('Access Denied', { status: 403 });
-const activeSprint = db.prepare("SELECT id, name FROM sprints WHERE workspace_id = ? AND status = 'active' LIMIT 1").get(workspace.id) as any;
-const pendingIssues = db.prepare("SELECT COUNT(*) as count FROM issues WHERE workspace_id = ? AND status != 'done'").get(workspace.id) as any;
-const totalPages = db.prepare("SELECT COUNT(*) as count FROM pages WHERE workspace_id = ?").get(workspace.id) as any;
+
+// ──── Stats ────
+const activeSprint = db.prepare(`
+  SELECT id, name, start_date, end_date, goal 
+  FROM sprints WHERE workspace_id = ? AND status = 'active' 
+  LIMIT 1
+`).get(workspace.id) as any;
+
+const pendingIssues = db.prepare(`
+  SELECT COUNT(*) as count FROM issues 
+  WHERE workspace_id = ? AND status != 'done'
+`).get(workspace.id) as any;
+
+const blockedIssues = db.prepare(`
+  SELECT COUNT(*) as count FROM issues 
+  WHERE workspace_id = ? AND status = 'blocked'
+`).get(workspace.id) as any;
+
+const totalPages = db.prepare(`
+  SELECT COUNT(*) as count FROM pages WHERE workspace_id = ?
+`).get(workspace.id) as any;
+
+// Issues due this week
+const oneWeekFromNow = new Date();
+oneWeekFromNow.setDate(oneWeekFromNow.getDate() + 7);
+const dueSoon = db.prepare(`
+  SELECT COUNT(*) as count FROM issues 
+  WHERE workspace_id = ? AND status != 'done' 
+  AND due_date IS NOT NULL AND due_date <= ?
+`).get(workspace.id, oneWeekFromNow.toISOString()) as any;
+
+// ──── Roadmap (All sprints) ────
+const allSprints = db.prepare(`
+  SELECT id, name, start_date, end_date, status, goal
+  FROM sprints WHERE workspace_id = ?
+  ORDER BY COALESCE(start_date, '9999') ASC
+  LIMIT 6
+`).all(workspace.id) as any[];
+
+// ──── Sprint progress ────
+let sprintProgress = 0;
+let sprintDaysLeft = 0;
+if (activeSprint) {
+  const doneInSprint = db.prepare(`
+    SELECT COUNT(*) as count FROM issues WHERE sprint_id = ? AND status = 'done'
+  `).get(activeSprint.id) as any;
+  const totalInSprint = db.prepare(`
+    SELECT COUNT(*) as count FROM issues WHERE sprint_id = ?
+  `).get(activeSprint.id) as any;
+  
+  sprintProgress = totalInSprint.count > 0 
+    ? Math.round((doneInSprint.count / totalInSprint.count) * 100) 
+    : 0;
+  
+  if (activeSprint.end_date) {
+    const endDate = new Date(activeSprint.end_date);
+    const now = new Date();
+    sprintDaysLeft = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+  }
+}
+
+// ──── Milestones ────
+const milestones = db.prepare(`
+  SELECT id, name, target_date, status 
+  FROM milestones WHERE workspace_id = ? AND status = 'planned'
+  ORDER BY target_date ASC LIMIT 3
+`).all(workspace.id) as any[];
+
+// ──── Upcoming events (sprint ends + milestone targets) ────
+const upcomingEvents: any[] = [];
+allSprints.filter(s => s.end_date && s.status !== 'completed').forEach(s => {
+  upcomingEvents.push({ date: s.end_date, title: `End of ${s.name}`, type: 'sprint' });
+});
+milestones.forEach(m => {
+  if (m.target_date) upcomingEvents.push({ date: m.target_date, title: m.name, type: 'milestone' });
+});
+upcomingEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+const nextEvents = upcomingEvents.slice(0, 4);
+
+// ──── Recent activity (audit log) ────
+const recentActivity = db.prepare(`
+  SELECT al.action, al.entity_type, al.entity_id, al.details_json, al.timestamp,
+         u.username, u.avatar_url
+  FROM audit_logs al
+  LEFT JOIN users u ON al.user_id = u.id
+  WHERE al.entity_id IN (
+    SELECT id FROM issues WHERE workspace_id = ?
+    UNION SELECT id FROM pages WHERE workspace_id = ?
+  )
+  ORDER BY al.timestamp DESC LIMIT 8
+`).all(workspace.id, workspace.id) as any[];
+
+// ──── Workload per member ────
+const members = db.prepare(`
+  SELECT u.id, u.username, u.avatar_url
+  FROM workspace_members wm JOIN users u ON wm.user_id = u.id
+  WHERE wm.workspace_id = ?
+  ORDER BY u.username ASC LIMIT 6
+`).all(workspace.id) as any[];
+
+for (const member of members) {
+  const openIssues = db.prepare(`
+    SELECT COUNT(*) as count FROM issues 
+    WHERE workspace_id = ? AND assignee_id = ? AND status != 'done'
+  `).get(workspace.id, member.id) as any;
+  member.openCount = openIssues.count;
+}
+const maxWorkload = Math.max(...members.map((m: any) => m.openCount), 1);
+
+// ──── My tasks in this workspace ────
+const myTasks = db.prepare(`
+  SELECT id, title, status, type, priority 
+  FROM issues 
+  WHERE workspace_id = ? AND assignee_id = ? AND status != 'done'
+  ORDER BY 
+    CASE priority WHEN 'highest' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END,
+    updated_at DESC
+  LIMIT 5
+`).all(workspace.id, user.id) as any[];
+
+// Date formatting helpers passed to template
+const formatDate = (dateStr: string | null) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T') + 'Z');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+const formatRelative = (dateStr: string) => {
+  const d = new Date(dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T') + 'Z');
+  const diff = Date.now() - d.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+};
+
+const actionLabel = (action: string) => {
+  const map: Record<string, string> = {
+    ISSUE_MOVED: 'moved issue',
+    ISSUE_CREATED: 'created issue',
+    ISSUE_UPDATED: 'updated issue',
+    PAGE_UPDATED: 'edited page',
+    PAGE_CREATED: 'created page',
+  };
+  return map[action] || action.toLowerCase().replace('_', ' ');
+};
+
+const statusColor: Record<string, string> = {
+  todo: 'bg-forge-muted/20 text-forge-muted',
+  'in-progress': 'bg-blue-500/20 text-blue-400',
+  'in_progress': 'bg-blue-500/20 text-blue-400',
+  review: 'bg-yellow-500/20 text-yellow-400',
+  done: 'bg-green-500/20 text-green-400',
+  blocked: 'bg-red-500/20 text-red-400',
+};
+const priorityColor: Record<string, string> = {
+  highest: 'text-red-400',
+  high: 'text-orange-400',
+  medium: 'text-yellow-400',
+  low: 'text-blue-400',
+  lowest: 'text-forge-muted',
+};
 ---
 
-<MainLayout title={`Dashboard - ${workspace.name}`} workspaceId={workspace.id}>
-  <div class="h-full flex flex-col">
-    <header class="mb-6">
-      <h1 class="text-2xl font-bold text-forge-text">{workspace.name} Dashboard</h1>
+<MainLayout title={`Dashboard — ${workspace.name}`} workspaceId={workspace.id}>
+  <div class="space-y-6 max-w-[1400px]">
+    
+    <!-- Header -->
+    <header class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-forge-text">{workspace.name}</h1>
+        <p class="text-sm text-forge-muted mt-0.5">Dashboard — workspace overview</p>
+      </div>
+      <div class="flex gap-2">
+        <a href={`/w/${sys_tag}/board`} class="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded bg-forge-secondary text-forge-bg hover:opacity-90 transition-opacity">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+          Open Board
+        </a>
+        <a href={`/w/${sys_tag}/p`} class="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded bg-forge-panel border border-forge-border text-forge-text hover:border-forge-secondary transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+          Knowledge Base
+        </a>
+      </div>
     </header>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      
-      <!-- Active Sprint Card -->
-      <div class="bg-forge-panel border border-forge-border p-6 rounded-lg flex flex-col">
-        <h3 class="text-sm font-bold text-forge-muted uppercase tracking-wider mb-4">Active Sprint</h3>
+
+    <!-- Stats Row -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Sprint activo -->
+      <div class="bg-forge-panel border border-forge-border rounded-xl p-4 hover:border-forge-secondary/50 transition-colors group">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-bold text-forge-muted uppercase tracking-wider">Sprint Activo</span>
+          <div class={`w-2 h-2 rounded-full ${activeSprint ? 'bg-forge-secondary animate-pulse' : 'bg-forge-muted'}`}></div>
+        </div>
         {activeSprint ? (
-          <div class="mt-auto">
-            <div class="text-3xl font-black text-forge-text">{activeSprint.name}</div>
-            <a href={`/w/${sys_tag}/board`} class="text-xs text-forge-secondary hover:underline mt-2 inline-block">Go to Board →</a>
-          </div>
-        ) : (
-          <div class="flex-1 flex flex-col items-center justify-center text-center p-4 border border-dashed border-forge-border/30 rounded bg-forge-bg/50 relative overflow-hidden mt-auto">
-            <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(circle at 50% 50%, var(--forge-muted) 2px, transparent 2px); background-size: 100% 100%;">
-              <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M 20 20 L 80 80 M 80 20 L 20 80" fill="none" stroke="currentColor" class="text-forge-muted" stroke-dasharray="2,2" stroke-width="0.5" /></svg>
+          <>
+            <div class="text-xl font-black text-forge-text mb-1 truncate">{activeSprint.name}</div>
+            <div class="flex items-center gap-2 mb-2">
+              <div class="flex-1 h-1 bg-forge-bg rounded-full overflow-hidden">
+                <div class="h-full bg-forge-secondary rounded-full transition-all" style={`width: ${sprintProgress}%`}></div>
+              </div>
+              <span class="text-[10px] font-mono text-forge-muted shrink-0">{sprintProgress}%</span>
             </div>
-            <p class="text-forge-muted font-mono text-[10px] mb-2 relative z-10 opacity-60">NO_ACTIVE_SPRINT</p>
-            <a href={`/w/${sys_tag}/board`} class="text-forge-secondary font-bold text-sm relative z-10 hover:bg-forge-secondary/10 px-2 py-1 rounded transition-colors">+ New Sprint</a>
+            <span class="text-xs text-forge-muted">
+              {sprintDaysLeft > 0 ? `Ends in ${sprintDaysLeft}d` : 'Ending today'}
+            </span>
+          </>
+        ) : (
+          <div class="mt-1">
+            <div class="text-forge-muted text-sm">No active sprint</div>
+            <a href={`/w/${sys_tag}/board`} class="text-xs text-forge-secondary hover:underline mt-1 inline-block">+ New Sprint</a>
           </div>
         )}
       </div>
 
-      <!-- Pending Issues Card -->
-      <div class="bg-forge-panel border border-forge-border p-6 rounded-lg flex flex-col justify-between">
-        <h3 class="text-sm font-bold text-forge-muted uppercase tracking-wider mb-2">Pending Issues</h3>
+      <!-- Issues pendientes -->
+      <a href={`/w/${sys_tag}/board`} class="bg-forge-panel border border-forge-border rounded-xl p-4 hover:border-forge-secondary/50 transition-colors group block">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-bold text-forge-muted uppercase tracking-wider">Pending Issues</span>
+          <svg class="text-forge-muted group-hover:text-forge-secondary transition-colors" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
         <div class="text-4xl font-black text-forge-secondary">{pendingIssues.count}</div>
-      </div>
+        {blockedIssues.count > 0 && (
+          <div class="text-xs text-red-400 mt-1 font-medium">⚠ {blockedIssues.count} blocked</div>
+        )}
+      </a>
 
-      <!-- Knowledge Pages Card -->
-      <div class="bg-forge-panel border border-forge-border p-6 rounded-lg flex flex-col justify-between">
-        <h3 class="text-sm font-bold text-forge-muted uppercase tracking-wider mb-2">Knowledge Pages</h3>
+      <!-- KB Pages -->
+      <a href={`/w/${sys_tag}/p`} class="bg-forge-panel border border-forge-border rounded-xl p-4 hover:border-forge-secondary/50 transition-colors group block">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-bold text-forge-muted uppercase tracking-wider">KB Pages</span>
+          <svg class="text-forge-muted group-hover:text-forge-secondary transition-colors" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+        </div>
         <div class="text-4xl font-black text-forge-text">{totalPages.count}</div>
+        <div class="text-xs text-forge-muted mt-1">knowledge articles</div>
+      </a>
+
+      <!-- Due this week -->
+      <div class="bg-forge-panel border border-forge-border rounded-xl p-4 hover:border-forge-secondary/50 transition-colors">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-bold text-forge-muted uppercase tracking-wider">Due This Week</span>
+          <svg class="text-forge-muted" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class={`text-4xl font-black ${dueSoon.count > 0 ? 'text-yellow-400' : 'text-forge-text'}`}>{dueSoon.count}</div>
+        {dueSoon.count > 0 && (
+          <div class="text-xs text-yellow-400 mt-1 font-medium">require attention</div>
+        )}
+      </div>
+    </div>
+
+    <!-- Middle Row: Roadmap + Upcoming Events -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      
+      <!-- Roadmap -->
+      <div class="lg:col-span-2 bg-forge-panel border border-forge-border rounded-xl p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-bold text-forge-text flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Roadmap del proyecto
+          </h2>
+          <a href={`/w/${sys_tag}/board`} class="text-xs text-forge-muted hover:text-forge-secondary transition-colors">Ver board →</a>
+        </div>
+
+        {allSprints.length === 0 ? (
+          <div class="py-8 text-center text-forge-muted text-sm">
+            <p>No sprints yet.</p>
+            <a href={`/w/${sys_tag}/board`} class="text-forge-secondary hover:underline text-xs mt-2 inline-block">Create your first sprint →</a>
+          </div>
+        ) : (
+          <div class="space-y-3" id="roadmap-container">
+            {allSprints.map((sprint, i) => {
+              // Calculate bar widths relative to first sprint start and last sprint end
+              const firstStart = allSprints.find(s => s.start_date)?.start_date;
+              const lastEnd = [...allSprints].reverse().find(s => s.end_date)?.end_date;
+              
+              let barLeft = 0;
+              let barWidth = 50; // default
+              
+              if (firstStart && lastEnd && sprint.start_date && sprint.end_date) {
+                const rangeStart = new Date(firstStart).getTime();
+                const rangeEnd = new Date(lastEnd).getTime();
+                const range = rangeEnd - rangeStart || 1;
+                const sprintStart = new Date(sprint.start_date).getTime();
+                const sprintEnd = new Date(sprint.end_date).getTime();
+                barLeft = Math.max(0, Math.min(100, ((sprintStart - rangeStart) / range) * 100));
+                barWidth = Math.max(8, Math.min(100 - barLeft, ((sprintEnd - sprintStart) / range) * 100));
+              } else {
+                barLeft = (i / Math.max(allSprints.length, 3)) * 60;
+                barWidth = 100 / Math.max(allSprints.length, 3) * 0.8;
+              }
+
+              const barColor = sprint.status === 'completed' ? 'bg-forge-muted/40' : 
+                               sprint.status === 'active' ? 'bg-forge-secondary' : 
+                               'bg-forge-secondary/30';
+              
+              return (
+                <div class="flex items-center gap-3">
+                  <span class="text-xs text-forge-muted font-mono w-20 shrink-0 truncate" title={sprint.name}>{sprint.name}</span>
+                  <div class="flex-1 h-4 bg-forge-bg rounded-full relative overflow-hidden border border-forge-border/30">
+                    <div 
+                      class={`absolute h-full rounded-full ${barColor} transition-all duration-700`}
+                      style={`left: ${barLeft}%; width: ${barWidth}%`}
+                    ></div>
+                    {sprint.status === 'active' && (
+                      <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-[9px] font-bold text-forge-bg/90 z-10">{sprintProgress}%</span>
+                      </div>
+                    )}
+                  </div>
+                  <div class="flex items-center gap-1 shrink-0">
+                    {sprint.end_date && (
+                      <span class="text-[10px] text-forge-muted font-mono w-16 text-right">{formatDate(sprint.end_date)}</span>
+                    )}
+                    <span class={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                      sprint.status === 'completed' ? 'bg-forge-muted/20 text-forge-muted' :
+                      sprint.status === 'active' ? 'bg-forge-secondary/20 text-forge-secondary' :
+                      'bg-forge-panel text-forge-muted border border-forge-border'
+                    }`}>{sprint.status}</span>
+                  </div>
+                </div>
+              );
+            })}
+
+            {milestones.map(m => (
+              <div class="flex items-center gap-3 pt-1 border-t border-forge-border/30 mt-1">
+                <span class="text-xs text-yellow-400/80 font-mono w-20 shrink-0 flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                  {m.name}
+                </span>
+                <div class="flex-1 border-t border-dashed border-yellow-400/20"></div>
+                <span class="text-[10px] font-mono text-yellow-400/70 shrink-0">{formatDate(m.target_date)}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
+      <!-- Upcoming Events -->
+      <div class="bg-forge-panel border border-forge-border rounded-xl p-5">
+        <h2 class="font-bold text-forge-text flex items-center gap-2 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Próximos eventos
+        </h2>
+        {nextEvents.length === 0 ? (
+          <div class="text-sm text-forge-muted text-center py-6">No upcoming events</div>
+        ) : (
+          <div class="space-y-3">
+            {nextEvents.map(event => {
+              const d = new Date(event.date.includes('T') ? event.date : event.date.replace(' ', 'T') + 'Z');
+              return (
+                <div class="flex gap-3 items-start">
+                  <div class="shrink-0 w-10 text-center">
+                    <div class="text-[10px] font-bold text-forge-muted uppercase">{d.toLocaleDateString('en-US', { month: 'short' })}</div>
+                    <div class="text-lg font-black text-forge-text leading-tight">{d.getDate()}</div>
+                  </div>
+                  <div class="flex-1 min-w-0 pt-0.5">
+                    <p class="text-sm text-forge-text font-medium truncate">{event.title}</p>
+                    <span class={`text-[10px] font-bold ${event.type === 'milestone' ? 'text-yellow-400' : 'text-forge-secondary'}`}>
+                      {event.type === 'milestone' ? '⚑ Milestone' : '◈ Sprint end'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        
+        <!-- Quick Actions -->
+        <div class="mt-4 pt-4 border-t border-forge-border space-y-2">
+          <p class="text-[10px] font-bold text-forge-muted uppercase tracking-wider mb-2">Quick Actions</p>
+          <button id="dash-btn-new-issue" class="w-full flex items-center gap-2 text-xs font-bold px-3 py-2 rounded bg-forge-secondary/10 border border-forge-secondary/30 text-forge-secondary hover:bg-forge-secondary/20 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New Issue
+          </button>
+          <a href={`/w/${sys_tag}/p`} id="dash-btn-new-page" class="w-full flex items-center gap-2 text-xs font-bold px-3 py-2 rounded bg-forge-panel border border-forge-border text-forge-text hover:border-forge-secondary transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            New Page
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Row: Activity + Workload + My Tasks -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      
+      <!-- Recent Activity -->
+      <div class="bg-forge-panel border border-forge-border rounded-xl p-5">
+        <h2 class="font-bold text-forge-text flex items-center gap-2 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Actividad reciente
+        </h2>
+        {recentActivity.length === 0 ? (
+          <div class="text-sm text-forge-muted text-center py-6">No activity yet</div>
+        ) : (
+          <div class="space-y-3">
+            {recentActivity.map(act => (
+              <div class="flex items-start gap-2.5">
+                <img 
+                  src={act.avatar_url || '/default-avatar.svg'} 
+                  class="w-6 h-6 rounded-full border border-forge-border bg-forge-bg shrink-0 mt-0.5" 
+                  alt={act.username}
+                />
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs text-forge-text">
+                    <span class="font-bold">{act.username || 'System'}</span>
+                    {' '}<span class="text-forge-muted">{actionLabel(act.action)}</span>
+                  </p>
+                  <p class="text-[10px] text-forge-muted mt-0.5">{formatRelative(act.timestamp)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <!-- Workload -->
+      <div class="bg-forge-panel border border-forge-border rounded-xl p-5">
+        <h2 class="font-bold text-forge-text flex items-center gap-2 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+          Carga de trabajo
+        </h2>
+        {members.length === 0 ? (
+          <div class="text-sm text-forge-muted text-center py-6">No members yet</div>
+        ) : (
+          <div class="space-y-3">
+            {members.map((member: any) => (
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <div class="flex items-center gap-2">
+                    <img src={member.avatar_url || '/default-avatar.svg'} class="w-5 h-5 rounded-full border border-forge-border" alt={member.username} />
+                    <span class="text-xs font-medium text-forge-text truncate max-w-[100px]">{member.username}</span>
+                  </div>
+                  <span class="text-[10px] font-mono text-forge-muted">{member.openCount} open</span>
+                </div>
+                <div class="h-1.5 bg-forge-bg rounded-full overflow-hidden">
+                  <div 
+                    class={`h-full rounded-full transition-all duration-700 ${
+                      member.openCount === 0 ? 'bg-forge-muted/20' :
+                      member.openCount / maxWorkload > 0.75 ? 'bg-red-400' :
+                      member.openCount / maxWorkload > 0.5 ? 'bg-yellow-400' :
+                      'bg-forge-secondary'
+                    }`}
+                    style={`width: ${maxWorkload > 0 ? (member.openCount / maxWorkload) * 100 : 0}%`}
+                  ></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <!-- My Tasks in this workspace -->
+      <div class="bg-forge-panel border border-forge-border rounded-xl p-5">
+        <h2 class="font-bold text-forge-text flex items-center gap-2 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Mis tareas
+        </h2>
+        {myTasks.length === 0 ? (
+          <div class="text-sm text-forge-muted text-center py-6">
+            <p>No tasks assigned to you</p>
+            <p class="text-xs mt-1">You're all caught up! 🎉</p>
+          </div>
+        ) : (
+          <div class="space-y-2">
+            {myTasks.map(task => (
+              <a 
+                href={`/w/${sys_tag}/board?issue=${task.id}`}
+                class="flex items-center gap-2 p-2 rounded hover:bg-forge-bg transition-colors group"
+              >
+                <span class={`text-[10px] font-bold shrink-0 ${priorityColor[task.priority] || 'text-forge-muted'}`} title={task.priority}>
+                  {task.priority === 'highest' ? '▲▲' : task.priority === 'high' ? '▲' : task.priority === 'low' ? '▼' : task.priority === 'lowest' ? '▼▼' : '●'}
+                </span>
+                <span class="text-xs text-forge-text group-hover:text-forge-secondary transition-colors flex-1 truncate">{task.title}</span>
+                <span class={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${statusColor[task.status] || 'bg-forge-muted/20 text-forge-muted'}`}>
+                  {task.status.replace('_', ' ').replace('-', ' ')}
+                </span>
+              </a>
+            ))}
+            <a href={`/w/${sys_tag}/board`} class="block text-center text-xs text-forge-muted hover:text-forge-secondary transition-colors pt-2 border-t border-forge-border mt-2">
+              View all in board →
+            </a>
+          </div>
+        )}
+      </div>
     </div>
   </div>
+
+  <!-- New Issue Modal (reusable from board) -->
+  <dialog id="dash-new-issue-modal" class="bg-forge-panel border border-forge-border rounded-lg p-6 w-full max-w-[400px] text-forge-text shadow-xl backdrop:bg-black/50">
+    <h2 class="text-lg font-bold mb-4">Create Issue</h2>
+    <div class="mb-3">
+      <label class="block text-xs uppercase tracking-wider text-forge-muted mb-1">Title</label>
+      <input type="text" id="dash-issue-title" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:border-forge-secondary focus:outline-none text-sm" placeholder="What needs to be done?">
+    </div>
+    <div class="mb-4">
+      <label class="block text-xs uppercase tracking-wider text-forge-muted mb-1">Type</label>
+      <select id="dash-issue-type" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:border-forge-secondary focus:outline-none text-sm">
+        <option value="task">Task</option>
+        <option value="bug">Bug</option>
+        <option value="story">Story</option>
+        <option value="epic">Epic</option>
+      </select>
+    </div>
+    <div class="flex justify-end gap-3">
+      <button class="px-4 py-2 text-forge-muted hover:text-forge-text text-sm" onclick="document.getElementById('dash-new-issue-modal').close()">Cancel</button>
+      <button id="dash-btn-save-issue" class="bg-forge-secondary text-forge-bg px-4 py-2 rounded font-bold hover:opacity-90 transition-opacity text-sm">Create</button>
+    </div>
+  </dialog>
+
+  <script define:vars={{ workspaceId: workspace.id, sysTag: sys_tag }}>
+    // New Issue from Dashboard
+    document.getElementById('dash-btn-new-issue')?.addEventListener('click', () => {
+      document.getElementById('dash-new-issue-modal')?.showModal();
+      document.getElementById('dash-issue-title')?.focus();
+    });
+
+    document.getElementById('dash-btn-save-issue')?.addEventListener('click', async () => {
+      const title = document.getElementById('dash-issue-title')?.value?.trim();
+      const type = document.getElementById('dash-issue-type')?.value;
+      if (!title) return window.showToast?.('Please enter a title', true);
+
+      const btn = document.getElementById('dash-btn-save-issue');
+      if (btn) { btn.textContent = 'Creating...'; btn.setAttribute('disabled', 'true'); }
+
+      const res = await fetch('/api/issues', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, type, workspaceId })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById('dash-new-issue-modal')?.close();
+        window.showToast?.('Issue created!');
+        window.location.href = `/w/${sysTag}/board?issue=${data.id}`;
+      } else {
+        const err = await res.text();
+        window.showToast?.('Error: ' + err, true);
+        if (btn) { btn.textContent = 'Create'; btn.removeAttribute('disabled'); }
+      }
+    });
+
+    // Enter key in title
+    document.getElementById('dash-issue-title')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('dash-btn-save-issue')?.click();
+    });
+  </script>
 </MainLayout>

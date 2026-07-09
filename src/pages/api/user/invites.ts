@@ -36,6 +36,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (err: any) {
-    return new Response(err.message, { status: 500 });
+    console.error('[invites POST] Unhandled error:', err);
+    return new Response('Internal Server Error', { status: 500 });
   }
 };
