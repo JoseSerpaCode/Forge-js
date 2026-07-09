@@ -47,11 +47,7 @@ const { title, workspaceName } = Astro.props;
     <button id="btn-show-docs" class="text-forge-muted hover:text-forge-secondary transition-colors p-1.5 rounded hover:bg-forge-bg hidden sm:block" title="Documentation">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
     </button>
-    {workspaceName && (
-      <a href={`/w/${Astro.params.sys_tag}/settings`} class="text-forge-muted hover:text-forge-secondary transition-colors p-1.5 rounded hover:bg-forge-bg hidden sm:block" title="Workspace Settings">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      </a>
-    )}
+
     <div class="h-5 w-px bg-forge-border hidden sm:block"></div>
     <div class="relative">
       <button id="btn-notifications" class="text-forge-muted hover:text-forge-secondary transition-colors relative group p-1.5 rounded hover:bg-forge-bg">
@@ -206,9 +202,9 @@ const { title, workspaceName } = Astro.props;
   });
 
   let searchTimeout: any;
-  searchInput?.addEventListener('input', (e: any) => {
+
+  const performSearch = (query: string) => {
     clearTimeout(searchTimeout);
-    const query = e.target.value;
     if (query.length > 0) {
       searchDropdown?.classList.remove('hidden');
       if (searchResults) searchResults.innerHTML = '<li class="p-3 text-forge-muted text-xs text-center flex items-center justify-center gap-2"><svg class="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Searching...</li>';
@@ -247,10 +243,14 @@ const { title, workspaceName } = Astro.props;
         } catch (err) {
           if (searchResults) searchResults.innerHTML = '<li class="p-2 text-red-400 text-sm text-center">Search error</li>';
         }
-      }, 200); // reduced debounce to 200ms
+      }, 200);
     } else {
       searchDropdown?.classList.add('hidden');
     }
+  };
+
+  searchInput?.addEventListener('input', (e: any) => {
+    performSearch(e.target.value);
   });
 
   const notifDropdown = document.getElementById('notif-dropdown');
@@ -400,11 +400,15 @@ const { title, workspaceName } = Astro.props;
       const type = item.getAttribute('data-type');
       if (type === 'hint') {
         e.preventDefault();
+        e.stopPropagation(); // Prevent document click listener from hiding the dropdown
         const insert = item.getAttribute('data-insert');
         if (searchInput && insert) {
           searchInput.value = insert;
           searchInput.focus();
-          searchInput.dispatchEvent(new Event('input'));
+          // Programmatically trigger search since dispatchEvent doesn't always bubble correctly in all browsers
+          if (typeof performSearch === 'function') {
+            performSearch(insert);
+          }
         }
       } else if (type === 'user') {
         e.preventDefault();
