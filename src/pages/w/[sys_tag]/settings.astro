@@ -24,7 +24,7 @@ const members = db.prepare(`
 ---
 
 <MainLayout title={`Settings - ${ws.name}`} workspaceId={ws.id}>
-  <div class="max-w-4xl mx-auto mt-10 p-6 space-y-8">
+  <div class="max-w-4xl mx-auto mt-4 sm:mt-10 p-0 sm:p-6 space-y-6 sm:space-y-8 relative">
     <div class="flex items-center justify-between">
       <h1 class="text-3xl font-bold text-forge-text">Workspace Settings</h1>
       <a href={`/w/${sys_tag}`} class="text-forge-muted hover:text-forge-text text-sm hover:underline">Back to Dashboard</a>

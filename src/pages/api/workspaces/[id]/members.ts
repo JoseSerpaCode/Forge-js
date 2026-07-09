@@ -27,7 +27,7 @@ export const POST: APIRoute = async ({ request, params, locals }) => {
     const existing = db.prepare('SELECT * FROM workspace_members WHERE workspace_id = ? AND user_id = ?').get(workspaceId, targetUser.id);
     if (existing) return new Response('User is already a member', { status: 400 });
 
-    const existingInvite = db.prepare('SELECT id FROM notifications WHERE user_id = ? AND type = "invite" AND link_url LIKE ?').get(targetUser.id, `%"ws_id":"${workspaceId}"%`);
+    const existingInvite = db.prepare("SELECT id FROM notifications WHERE user_id = ? AND type = 'invite' AND link_url LIKE ?").get(targetUser.id, `%"ws_id":"${workspaceId}"%`);
     if (existingInvite) return new Response('An invitation is already pending', { status: 400 });
 
     const wsInfo = db.prepare('SELECT name FROM workspaces WHERE id = ?').get(workspaceId) as any;

@@ -14,7 +14,7 @@ const memberships = db.prepare(`
 ---
 
 <MainLayout title="Settings">
-  <div class="max-w-4xl mx-auto mt-10 p-6 space-y-8">
+  <div class="max-w-4xl mx-auto mt-4 sm:mt-10 p-0 sm:p-6 space-y-6 sm:space-y-8">
     
     <!-- User Settings -->
     <div class="bg-forge-panel border border-forge-border rounded-lg shadow-lg p-6">
@@ -71,7 +71,7 @@ const memberships = db.prepare(`
         </div>
         
         <div class="flex justify-start pt-2">
-          <button id="btn-save-settings" class="bg-forge-primary text-forge-bg font-bold py-2 px-6 rounded hover:bg-forge-primary/90 transition-colors mt-4">
+          <button id="btn-save-settings" class="bg-forge-primary text-forge-bg font-bold py-2 px-6 rounded hover:bg-forge-primary/90 transition-colors mt-4 w-full sm:w-auto">
             Save Changes
           </button>
         </div>
@@ -92,8 +92,8 @@ const memberships = db.prepare(`
           ) : (
             <ul class="space-y-3">
               {memberships.map((ws) => (
-                <li class="bg-forge-bg border border-forge-border rounded p-3 flex items-center justify-between">
-                  <div>
+                <li class="bg-forge-bg border border-forge-border rounded p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div class="w-full sm:w-auto overflow-hidden">
                     <div class="font-bold text-forge-text">{ws.name}</div>
                     <div class="text-xs text-forge-muted flex items-center gap-2 mt-1">
                       <span class="bg-forge-panel px-1.5 py-0.5 rounded font-mono">#{ws.sys_tag}</span>
@@ -102,17 +102,17 @@ const memberships = db.prepare(`
                   </div>
                   
                   {ws.ws_role === 'owner' ? (
-                    <div class="flex gap-2">
-                      <a href={`/w/${ws.sys_tag}/settings`} class="text-xs text-forge-muted hover:text-forge-secondary border border-transparent hover:border-forge-secondary/30 bg-forge-panel hover:bg-forge-secondary/10 px-3 py-1.5 rounded transition-colors flex items-center gap-1 cursor-pointer" title="Workspace Settings">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                      <a href={`/w/${ws.sys_tag}/settings`} class="flex-1 sm:flex-none justify-center text-xs text-forge-muted hover:text-forge-secondary border border-transparent hover:border-forge-secondary/30 bg-forge-panel hover:bg-forge-secondary/10 px-3 py-1.5 rounded transition-colors flex items-center gap-1 cursor-pointer" title="Workspace Settings">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l-.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                         Settings
                       </a>
-                      <button class="btn-delete-ws text-xs bg-red-500/10 text-red-400 border border-red-500/30 px-3 py-1.5 rounded hover:bg-red-500/20 transition-colors" data-id={ws.id}>
+                      <button class="flex-1 sm:flex-none justify-center btn-delete-ws text-xs bg-red-500/10 text-red-400 border border-red-500/30 px-3 py-1.5 rounded hover:bg-red-500/20 transition-colors" data-id={ws.id}>
                         Delete
                       </button>
                     </div>
                   ) : (
-                    <button class="btn-leave-ws text-xs bg-forge-panel text-forge-muted border border-forge-border px-3 py-1.5 rounded hover:text-forge-text transition-colors" data-id={ws.id} data-user-id={user.id}>
+                    <button class="w-full sm:w-auto btn-leave-ws text-xs bg-forge-panel text-forge-muted border border-forge-border px-3 py-1.5 rounded hover:text-forge-text transition-colors" data-id={ws.id} data-user-id={user.id}>
                       Leave
                     </button>
                   )}

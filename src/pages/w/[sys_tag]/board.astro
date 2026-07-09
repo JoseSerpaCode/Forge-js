@@ -81,8 +81,8 @@ const workspaceMembers = db.prepare(`
       </div>
       
       <!-- Sprint Selector & Actions -->
-      <div class="flex gap-4 items-center">
-        <select id="sprint-selector" class="bg-forge-bg text-forge-text border border-forge-border rounded px-4 py-2 text-sm focus:outline-none focus:border-forge-secondary">
+      <div class="flex flex-wrap gap-2 sm:gap-4 items-center w-full sm:w-auto mt-2 sm:mt-0">
+        <select id="sprint-selector" class="bg-forge-bg text-forge-text border border-forge-border rounded px-2 sm:px-4 py-2 text-sm focus:outline-none focus:border-forge-secondary flex-1 min-w-[140px]">
           <option value="backlog" selected={!activeSprintId}>Backlog</option>
           {sprints.map(s => (
             <option value={s.id} selected={activeSprintId === s.id}>{s.name} {s.status === 'active' ? '(Active)' : s.status === 'completed' ? '(Completed)' : ''}</option>
