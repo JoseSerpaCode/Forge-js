@@ -110,7 +110,7 @@ const workspaceMembers = db.prepare(`
 
     <div class="flex-1 overflow-hidden">
       <!-- Pass sprints to KanbanBoard so IssueDetailsModal can use it -->
-      <KanbanBoard workspaceId={workspace.id} issues={issues} sprints={sprints} currentSprintId={activeSprintId} workspaceMembers={workspaceMembers} />
+      <KanbanBoard workspaceId={workspace.id} issues={issues} sprints={sprints} currentSprintId={activeSprintId} workspaceMembers={workspaceMembers} userRole={access.role} />
     </div>
   </div>
 

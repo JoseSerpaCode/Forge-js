@@ -9,9 +9,11 @@ interface Props {
   sprints?: any[];
   currentSprintId?: string | null;
   workspaceMembers?: any[];
+  userRole?: string;
 }
 
-const { issues, workspaceId, sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.props;
+const { issues, workspaceId, sprints = [], currentSprintId = null, workspaceMembers = [], userRole = 'viewer' } = Astro.props;
+const canEdit = userRole === 'owner' || userRole === 'editor';
 
 const columns = [
   { id: 'todo', title: 'To Do' },
@@ -27,7 +29,7 @@ function getInitials(username: string) {
 }
 ---
 <div class="h-full flex flex-col">
-  <div class="flex gap-4 h-full overflow-x-auto pb-4 kanban-container" data-workspace={workspaceId}>
+  <div class="flex gap-4 h-full overflow-x-auto pb-4 kanban-container" data-workspace={workspaceId} data-can-edit={canEdit.toString()}>
     {columns.map(col => (
       <BoardColumn title={col.title} status={col.id}>
         {issues.filter(i => i.status === col.id).map(issue => (
@@ -44,7 +46,7 @@ function getInitials(username: string) {
             reporter_id: issue.reporter_id,
             position: issue.position || 0,
             sprint_id: issue.sprint_id || 'backlog'
-          }} />
+          }} canEdit={canEdit} />
         ))}
       </BoardColumn>
     ))}
@@ -58,6 +60,7 @@ function getInitials(username: string) {
   const cards = document.querySelectorAll('.issue-card');
   const container = document.querySelector('.kanban-container');
   const workspaceId = container?.getAttribute('data-workspace');
+  const canEdit = container?.getAttribute('data-can-edit') === 'true';
 
   // Inicializar conteos
   const updateCounts = () => {
@@ -70,20 +73,21 @@ function getInitials(username: string) {
   updateCounts();
 
   cards.forEach(card => {
-    card.addEventListener('dragstart', (e: any) => {
-      e.dataTransfer.setData('text/plain', card.id);
-      card.classList.add('opacity-50');
-      // Set drag effect
-      e.dataTransfer.effectAllowed = 'move';
-    });
-
-    card.addEventListener('dragend', () => {
-      card.classList.remove('opacity-50');
-      columns.forEach(c => {
-        const content = c.querySelector('.column-content');
-        if (content) content.classList.remove('bg-forge-secondary/10');
+    if (canEdit) {
+      card.addEventListener('dragstart', (e: any) => {
+        e.dataTransfer.setData('text/plain', card.id);
+        card.classList.add('opacity-50');
+        e.dataTransfer.effectAllowed = 'move';
       });
-    });
+
+      card.addEventListener('dragend', () => {
+        card.classList.remove('opacity-50');
+        columns.forEach(c => {
+          const content = c.querySelector('.column-content');
+          if (content) content.classList.remove('bg-forge-secondary/10');
+        });
+      });
+    }
     
     // Modal logic
     card.addEventListener('click', () => {
@@ -157,7 +161,8 @@ function getInitials(username: string) {
     }, { offset: Number.NEGATIVE_INFINITY, element: null as Element | null }).element;
   }
 
-  columns.forEach(column => {
+  if (canEdit) {
+    columns.forEach(column => {
     const content = column.querySelector('.column-content');
     column.addEventListener('dragover', (e: any) => {
       e.preventDefault();
@@ -232,6 +237,7 @@ function getInitials(username: string) {
       }
     });
   });
+  } // end if canEdit
 
   // Check URL for issue parameter to auto-open
   window.addEventListener('DOMContentLoaded', () => {
