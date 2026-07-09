@@ -8,7 +8,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
   const url = new URL(request.url);
   const q = url.searchParams.get('q');
   
-  if (!q || q.length < 2) {
+  if (!q || q.length < 1) {
     return new Response(JSON.stringify([]), { status: 200 });
   }
 

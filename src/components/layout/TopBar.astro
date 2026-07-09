@@ -176,7 +176,7 @@ const { title, workspaceName } = Astro.props;
   searchInput?.addEventListener('input', (e: any) => {
     clearTimeout(searchTimeout);
     const query = e.target.value;
-    if (query.length > 1) {
+    if (query.length > 0) {
       searchDropdown?.classList.remove('hidden');
       if (searchResults) searchResults.innerHTML = '<li class="p-2 text-forge-muted text-sm text-center">Searching...</li>';
       
