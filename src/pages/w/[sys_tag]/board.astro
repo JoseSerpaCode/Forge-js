@@ -115,7 +115,7 @@ const workspaceMembers = db.prepare(`
   </div>
 
   <!-- New Sprint Modal -->
-  <dialog id="new-sprint-modal" class="bg-forge-panel border border-forge-border rounded-lg p-6 w-[400px] text-forge-text shadow-xl backdrop:bg-black/50">
+  <dialog id="new-sprint-modal" class="bg-forge-panel border border-forge-border rounded-lg p-6 w-full max-w-[400px] text-forge-text shadow-xl backdrop:bg-black/50">
     <h2 class="text-xl font-bold mb-4">Create Sprint</h2>
     <div class="mb-4">
       <label class="block text-xs uppercase tracking-wider text-forge-muted mb-1">Name</label>
@@ -128,7 +128,7 @@ const workspaceMembers = db.prepare(`
   </dialog>
 
   <!-- New Issue Modal -->
-  <dialog id="new-issue-modal" class="bg-forge-panel border border-forge-border rounded-lg p-6 w-[500px] text-forge-text shadow-xl backdrop:bg-black/50">
+  <dialog id="new-issue-modal" class="bg-forge-panel border border-forge-border rounded-lg p-6 w-full max-w-[500px] text-forge-text shadow-xl backdrop:bg-black/50">
     <h2 class="text-xl font-bold mb-4">Create Issue</h2>
     <div class="space-y-4">
       <div>

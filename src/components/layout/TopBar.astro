@@ -275,10 +275,36 @@ const { title, workspaceName } = Astro.props;
   });
 
   // Sidebar Toggle
-  document.getElementById('btn-toggle-sidebar')?.addEventListener('click', () => {
+  document.getElementById('btn-toggle-sidebar')?.addEventListener('click', (e) => {
+    e.stopPropagation();
     const sidebar = document.getElementById('app-sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
     if (sidebar) {
-      sidebar.classList.toggle('-ml-64');
+      // Toggle for mobile (translate)
+      sidebar.classList.toggle('-translate-x-full');
+      // Toggle for desktop (margin) - Optional, we can leave it to just collapse
+      sidebar.classList.toggle('md:-ml-64');
+      
+      if (backdrop) {
+        if (sidebar.classList.contains('-translate-x-full')) {
+          backdrop.classList.add('opacity-0');
+          setTimeout(() => backdrop.classList.add('hidden'), 300);
+        } else {
+          backdrop.classList.remove('hidden');
+          // small delay for transition to kick in
+          setTimeout(() => backdrop.classList.remove('opacity-0'), 10);
+        }
+      }
+    }
+  });
+
+  document.getElementById('sidebar-backdrop')?.addEventListener('click', () => {
+    const sidebar = document.getElementById('app-sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (sidebar && backdrop) {
+      sidebar.classList.add('-translate-x-full');
+      backdrop.classList.add('opacity-0');
+      setTimeout(() => backdrop.classList.add('hidden'), 300);
     }
   });
 

@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import db from '../../../lib/db';
 import { checkWorkspaceAccess } from '../../../lib/guard';
+import crypto from 'crypto';
 
 export const POST: APIRoute = async ({ request, locals }) => {
   const user = locals.user;
