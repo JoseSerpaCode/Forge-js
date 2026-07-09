@@ -109,25 +109,36 @@ const { title, workspaceName } = Astro.props;
     }
   });
 
-  searchInput?.addEventListener('input', async (e: any) => {
+  let searchTimeout: any;
+  searchInput?.addEventListener('input', (e: any) => {
+    clearTimeout(searchTimeout);
     const query = e.target.value;
-    if (query.length > 2) {
+    if (query.length > 1) {
       searchDropdown?.classList.remove('hidden');
       if (searchResults) searchResults.innerHTML = '<li class="p-2 text-forge-muted text-sm text-center">Searching...</li>';
       
-      const res = await fetch(`/api/sys/state?q=${query}`);
-      const data = await res.json();
-      
-      if (searchResults) {
-        searchResults.innerHTML = '';
-        if (data.length === 0) {
-           searchResults.innerHTML = '<li class="p-2 text-forge-muted text-sm text-center">No results found</li>';
-        } else {
-           data.forEach((item: any) => {
-             searchResults.innerHTML += `<li data-id="${item.id || item.title}" class="search-item p-2 hover:bg-forge-panel rounded cursor-pointer text-sm text-forge-text border-l-2 border-transparent hover:border-forge-secondary transition-all">${item.title}</li>`;
-           });
+      searchTimeout = setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/sys/state?q=${encodeURIComponent(query)}`);
+          const data = await res.json();
+          
+          if (searchResults) {
+            if (data.length === 0) {
+               searchResults.innerHTML = '<li class="p-2 text-forge-muted text-sm text-center">No results found</li>';
+            } else {
+               let html = '';
+               data.forEach((item: any) => {
+                 const icon = item.type === 'workspace' ? '🏢' : item.type === 'user' ? '👤' : item.type === 'issue' ? '📋' : '📄';
+                 const action = item.type === 'user' ? `onclick="window.showToast('User profiles coming soon'); event.preventDefault()"` : '';
+                 html += `<li><a href="${item.url}" ${action} class="search-item p-2 hover:bg-forge-panel rounded cursor-pointer text-sm text-forge-text border-l-2 border-transparent hover:border-forge-secondary transition-all flex items-center gap-2"><span class="text-xs opacity-70">${icon}</span> <span class="truncate flex-1 font-medium">${item.title}</span> <span class="text-[10px] text-forge-muted uppercase tracking-wider">${item.type}</span></a></li>`;
+               });
+               searchResults.innerHTML = html;
+            }
+          }
+        } catch (err) {
+          if (searchResults) searchResults.innerHTML = '<li class="p-2 text-red-400 text-sm text-center">Search error</li>';
         }
-      }
+      }, 300); // 300ms debounce
     } else {
       searchDropdown?.classList.add('hidden');
     }
