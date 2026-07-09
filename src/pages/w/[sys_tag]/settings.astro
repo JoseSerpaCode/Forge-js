@@ -294,7 +294,10 @@ const members = db.prepare(`
       body: JSON.stringify({ username, role })
     });
     if (res.ok) {
-      window.location.reload();
+      // @ts-ignore
+      window.showToast(`Invitation sent to ${username}!`);
+      (document.getElementById('add-member-username') as HTMLInputElement).value = '';
+      (document.getElementById('add-member-modal') as HTMLDialogElement).close();
     } else {
       // @ts-ignore
       window.showToast(await res.text(), true);

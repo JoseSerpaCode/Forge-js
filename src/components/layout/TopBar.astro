@@ -220,10 +220,18 @@ const { title, workspaceName } = Astro.props;
                 body: JSON.stringify({ notifId, action })
               });
               if (res.ok) {
-                 if (action === 'accept') window.location.reload();
-                 else fetchNotifications();
+                 if (action === 'accept') {
+                   // @ts-ignore
+                   window.showToast('Welcome to the workspace! Reloading...');
+                   setTimeout(() => window.location.reload(), 1500);
+                 } else {
+                   // @ts-ignore
+                   window.showToast('Invitation declined.');
+                   fetchNotifications();
+                 }
               } else {
-                 alert('Error processing invitation.');
+                 // @ts-ignore
+                 window.showToast('Error processing invitation.', true);
               }
             });
           });
