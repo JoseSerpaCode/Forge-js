@@ -199,13 +199,7 @@ const { title, workspaceName } = Astro.props;
                  if (item.type === 'user') icon = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
                  if (item.type === 'issue') icon = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>';
                  
-                 let action = '';
-                 if (isHint) {
-                    action = `onclick="event.preventDefault(); const s = document.getElementById('global-search'); s.value = '${item.insert}'; s.focus(); s.dispatchEvent(new Event('input'))"`;
-                 } else if (item.type === 'user') {
-                    action = `onclick="window.showToast('User profiles coming soon'); event.preventDefault()"`;
-                 }
-                 html += `<li><a href="${item.url || '#'}" ${action} class="search-item p-2 hover:bg-forge-panel rounded cursor-pointer text-sm text-forge-text border-l-2 border-transparent hover:border-forge-secondary transition-all flex items-center gap-2 focus:bg-forge-panel focus:outline-none focus:border-forge-secondary"><span class="text-forge-muted shrink-0">${icon}</span> <span class="truncate flex-1 font-medium">${item.title}</span> <span class="text-[10px] text-forge-muted uppercase tracking-wider shrink-0">${item.type}</span></a></li>`;
+                 html += `<li><a href="${item.url || '#'}" data-type="${item.type}" data-insert="${item.insert || ''}" class="search-item p-2 hover:bg-forge-panel rounded cursor-pointer text-sm text-forge-text border-l-2 border-transparent hover:border-forge-secondary transition-all flex items-center gap-2 focus:bg-forge-panel focus:outline-none focus:border-forge-secondary"><span class="text-forge-muted shrink-0">${icon}</span> <span class="truncate flex-1 font-medium">${item.title}</span> <span class="text-[10px] text-forge-muted uppercase tracking-wider shrink-0">${item.type}</span></a></li>`;
                });
                searchResults.innerHTML = html;
             }
@@ -362,8 +356,22 @@ const { title, workspaceName } = Astro.props;
 
   searchResults?.addEventListener('click', (e: any) => {
     const item = e.target.closest('a.search-item');
-    if (item && !item.getAttribute('onclick')?.includes('preventDefault')) {
-      searchDropdown?.classList.add('hidden');
+    if (item) {
+      const type = item.getAttribute('data-type');
+      if (type === 'hint') {
+        e.preventDefault();
+        const insert = item.getAttribute('data-insert');
+        if (searchInput && insert) {
+          searchInput.value = insert;
+          searchInput.focus();
+          searchInput.dispatchEvent(new Event('input'));
+        }
+      } else if (type === 'user') {
+        e.preventDefault();
+        window.showToast('User profiles coming soon');
+      } else {
+        searchDropdown?.classList.add('hidden');
+      }
     }
   });
 
