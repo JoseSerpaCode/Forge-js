@@ -21,16 +21,16 @@ export const GET: APIRoute = async ({ request, locals }) => {
     else if (q.startsWith('/p ')) { filter = 'page'; searchQuery = q.slice(3); }
     else if (q.startsWith('/u ')) { filter = 'user'; searchQuery = q.slice(3); }
     else if (q.startsWith('/')) {
-      if (q.length === 1 || !['/w', '/i', '/p', '/u'].some(prefix => prefix.startsWith(q))) {
-         // Just a slash or invalid command, let's just strip it and search normally
-         searchQuery = q.replace(/^\//, '');
-      } else {
+      if (q === '/' || ['/w', '/i', '/p', '/u'].some(prefix => prefix.startsWith(q))) {
          return new Response(JSON.stringify([
            { title: 'Search Workspaces...', type: 'hint', insert: '/w ' },
            { title: 'Search Issues...', type: 'hint', insert: '/i ' },
            { title: 'Search Pages...', type: 'hint', insert: '/p ' },
            { title: 'Search Users...', type: 'hint', insert: '/u ' }
          ]), { status: 200 });
+      } else {
+         // Just a slash or invalid command, let's just strip it and search normally
+         searchQuery = q.replace(/^\//, '');
       }
     }
 
