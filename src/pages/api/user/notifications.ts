@@ -31,10 +31,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
       db.prepare('UPDATE notifications SET is_read = 1 WHERE user_id = ? AND id = ?').run(user.id, id);
     } else if (action === 'delete' && id) {
       db.prepare('DELETE FROM notifications WHERE user_id = ? AND id = ?').run(user.id, id);
+    } else {
+      // [M-6 FIX] Return 400 for unknown or incomplete actions instead of silently returning 200
+      return new Response(JSON.stringify({ error: 'Invalid action' }), { status: 400 });
     }
     
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (err: any) {
-    return new Response(err.message, { status: 500 });
+    console.error('notifications POST error:', err);
+    return new Response('Internal Server Error', { status: 500 });
   }
 };

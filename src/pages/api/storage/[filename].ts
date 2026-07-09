@@ -48,9 +48,13 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
   return new Response(fileStream as any, {
     status: 200,
     headers: {
-      'Content-Type': attachment.mime_type || 'application/octet-stream',
+      // [A-5 FIX] Never serve user-uploaded files with their original MIME type.
+      // Forcing octet-stream + Content-Disposition: attachment prevents SVG/HTML XSS.
+      'Content-Type': 'application/octet-stream',
+      'Content-Disposition': `attachment; filename="${encodeURIComponent(safeFilename)}"`,
+      'X-Content-Type-Options': 'nosniff',
       'Content-Length': stat.size.toString(),
-      'Cache-Control': 'private, max-age=86400', // Private cache, valid for 1 day
+      'Cache-Control': 'private, max-age=86400',
     }
   });
 };

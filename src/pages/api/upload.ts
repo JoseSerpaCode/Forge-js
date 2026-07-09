@@ -31,6 +31,26 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return new Response(access.error || 'Forbidden', { status: 403 });
   }
 
+  // [A-4 FIX] Enforce file size limit (10 MB)
+  const MAX_SIZE = 10 * 1024 * 1024;
+  if (file.size > MAX_SIZE) {
+    return new Response(JSON.stringify({ error: 'File too large (max 10 MB)' }), { status: 413 });
+  }
+
+  // [A-4 FIX] Whitelist allowed MIME types — client-provided type, but blocked at server level
+  const ALLOWED_TYPES = [
+    'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+    'application/pdf', 'text/plain', 'text/csv',
+    'application/zip',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ];
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    return new Response(JSON.stringify({ error: `File type '${file.type}' is not allowed` }), { status: 400 });
+  }
+
   const buffer = Buffer.from(await file.arrayBuffer());
   const safeFilename = path.basename(file.name).replace(/[^a-zA-Z0-9.\-_]/g, '_');
   const fileName = `${crypto.randomUUID()}-${safeFilename}`;

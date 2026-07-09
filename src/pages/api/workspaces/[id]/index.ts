@@ -52,6 +52,11 @@ export const PATCH: APIRoute = async ({ request, params, locals }) => {
     const { name, sys_tag, icon } = await request.json();
     if (!name || !sys_tag) return new Response('Name and System Tag are required', { status: 400 });
     
+    // [M-2 FIX] Validate sys_tag format — same rule as POST /api/workspaces
+    if (!/^[a-z0-9\-]+$/.test(sys_tag)) {
+      return new Response('Invalid sys_tag format (lowercase letters, numbers and dashes only)', { status: 400 });
+    }
+
     // Check if tag is taken
     const existing = db.prepare('SELECT id FROM workspaces WHERE sys_tag = ? AND id != ?').get(sys_tag, workspaceId);
     if (existing) return new Response('System tag already in use', { status: 400 });

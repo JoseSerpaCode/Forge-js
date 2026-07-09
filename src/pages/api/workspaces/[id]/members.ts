@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import db from '../../../../lib/db';
 import { checkWorkspaceAccess } from '../../../../lib/guard';
+import crypto from 'crypto';
 
 // Add a member
 export const POST: APIRoute = async ({ request, params, locals }) => {
@@ -31,7 +32,6 @@ export const POST: APIRoute = async ({ request, params, locals }) => {
     if (existingInvite) return new Response('An invitation is already pending', { status: 400 });
 
     const wsInfo = db.prepare('SELECT name FROM workspaces WHERE id = ?').get(workspaceId) as any;
-    const crypto = require('crypto');
     db.prepare(`
       INSERT INTO notifications (id, user_id, title, message, type, link_url, is_read, created_at)
       VALUES (?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)

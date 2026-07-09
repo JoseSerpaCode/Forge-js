@@ -32,7 +32,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const match = context.url.pathname.match(/^\/w\/([^/]+)/);
   if (match && match[1]) {
     const sysTag = match[1];
-    if (sessionData.last_workspace_id !== sysTag) {
+    // [M-1 FIX] Only update last_workspace_id if the user is actually a member (or sysadmin)
+    const isMember = sessionData.is_sysadmin === 1
+      ? true
+      : db.prepare(
+          `SELECT 1 FROM workspace_members wm JOIN workspaces w ON w.id = wm.workspace_id WHERE w.sys_tag = ? AND wm.user_id = ?`
+        ).get(sysTag, sessionData.id);
+
+    if (isMember && sessionData.last_workspace_id !== sysTag) {
       db.prepare('UPDATE users SET last_workspace_id = ? WHERE id = ?').run(sysTag, sessionData.id);
       sessionData.last_workspace_id = sysTag;
     }

@@ -13,19 +13,22 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (!notif || notif.type !== 'invite') return new Response('Invite not found', { status: 404 });
 
     if (action === 'accept') {
+      let payload: any;
       try {
-        const payload = JSON.parse(notif.link_url);
-        if (payload.ws_id && payload.role) {
-          // Verify workspace still exists
-          const ws = db.prepare('SELECT id FROM workspaces WHERE id = ?').get(payload.ws_id);
-          if (ws) {
-             const existing = db.prepare('SELECT * FROM workspace_members WHERE workspace_id = ? AND user_id = ?').get(payload.ws_id, user.id);
-             if (!existing) {
-               db.prepare('INSERT INTO workspace_members (workspace_id, user_id, ws_role) VALUES (?, ?, ?)').run(payload.ws_id, user.id, payload.role);
-             }
-          }
+        payload = JSON.parse(notif.link_url);
+      } catch (parseErr) {
+        console.error('[M-7 FIX] Failed to parse invite payload:', parseErr);
+        return new Response(JSON.stringify({ error: 'Invite data is corrupted' }), { status: 500 });
+      }
+      if (payload.ws_id && payload.role) {
+        const ws = db.prepare('SELECT id FROM workspaces WHERE id = ?').get(payload.ws_id);
+        if (ws) {
+           const existing = db.prepare('SELECT * FROM workspace_members WHERE workspace_id = ? AND user_id = ?').get(payload.ws_id, user.id);
+           if (!existing) {
+             db.prepare('INSERT INTO workspace_members (workspace_id, user_id, ws_role) VALUES (?, ?, ?)').run(payload.ws_id, user.id, payload.role);
+           }
         }
-      } catch(e) {}
+      }
     }
 
     // Delete notification regardless of accept or reject

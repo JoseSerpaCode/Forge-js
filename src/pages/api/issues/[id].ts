@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import db from '../../../lib/db';
 import { checkWorkspaceAccess } from '../../../lib/guard';
+import crypto from 'crypto';
 
 export const PATCH: APIRoute = async ({ params, request, locals }) => {
   const { id } = params;
@@ -61,13 +62,13 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
       }
     }
 
-    if (data.reporter_id !== undefined) {
-      db.prepare('UPDATE issues SET reporter_id = ? WHERE id = ?').run(data.reporter_id, id);
-    }
+    // [C-4 FIX] reporter_id is immutable — it records the original creator.
+    // Allowing any editor to change it would allow falsifying authorship.
 
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    console.error('PATCH /api/issues/[id] error:', err);
+    return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 };
 
@@ -90,6 +91,7 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
 
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    console.error('DELETE /api/issues/[id] error:', err);
+    return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 };

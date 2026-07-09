@@ -12,11 +12,25 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     if (username.length < 3) {
-      return new Response(JSON.stringify({ error: 'Username too short' }), { status: 400 });
+      return new Response(JSON.stringify({ error: 'Username must be at least 3 characters' }), { status: 400 });
     }
 
-    if (password.length < 6) {
-      return new Response(JSON.stringify({ error: 'Password must be at least 6 characters' }), { status: 400 });
+    if (username.length > 32) {
+      return new Response(JSON.stringify({ error: 'Username cannot exceed 32 characters' }), { status: 400 });
+    }
+
+    // [A-2 FIX] Restrict to safe characters — prevents XSS payloads in usernames
+    if (!/^[a-zA-Z0-9._\-]+$/.test(username)) {
+      return new Response(JSON.stringify({ error: 'Username can only contain letters, numbers, dots, hyphens and underscores' }), { status: 400 });
+    }
+
+    if (password.length < 8) {
+      return new Response(JSON.stringify({ error: 'Password must be at least 8 characters' }), { status: 400 });
+    }
+
+    // [A-2 FIX] Prevent DoS via bcrypt with extremely long passwords
+    if (password.length > 128) {
+      return new Response(JSON.stringify({ error: 'Password cannot exceed 128 characters' }), { status: 400 });
     }
     
     // Check if user exists
