@@ -1,53 +1,53 @@
 # Forge JS - Enterprise Multi-Tenant OS
 
-**Forge JS (Omnibus Uncut Edition)** is a robust, isolated, multi-tenant workspace operating system. Built completely on a custom Vanilla JS frontend over Astro and a highly optimized NodeJS/Express + SQLite backend.
+**Forge JS** es un sistema operativo de trabajo colaborativo multi-inquilino (multi-tenant), diseñado con un frontend Vanilla JS superrápido sobre Astro y un backend optimizado en NodeJS con SQLite.
 
-## 🚀 Core Architecture
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
-- **Multi-Tenant Data Isolation**: True data isolation using pivot tables and workspace-level RBAC (Role-Based Access Control). Users can only interact with Workspaces they are explicitly invited to (Owner, Editor, Commenter, Viewer).
-- **Custom Node.js Server**: Avoids heavy frameworks in favor of a customized Express/Astro SSR middleware stack with natively attached `socket.io` for real-time WebSockets.
-- **SQLite Engine**: Zero latency local Database logic managed securely via `better-sqlite3`.
-- **Zapier-style Automations**: Internal `EventEmitter` engine that observes database mutations (like Kanban status changes) to trigger server-side Webhook actions.
-- **Premium Orion Neon UI**: An extreme high-contrast dark mode tailored for developers (`bg-[#050505]`) with neon green accents (`#bfff00`) built natively in Tailwind CSS.
+![Orion's Forge Screenshot](./public/screenshot.png)
 
-## 📦 Features
+## 🚀 Características Principales
 
-- **Personal Hub**: Aggregated cross-workspace view showing assigned tasks and unread notifications.
-- **Advanced Issue Tracker**: Jira-style Kanban boards with native Drag & Drop, optimistic UI rendering, and precise Time Logging.
-- **Knowledge Base (Docs)**: Notion-style block editor schemas optimized for internal Workspace documentation.
-- **Global Search**: Keyboard-first design. Press `/` to trigger a universal search across the system's database.
+- **Gestión Multi-Tenant:** Aislamiento total por "Workspaces" con guardias de acceso robustos (RBAC).
+- **Tablero Kanban (Sprints & Issues):** Sistema de tickets interactivo estilo Jira con soporte para bugs, historias, tareas y épicas.
+- **Base de Conocimientos (Knowledge Base):** Editor de documentos estilo Notion con organización jerárquica de páginas.
+- **Bases de Datos Dinámicas:** Creación de tablas personalizadas estilo Airtable con múltiples tipos de datos.
+- **Sistema de Notificaciones:** Centro de notificaciones en tiempo real en la UI.
+- **Soporte Multi-Idioma (i18n):** Traducción automática y completa de la UI (Inglés/Español) basada en las preferencias del navegador.
+- **Seguridad Empresarial:** Prevención estricta contra SQLi, XSS, SSRF y Path Traversal en subida de archivos (10MB max, whitelist MIME).
 
-## 🛠️ Quick Start
+## 🛠 Stack Técnico
 
-1. Install dependencies:
+Astro (Frontend) + Vanilla JS / CSS nativo + NodeJS / Express (Backend) + better-sqlite3
+
+## 📦 Instalación Local
+
+1. **Clonar el repositorio y entrar:**
+   ```bash
+   git clone https://github.com/JoseSerpaCode/Forge-js.git
+   cd Forge-js
+   ```
+
+2. **Instalar dependencias:**
    ```bash
    npm install
    ```
 
-2. Seed the Multi-Tenant SQLite Database:
+3. **Poblar la base de datos (Opcional):**
    ```bash
-   npx tsx src/lib/seed.ts
+   npm run seed
    ```
 
-3. Build and run the optimized Node server:
+4. **Levantar el entorno de desarrollo:**
    ```bash
-   npm run build
-   node server.mjs
+   npm run dev
    ```
+   *La aplicación estará disponible en `http://localhost:4321`.*
 
-4. Go to `http://localhost:4321` and login with the `sysadmin` credentials.
+## 🤝 Contribuyendo
 
-## 🛡️ Security
+¡Las contribuciones son bienvenidas! Si deseas ayudar a mejorar Forge JS, por favor revisa nuestra guía en [CONTRIBUTING.md](./CONTRIBUTING.md) para conocer los estándares de código, la convención de ramas y los requisitos para Pull Requests.
 
-- **Strict Access Guard Middleware**: All APIs natively validate the bearer token against the workspace pivot table. Viewer roles are strictly blocked from mutating states.
-- **System Admin**: Only the global `sysadmin` role has the privileges to invoke the Janus LLM indexing APIs.
+## 📄 Licencia
 
-## 📝 Testing
-
-Comprehensive UI Integrity and Backend Security E2E testing powered by Playwright:
-```bash
-npx playwright test
-```
-
----
-*Developed autonomously from the Master Document V12.0*
+MIT License — ver el archivo [LICENSE](./LICENSE) para más detalles.
