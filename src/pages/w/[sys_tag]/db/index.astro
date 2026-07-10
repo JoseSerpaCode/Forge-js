@@ -1,0 +1,297 @@
+---
+import MainLayout from '../../../../layouts/MainLayout.astro';
+import db from '../../../../lib/db';
+import { checkWorkspaceAccess } from '../../../../lib/guard';
+
+const { sys_tag } = Astro.params;
+const user = Astro.locals.user;
+
+if (!user) return Astro.redirect('/login');
+
+const workspace = db.prepare('SELECT id, name FROM workspaces WHERE sys_tag = ?').get(sys_tag) as any;
+if (!workspace) return Astro.redirect('/404');
+
+const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspace.id, 'viewer');
+if (!access.granted) return new Response('Access Denied', { status: 403 });
+
+const databases = db.prepare(`
+  SELECT id, name, description, icon, schema_json, created_at 
+  FROM dynamic_databases 
+  WHERE workspace_id = ?
+  ORDER BY created_at DESC
+`).all(workspace.id) as any[];
+
+const canEdit = access.role !== 'viewer';
+---
+
+<MainLayout title={`Databases — ${workspace.name}`} workspaceId={workspace.id}>
+  <div class="max-w-[1200px] mx-auto space-y-6">
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-forge-panel to-forge-panel/50 p-6 rounded-2xl border border-forge-border/40 shadow-sm relative overflow-hidden">
+      <!-- Decorative background blur -->
+      <div class="absolute -right-20 -top-20 w-64 h-64 bg-forge-secondary/5 rounded-full blur-3xl pointer-events-none"></div>
+      
+      <div class="relative z-10">
+        <h1 class="text-2xl font-bold text-forge-text flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl bg-forge-bg flex items-center justify-center border border-forge-border/60 shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+          </div>
+          Databases & Tables
+        </h1>
+        <p class="text-sm text-forge-muted mt-2 max-w-xl leading-relaxed">
+          Create structured tables to manage <span class="text-forge-text font-medium">CRMs, inventories, or trackers</span> directly inside your workspace. Think of it as your own integrated spreadsheet or Notion table.
+        </p>
+      </div>
+      {canEdit && (
+        <button id="btn-new-db" class="bg-forge-text text-forge-bg text-sm font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-all flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Create New Table
+        </button>
+      )}
+    </header>
+
+    {databases.length === 0 ? (
+      <div class="text-center py-24 bg-forge-panel border border-forge-border rounded-2xl border-dashed">
+        <div class="w-16 h-16 rounded-2xl bg-forge-bg border border-forge-border flex items-center justify-center mx-auto mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-forge-muted"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+        </div>
+        <h3 class="text-lg font-bold text-forge-text mb-1">No tables created yet</h3>
+        <p class="text-sm text-forge-muted max-w-sm mx-auto leading-relaxed">
+          Start organizing your team's data by creating your first tabular database.
+        </p>
+      </div>
+    ) : (
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {databases.map(database => (
+          <a href={`/w/${sys_tag}/db/${database.id}`} class="group relative bg-forge-panel border border-forge-border/60 rounded-2xl p-5 hover:border-forge-secondary/40 transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:-translate-y-1 overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-br from-forge-secondary/0 to-forge-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div class="relative z-10">
+              <div class="flex items-start gap-4 mb-4">
+                <div class="w-12 h-12 rounded-xl bg-forge-bg border border-forge-border/50 flex items-center justify-center text-2xl shrink-0 group-hover:scale-110 group-hover:border-forge-secondary/30 transition-all shadow-sm">
+                  {database.icon || '🗄️'}
+                </div>
+                <div class="flex-1 min-w-0 pt-1">
+                  <h3 class="text-base font-bold text-forge-text truncate group-hover:text-forge-secondary transition-colors">{database.name}</h3>
+                  <div class="flex items-center gap-2 mt-1">
+                    <span class="inline-flex items-center gap-1 text-[10px] uppercase font-bold text-forge-muted tracking-wider bg-forge-bg px-2 py-0.5 rounded-md border border-forge-border/50">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                      {JSON.parse(database.schema_json).columns?.length || 0} columns
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <p class="text-sm text-forge-muted/90 line-clamp-2 leading-relaxed h-10">{database.description || <span class="italic opacity-50">No description provided.</span>}</p>
+            </div>
+          </a>
+        ))}
+      </div>
+    )}
+  </div>
+
+  <!-- New DB Modal -->
+  {canEdit && (
+    <dialog id="new-db-modal" class="bg-forge-panel border border-forge-border/60 rounded-3xl p-0 w-full max-w-[700px] text-forge-text shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop:bg-black/70 backdrop:backdrop-blur-md">
+      <div class="px-8 py-6 border-b border-forge-border/40 flex justify-between items-start sticky top-0 bg-forge-panel/95 backdrop-blur z-20 rounded-t-3xl">
+        <div>
+          <h2 class="text-2xl font-bold text-forge-text flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            {t('db.new_db')}
+          </h2>
+          <p class="text-sm text-forge-muted mt-2 ml-13">{t('db.new_db_desc')}</p>
+        </div>
+        <button type="button" class="text-forge-muted hover:text-forge-text p-2 hover:bg-forge-border/50 rounded-full transition-all" onclick="document.getElementById('new-db-modal').close()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      
+      <div class="p-8 max-h-[65vh] overflow-y-auto space-y-8 custom-scrollbar bg-forge-bg/30">
+        <div class="flex flex-col sm:flex-row gap-6">
+          <div class="w-24 shrink-0 flex flex-col items-center">
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-forge-muted mb-2 text-center w-full">{t('db.icon')}</label>
+            <div class="relative group cursor-text w-full">
+              <input type="text" id="db-icon" maxlength="2" class="w-full aspect-square bg-forge-panel border border-forge-border rounded-2xl p-0 text-center text-3xl focus:border-forge-secondary focus:ring-4 focus:ring-forge-secondary/10 outline-none transition-all shadow-sm flex items-center justify-center" value="🗄️">
+              <div class="absolute -bottom-2 -right-2 bg-forge-bg border border-forge-border text-forge-muted rounded-full p-1.5 shadow-sm pointer-events-none group-focus-within:text-forge-secondary group-focus-within:border-forge-secondary transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="flex-1 space-y-5">
+            <div>
+              <label class="block text-[10px] font-bold uppercase tracking-widest text-forge-muted mb-2">{t('db.table_name')} <span class="text-red-400">*</span></label>
+              <input type="text" id="db-name" class="w-full bg-forge-panel border border-forge-border rounded-xl px-4 py-3 text-base text-forge-text focus:border-forge-secondary focus:ring-2 focus:ring-forge-secondary/20 outline-none transition-all shadow-sm placeholder:text-forge-muted/40" placeholder={t('db.table_name_ph')}>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold uppercase tracking-widest text-forge-muted mb-2">{t('db.desc')} <span class="normal-case font-normal text-forge-muted/50">({t('db.optional')})</span></label>
+              <textarea id="db-desc" rows="2" class="w-full bg-forge-panel border border-forge-border rounded-xl px-4 py-3 text-sm text-forge-text focus:border-forge-secondary focus:ring-2 focus:ring-forge-secondary/20 outline-none transition-all shadow-sm placeholder:text-forge-muted/40 custom-scrollbar" placeholder={t('db.desc_ph')}></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-8 border-t border-forge-border/50">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-4">
+            <div>
+              <h3 class="text-base font-bold text-forge-text">{t('db.columns_schema')}</h3>
+              <p class="text-xs text-forge-muted mt-1">{t('db.columns_schema_desc')}</p>
+            </div>
+            <button type="button" id="btn-add-col" class="text-xs font-bold text-forge-secondary bg-forge-secondary/10 hover:bg-forge-secondary hover:text-forge-bg px-4 py-2 rounded-xl transition-all border border-forge-secondary/20 flex items-center gap-2 shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              {t('db.add_column')}
+            </button>
+          </div>
+          
+          <div id="columns-container" class="space-y-4">
+            <!-- Default column -->
+            <div class="col-def flex flex-wrap gap-4 items-start bg-forge-panel border border-forge-border p-4 rounded-2xl shadow-sm relative overflow-hidden group hover:border-forge-border/80 transition-colors">
+              <div class="absolute left-0 top-0 bottom-0 w-1 bg-forge-secondary/30"></div>
+              <div class="flex-1 min-w-[200px]">
+                <label class="block text-[9px] font-bold uppercase tracking-widest text-forge-muted mb-1.5 ml-1">{t('db.col_name')}</label>
+                <input type="text" class="col-name w-full bg-forge-bg border border-forge-border rounded-lg px-3 py-2.5 text-sm text-forge-text focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 outline-none transition-all" placeholder={t('db.col_name_ph')} value={t('db.col_name_default') || "Name"}>
+              </div>
+              <div class="w-36 shrink-0">
+                <label class="block text-[9px] font-bold uppercase tracking-widest text-forge-muted mb-1.5 ml-1">Data Type</label>
+                <select class="col-type w-full bg-forge-bg border border-forge-border rounded-lg px-3 py-2.5 text-sm text-forge-text focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 outline-none transition-all cursor-pointer">
+                  <option value="text">Aa Text</option>
+                  <option value="number"># Number</option>
+                  <option value="select">▼ Select Options</option>
+                </select>
+              </div>
+              <div class="col-options-container hidden w-full mt-2 basis-full p-3 bg-forge-bg/50 rounded-xl border border-forge-border/40">
+                <label class="block text-[9px] font-bold uppercase tracking-widest text-forge-secondary mb-1.5 ml-1">Select Options (Comma separated)</label>
+                <input type="text" class="col-options w-full bg-forge-panel border border-forge-border border-dashed rounded-lg px-3 py-2.5 text-sm text-forge-text focus:border-forge-secondary focus:border-solid outline-none transition-all placeholder:text-forge-muted/40" placeholder="e.g. Active, Pending, Closed">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="pt-6 border-t border-forge-border/40 flex justify-end gap-3 mt-8 p-8">
+        <button type="button" class="px-6 py-2.5 text-sm font-bold text-forge-muted hover:text-forge-text transition-colors" onclick="document.getElementById('new-db-modal').close()">
+          {t('ws.settings.modal_cancel')}
+        </button>
+        <button type="button" id="btn-save-db" class="bg-forge-primary text-forge-bg px-8 py-2.5 rounded-xl font-bold hover:opacity-90 transition-all shadow-sm shadow-forge-primary/20">
+          {t('db.create')}
+        </button>
+      </div>
+    </dialog>
+  )}
+
+  <script define:vars={{ sysTag: sys_tag }}>
+    const newDbBtn = document.getElementById('btn-new-db');
+    const modal = document.getElementById('new-db-modal');
+    const addColBtn = document.getElementById('btn-add-col');
+    const colsContainer = document.getElementById('columns-container');
+    const saveBtn = document.getElementById('btn-save-db');
+
+    newDbBtn?.addEventListener('click', () => modal?.showModal());
+
+    const bindTypeSelect = (row) => {
+      const typeSelect = row.querySelector('.col-type');
+      const optContainer = row.querySelector('.col-options-container');
+      typeSelect.addEventListener('change', () => {
+        if (typeSelect.value === 'select') {
+          optContainer.classList.remove('hidden');
+        } else {
+          optContainer.classList.add('hidden');
+        }
+      });
+    };
+
+    // Bind initial row
+    document.querySelectorAll('.col-def').forEach(bindTypeSelect);
+
+    addColBtn?.addEventListener('click', () => {
+      const div = document.createElement('div');
+      div.className = 'col-def flex flex-wrap gap-4 items-start bg-forge-panel border border-forge-border p-4 rounded-2xl shadow-sm relative overflow-hidden group hover:border-forge-border/80 transition-colors mt-4';
+      div.innerHTML = `
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-forge-border/40 group-hover:bg-forge-secondary/50 transition-colors"></div>
+        <div class="flex-1 min-w-[200px]">
+          <label class="block text-[9px] font-bold uppercase tracking-widest text-forge-muted mb-1.5 ml-1">Column Name</label>
+          <input type="text" class="col-name w-full bg-forge-bg border border-forge-border rounded-lg px-3 py-2.5 text-sm text-forge-text focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 outline-none transition-all" placeholder="e.g. Status">
+        </div>
+        <div class="w-36 shrink-0">
+          <label class="block text-[9px] font-bold uppercase tracking-widest text-forge-muted mb-1.5 ml-1">Data Type</label>
+          <select class="col-type w-full bg-forge-bg border border-forge-border rounded-lg px-3 py-2.5 text-sm text-forge-text focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 outline-none transition-all cursor-pointer">
+            <option value="text">Aa Text</option>
+            <option value="number"># Number</option>
+            <option value="select">▼ Select Options</option>
+          </select>
+        </div>
+        <div class="shrink-0 pt-6">
+          <button type="button" class="btn-rm-col text-forge-muted hover:text-red-500 hover:bg-red-500/10 p-2 rounded-xl transition-all border border-transparent hover:border-red-500/20"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+        <div class="col-options-container hidden w-full mt-2 basis-full p-3 bg-forge-bg/50 rounded-xl border border-forge-border/40">
+          <label class="block text-[9px] font-bold uppercase tracking-widest text-forge-secondary mb-1.5 ml-1">Select Options (Comma separated)</label>
+          <input type="text" class="col-options w-full bg-forge-panel border border-forge-border border-dashed rounded-lg px-3 py-2.5 text-sm text-forge-text focus:border-forge-secondary focus:border-solid outline-none transition-all placeholder:text-forge-muted/40" placeholder="e.g. Active, Pending, Closed">
+        </div>
+      `;
+      colsContainer?.appendChild(div);
+      bindTypeSelect(div);
+      
+      div.querySelector('.btn-rm-col')?.addEventListener('click', () => div.remove());
+    });
+
+    btnSaveDb?.addEventListener('click', async () => {
+      const name = document.getElementById('db-name')?.value.trim();
+      const icon = document.getElementById('db-icon')?.value.trim();
+      const desc = document.getElementById('db-desc')?.value.trim();
+
+      if (!name) return window.showToast?.('Table Name is required', true);
+
+      const columns = [];
+      const colDefs = document.querySelectorAll('.col-def');
+      
+      if (colDefs.length === 0) {
+        return window.showToast?.('You must add at least one column', true);
+      }
+
+      let validationError = null;
+
+      colDefs.forEach((def, index) => {
+        const colName = def.querySelector('.col-name').value.trim();
+        const type = def.querySelector('.col-type').value;
+        const options = def.querySelector('.col-options').value.trim();
+        
+        if (!colName) {
+          validationError = `Column #${index + 1} is missing a name`;
+        }
+
+        if (type === 'select' && !options) {
+          validationError = `Column "${colName || 'Unknown'}" needs at least one option`;
+        }
+        
+        const col = { name: colName, type: type };
+        if (type === 'select' && options) {
+          col.options = options.split(',').map(o => o.trim()).filter(o => o);
+        }
+        columns.push(col);
+      });
+
+      if (validationError) {
+        return window.showToast?.(validationError, true);
+      }
+
+      try {
+        btnSaveDb.disabled = true;
+        btnSaveDb.innerHTML = 'Saving...';
+        const res = await fetch(`/api/w/${sysTag}/db`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, description: desc, icon, columns })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          window.location.href = `/w/${sysTag}/db/${data.id}`;
+        } else {
+          const errText = await res.text();
+          window.showToast?.(errText || 'Error creating table', true);
+          btnSaveDb.disabled = false;
+          btnSaveDb.innerHTML = 'Create Table';
+        }
+      } catch (e) {
+        console.error(e);
+        btnSaveDb.disabled = false;
+        btnSaveDb.innerHTML = 'Create Table';
+      }
+    });
+  </script>
+</MainLayout>

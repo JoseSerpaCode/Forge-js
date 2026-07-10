@@ -9,6 +9,10 @@ const user = Astro.locals.user;
 
 if (!user) return Astro.redirect('/login');
 
+import { useTranslations } from '../../../i18n/ui';
+const lang = Astro.locals.lang || 'en';
+const t = useTranslations(lang);
+
 const workspace = db.prepare('SELECT id, name, icon, description FROM workspaces WHERE sys_tag = ?').get(sys_tag) as any;
 if (!workspace) return Astro.redirect('/404');
 
@@ -16,47 +20,34 @@ const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspace.id, 'vi
 if (!access.granted) return new Response('Access Denied', { status: 403 });
 
 // ──── Stats ────
-const activeSprint = db.prepare(`
+const activeSprints = db.prepare(`
   SELECT id, name, start_date, end_date, goal 
   FROM sprints WHERE workspace_id = ? AND status = 'active' 
-  LIMIT 1
-`).get(workspace.id) as any;
-
-const pendingIssues = db.prepare(`
-  SELECT COUNT(*) as count FROM issues 
-  WHERE workspace_id = ? AND status != 'done'
-`).get(workspace.id) as any;
-
-const blockedIssues = db.prepare(`
-  SELECT COUNT(*) as count FROM issues 
-  WHERE workspace_id = ? AND status = 'blocked'
-`).get(workspace.id) as any;
-
-const totalPages = db.prepare(`
-  SELECT COUNT(*) as count FROM pages WHERE workspace_id = ?
-`).get(workspace.id) as any;
-
-// Issues due this week
-const oneWeekFromNow = new Date();
-oneWeekFromNow.setDate(oneWeekFromNow.getDate() + 7);
-const dueSoon = db.prepare(`
-  SELECT COUNT(*) as count FROM issues 
-  WHERE workspace_id = ? AND status != 'done' 
-  AND due_date IS NOT NULL AND due_date <= ?
-`).get(workspace.id, oneWeekFromNow.toISOString()) as any;
-
-// ──── Roadmap (All sprints) ────
-const allSprints = db.prepare(`
-  SELECT id, name, start_date, end_date, status, goal
-  FROM sprints WHERE workspace_id = ?
-  ORDER BY COALESCE(start_date, '9999') ASC
-  LIMIT 6
+  ORDER BY start_date ASC
 `).all(workspace.id) as any[];
 
-// ──── Sprint progress ────
+const urlSprintId = Astro.url.searchParams.get('sprint');
+let activeSprint = activeSprints.find(s => s.id === urlSprintId);
+if (!activeSprint && activeSprints.length > 0) {
+  activeSprint = activeSprints[0];
+}
+
+let pendingIssues = { count: 0 };
+let blockedIssues = { count: 0 };
 let sprintProgress = 0;
 let sprintDaysLeft = 0;
+
 if (activeSprint) {
+  pendingIssues = db.prepare(`
+    SELECT COUNT(*) as count FROM issues 
+    WHERE workspace_id = ? AND sprint_id = ? AND status != 'done'
+  `).get(workspace.id, activeSprint.id) as any;
+
+  blockedIssues = db.prepare(`
+    SELECT COUNT(*) as count FROM issues 
+    WHERE workspace_id = ? AND sprint_id = ? AND status = 'blocked'
+  `).get(workspace.id, activeSprint.id) as any;
+
   const doneInSprint = db.prepare(`
     SELECT COUNT(*) as count FROM issues WHERE sprint_id = ? AND status = 'done'
   `).get(activeSprint.id) as any;
@@ -73,7 +64,29 @@ if (activeSprint) {
     const now = new Date();
     sprintDaysLeft = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
   }
+} else {
+  pendingIssues = db.prepare(`
+    SELECT COUNT(*) as count FROM issues 
+    WHERE workspace_id = ? AND status != 'done'
+  `).get(workspace.id) as any;
+
+  blockedIssues = db.prepare(`
+    SELECT COUNT(*) as count FROM issues 
+    WHERE workspace_id = ? AND status = 'blocked'
+  `).get(workspace.id) as any;
 }
+
+const totalPages = db.prepare(`
+  SELECT COUNT(*) as count FROM pages WHERE workspace_id = ?
+`).get(workspace.id) as any;
+
+// ──── Roadmap (All sprints) ────
+const allSprints = db.prepare(`
+  SELECT id, name, start_date, end_date, status, goal
+  FROM sprints WHERE workspace_id = ?
+  ORDER BY COALESCE(start_date, '9999') ASC
+  LIMIT 6
+`).all(workspace.id) as any[];
 
 // ──── Milestones ────
 const milestones = db.prepare(`
@@ -81,17 +94,6 @@ const milestones = db.prepare(`
   FROM milestones WHERE workspace_id = ? AND status = 'planned'
   ORDER BY target_date ASC LIMIT 3
 `).all(workspace.id) as any[];
-
-// ──── Upcoming events (sprint ends + milestone targets) ────
-const upcomingEvents: any[] = [];
-allSprints.filter(s => s.end_date && s.status !== 'completed').forEach(s => {
-  upcomingEvents.push({ date: s.end_date, title: `End of ${s.name}`, type: 'sprint' });
-});
-milestones.forEach(m => {
-  if (m.target_date) upcomingEvents.push({ date: m.target_date, title: m.name, type: 'milestone' });
-});
-upcomingEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-const nextEvents = upcomingEvents.slice(0, 4);
 
 // ──── Recent activity (audit log) ────
 const recentActivity = db.prepare(`
@@ -125,12 +127,11 @@ const maxWorkload = Math.max(...members.map((m: any) => m.openCount), 1);
 
 // ──── My tasks in this workspace ────
 const myTasks = db.prepare(`
-  SELECT id, title, status, type, priority 
-  FROM issues 
-  WHERE workspace_id = ? AND assignee_id = ? AND status != 'done'
+  SELECT i.id, i.title, i.status, i.priority, i.sprint_id 
+  FROM issues i
+  WHERE i.workspace_id = ? ${activeSprint ? "AND i.sprint_id = '" + activeSprint.id + "'" : ''} AND i.status != 'done' AND i.assignee_id = ?
   ORDER BY 
-    CASE priority WHEN 'highest' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END,
-    updated_at DESC
+    CASE i.priority WHEN 'highest' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 WHEN 'low' THEN 4 ELSE 5 END ASC
   LIMIT 5
 `).all(workspace.id, user.id) as any[];
 
@@ -191,22 +192,30 @@ const priorityColor: Record<string, string> = {
       <div class="flex gap-2">
         <a href={`/w/${sys_tag}/board`} class="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded bg-forge-secondary text-forge-bg hover:opacity-90 transition-opacity">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
-          Open Board
+          {t('dashboard.open_board')}
         </a>
         <a href={`/w/${sys_tag}/p`} class="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded bg-forge-panel border border-forge-border text-forge-text hover:border-forge-secondary transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
-          Knowledge Base
+          {t('dashboard.knowledge_base')}
         </a>
       </div>
     </header>
 
     <!-- Stats Row -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <!-- Sprint activo -->
       <div class="bg-forge-panel border border-forge-border rounded-xl p-4 hover:border-forge-secondary/50 transition-colors group">
         <div class="flex items-center justify-between mb-3">
-          <span class="text-xs font-bold text-forge-muted uppercase tracking-wider">Sprint Activo</span>
-          <div class={`w-2 h-2 rounded-full ${activeSprint ? 'bg-forge-secondary animate-pulse' : 'bg-forge-muted'}`}></div>
+          <span class="text-xs font-bold text-forge-muted uppercase tracking-wider">{t('dashboard.active_sprint')}</span>
+          {activeSprints.length > 1 ? (
+             <form id="sprint-selector-form" method="get">
+               <select name="sprint" onchange="this.form.submit()" class="bg-forge-bg border border-forge-border text-xs rounded p-1 text-forge-text focus:outline-none focus:border-forge-secondary">
+                 {activeSprints.map(s => <option value={s.id} selected={activeSprint?.id === s.id}>{s.name}</option>)}
+               </select>
+             </form>
+          ) : (
+             <div class={`w-2 h-2 rounded-full ${activeSprint ? 'bg-forge-secondary animate-pulse' : 'bg-forge-muted'}`}></div>
+          )}
         </div>
         {activeSprint ? (
           <>
@@ -218,69 +227,57 @@ const priorityColor: Record<string, string> = {
               <span class="text-[10px] font-mono text-forge-muted shrink-0">{sprintProgress}%</span>
             </div>
             <span class="text-xs text-forge-muted">
-              {sprintDaysLeft > 0 ? `Ends in ${sprintDaysLeft}d` : 'Ending today'}
+              {sprintDaysLeft > 0 ? t('dashboard.ends_in').replace('{days}', String(sprintDaysLeft)) : t('dashboard.ending_today')}
             </span>
           </>
         ) : (
           <div class="mt-1">
-            <div class="text-forge-muted text-sm">No active sprint</div>
-            <a href={`/w/${sys_tag}/board`} class="text-xs text-forge-secondary hover:underline mt-1 inline-block">+ New Sprint</a>
+            <div class="text-forge-muted text-sm">{t('dashboard.no_active_sprint')}</div>
+            <a href={`/w/${sys_tag}/board`} class="text-xs text-forge-secondary hover:underline mt-1 inline-block">{t('dashboard.new_sprint')}</a>
           </div>
         )}
       </div>
 
       <!-- Issues pendientes -->
-      <a href={`/w/${sys_tag}/board`} class="bg-forge-panel border border-forge-border rounded-xl p-4 hover:border-forge-secondary/50 transition-colors group block">
+      <a href={`/w/${sys_tag}/board${activeSprint ? `?sprint=${activeSprint.id}` : ''}`} class="bg-forge-panel border border-forge-border rounded-xl p-4 hover:border-forge-secondary/50 transition-colors group block">
         <div class="flex items-center justify-between mb-3">
-          <span class="text-xs font-bold text-forge-muted uppercase tracking-wider">Pending Issues</span>
+          <span class="text-xs font-bold text-forge-muted uppercase tracking-wider">{t('dashboard.pending_issues')}</span>
           <svg class="text-forge-muted group-hover:text-forge-secondary transition-colors" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         </div>
         <div class="text-4xl font-black text-forge-secondary">{pendingIssues.count}</div>
         {blockedIssues.count > 0 && (
-          <div class="text-xs text-red-400 mt-1 font-medium">⚠ {blockedIssues.count} blocked</div>
+          <div class="text-xs text-red-400 mt-1 font-medium">{t('dashboard.blocked').replace('{count}', String(blockedIssues.count))}</div>
         )}
       </a>
 
       <!-- KB Pages -->
       <a href={`/w/${sys_tag}/p`} class="bg-forge-panel border border-forge-border rounded-xl p-4 hover:border-forge-secondary/50 transition-colors group block">
         <div class="flex items-center justify-between mb-3">
-          <span class="text-xs font-bold text-forge-muted uppercase tracking-wider">KB Pages</span>
+          <span class="text-xs font-bold text-forge-muted uppercase tracking-wider">{t('dashboard.kb_pages')}</span>
           <svg class="text-forge-muted group-hover:text-forge-secondary transition-colors" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
         </div>
         <div class="text-4xl font-black text-forge-text">{totalPages.count}</div>
-        <div class="text-xs text-forge-muted mt-1">knowledge articles</div>
+        <div class="text-xs text-forge-muted mt-1">{t('dashboard.knowledge_articles')}</div>
       </a>
-
-      <!-- Due this week -->
-      <div class="bg-forge-panel border border-forge-border rounded-xl p-4 hover:border-forge-secondary/50 transition-colors">
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-xs font-bold text-forge-muted uppercase tracking-wider">Due This Week</span>
-          <svg class="text-forge-muted" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        </div>
-        <div class={`text-4xl font-black ${dueSoon.count > 0 ? 'text-yellow-400' : 'text-forge-text'}`}>{dueSoon.count}</div>
-        {dueSoon.count > 0 && (
-          <div class="text-xs text-yellow-400 mt-1 font-medium">require attention</div>
-        )}
-      </div>
     </div>
 
-    <!-- Middle Row: Roadmap + Upcoming Events -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <!-- Middle Row: Roadmap -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
       <!-- Roadmap -->
       <div class="lg:col-span-2 bg-forge-panel border border-forge-border rounded-xl p-5">
         <div class="flex items-center justify-between mb-4">
           <h2 class="font-bold text-forge-text flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            Roadmap del proyecto
+            {t('dashboard.roadmap')}
           </h2>
-          <a href={`/w/${sys_tag}/board`} class="text-xs text-forge-muted hover:text-forge-secondary transition-colors">Ver board →</a>
+          <a href={`/w/${sys_tag}/board`} class="text-xs text-forge-muted hover:text-forge-secondary transition-colors">{t('dashboard.view_board')}</a>
         </div>
 
         {allSprints.length === 0 ? (
           <div class="py-8 text-center text-forge-muted text-sm">
-            <p>No sprints yet.</p>
-            <a href={`/w/${sys_tag}/board`} class="text-forge-secondary hover:underline text-xs mt-2 inline-block">Create your first sprint →</a>
+            <p>{t('dashboard.no_sprints')}</p>
+            <a href={`/w/${sys_tag}/board`} class="text-forge-secondary hover:underline text-xs mt-2 inline-block">{t('dashboard.create_sprint')}</a>
           </div>
         ) : (
           <div class="space-y-3" id="roadmap-container">
@@ -350,63 +347,19 @@ const priorityColor: Record<string, string> = {
           </div>
         )}
       </div>
-
-      <!-- Upcoming Events -->
-      <div class="bg-forge-panel border border-forge-border rounded-xl p-5">
-        <h2 class="font-bold text-forge-text flex items-center gap-2 mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          Próximos eventos
-        </h2>
-        {nextEvents.length === 0 ? (
-          <div class="text-sm text-forge-muted text-center py-6">No upcoming events</div>
-        ) : (
-          <div class="space-y-3">
-            {nextEvents.map(event => {
-              const d = new Date(event.date.includes('T') ? event.date : event.date.replace(' ', 'T') + 'Z');
-              return (
-                <div class="flex gap-3 items-start">
-                  <div class="shrink-0 w-10 text-center">
-                    <div class="text-[10px] font-bold text-forge-muted uppercase">{d.toLocaleDateString('en-US', { month: 'short' })}</div>
-                    <div class="text-lg font-black text-forge-text leading-tight">{d.getDate()}</div>
-                  </div>
-                  <div class="flex-1 min-w-0 pt-0.5">
-                    <p class="text-sm text-forge-text font-medium truncate">{event.title}</p>
-                    <span class={`text-[10px] font-bold ${event.type === 'milestone' ? 'text-yellow-400' : 'text-forge-secondary'}`}>
-                      {event.type === 'milestone' ? '⚑ Milestone' : '◈ Sprint end'}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-        
-        <!-- Quick Actions -->
-        <div class="mt-4 pt-4 border-t border-forge-border space-y-2">
-          <p class="text-[10px] font-bold text-forge-muted uppercase tracking-wider mb-2">Quick Actions</p>
-          <button id="dash-btn-new-issue" class="w-full flex items-center gap-2 text-xs font-bold px-3 py-2 rounded bg-forge-secondary/10 border border-forge-secondary/30 text-forge-secondary hover:bg-forge-secondary/20 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            New Issue
-          </button>
-          <a href={`/w/${sys_tag}/p`} id="dash-btn-new-page" class="w-full flex items-center gap-2 text-xs font-bold px-3 py-2 rounded bg-forge-panel border border-forge-border text-forge-text hover:border-forge-secondary transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            New Page
-          </a>
-        </div>
-      </div>
     </div>
 
     <!-- Bottom Row: Activity + Workload + My Tasks -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
       <!-- Recent Activity -->
       <div class="bg-forge-panel border border-forge-border rounded-xl p-5">
         <h2 class="font-bold text-forge-text flex items-center gap-2 mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          Actividad reciente
+          {t('dashboard.recent_activity')}
         </h2>
         {recentActivity.length === 0 ? (
-          <div class="text-sm text-forge-muted text-center py-6">No activity yet</div>
+          <div class="text-sm text-forge-muted text-center py-6">{t('dashboard.no_activity')}</div>
         ) : (
           <div class="space-y-3">
             {recentActivity.map(act => (
@@ -433,10 +386,10 @@ const priorityColor: Record<string, string> = {
       <div class="bg-forge-panel border border-forge-border rounded-xl p-5">
         <h2 class="font-bold text-forge-text flex items-center gap-2 mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-          Carga de trabajo
+          {t('dashboard.workload')}
         </h2>
         {members.length === 0 ? (
-          <div class="text-sm text-forge-muted text-center py-6">No members yet</div>
+          <div class="text-sm text-forge-muted text-center py-6">{t('dashboard.no_members')}</div>
         ) : (
           <div class="space-y-3">
             {members.map((member: any) => (
@@ -446,7 +399,7 @@ const priorityColor: Record<string, string> = {
                     <img src={member.avatar_url || '/default-avatar.svg'} class="w-5 h-5 rounded-full border border-forge-border" alt={member.username} />
                     <span class="text-xs font-medium text-forge-text truncate max-w-[100px]">{member.username}</span>
                   </div>
-                  <span class="text-[10px] font-mono text-forge-muted">{member.openCount} open</span>
+                  <span class="text-[10px] font-mono text-forge-muted">{member.openCount} {t('dashboard.open')}</span>
                 </div>
                 <div class="h-1.5 bg-forge-bg rounded-full overflow-hidden">
                   <div 
@@ -469,18 +422,18 @@ const priorityColor: Record<string, string> = {
       <div class="bg-forge-panel border border-forge-border rounded-xl p-5">
         <h2 class="font-bold text-forge-text flex items-center gap-2 mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          Mis tareas
+          {t('dashboard.my_tasks')}
         </h2>
         {myTasks.length === 0 ? (
           <div class="text-sm text-forge-muted text-center py-6">
-            <p>No tasks assigned to you</p>
-            <p class="text-xs mt-1">You're all caught up! 🎉</p>
+            <p>{t('dashboard.no_tasks')}</p>
+            <p class="text-xs mt-1">{t('dashboard.all_caught_up')}</p>
           </div>
         ) : (
           <div class="space-y-2">
             {myTasks.map(task => (
               <a 
-                href={`/w/${sys_tag}/board?issue=${task.id}`}
+                href={`/w/${sys_tag}/board?sprint=${task.sprint_id || 'backlog'}&issue=${task.id}`}
                 class="flex items-center gap-2 p-2 rounded hover:bg-forge-bg transition-colors group"
               >
                 <span class={`text-[10px] font-bold shrink-0 ${priorityColor[task.priority] || 'text-forge-muted'}`} title={task.priority}>
@@ -493,7 +446,7 @@ const priorityColor: Record<string, string> = {
               </a>
             ))}
             <a href={`/w/${sys_tag}/board`} class="block text-center text-xs text-forge-muted hover:text-forge-secondary transition-colors pt-2 border-t border-forge-border mt-2">
-              View all in board →
+              {t('dashboard.view_all_board')}
             </a>
           </div>
         )}
@@ -501,64 +454,4 @@ const priorityColor: Record<string, string> = {
     </div>
   </div>
 
-  <!-- New Issue Modal (reusable from board) -->
-  <dialog id="dash-new-issue-modal" class="bg-forge-panel border border-forge-border rounded-lg p-6 w-full max-w-[400px] text-forge-text shadow-xl backdrop:bg-black/50">
-    <h2 class="text-lg font-bold mb-4">Create Issue</h2>
-    <div class="mb-3">
-      <label class="block text-xs uppercase tracking-wider text-forge-muted mb-1">Title</label>
-      <input type="text" id="dash-issue-title" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:border-forge-secondary focus:outline-none text-sm" placeholder="What needs to be done?">
-    </div>
-    <div class="mb-4">
-      <label class="block text-xs uppercase tracking-wider text-forge-muted mb-1">Type</label>
-      <select id="dash-issue-type" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:border-forge-secondary focus:outline-none text-sm">
-        <option value="task">Task</option>
-        <option value="bug">Bug</option>
-        <option value="story">Story</option>
-        <option value="epic">Epic</option>
-      </select>
-    </div>
-    <div class="flex justify-end gap-3">
-      <button class="px-4 py-2 text-forge-muted hover:text-forge-text text-sm" onclick="document.getElementById('dash-new-issue-modal').close()">Cancel</button>
-      <button id="dash-btn-save-issue" class="bg-forge-secondary text-forge-bg px-4 py-2 rounded font-bold hover:opacity-90 transition-opacity text-sm">Create</button>
-    </div>
-  </dialog>
-
-  <script define:vars={{ workspaceId: workspace.id, sysTag: sys_tag }}>
-    // New Issue from Dashboard
-    document.getElementById('dash-btn-new-issue')?.addEventListener('click', () => {
-      document.getElementById('dash-new-issue-modal')?.showModal();
-      document.getElementById('dash-issue-title')?.focus();
-    });
-
-    document.getElementById('dash-btn-save-issue')?.addEventListener('click', async () => {
-      const title = document.getElementById('dash-issue-title')?.value?.trim();
-      const type = document.getElementById('dash-issue-type')?.value;
-      if (!title) return window.showToast?.('Please enter a title', true);
-
-      const btn = document.getElementById('dash-btn-save-issue');
-      if (btn) { btn.textContent = 'Creating...'; btn.setAttribute('disabled', 'true'); }
-
-      const res = await fetch('/api/issues', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, type, workspaceId })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        document.getElementById('dash-new-issue-modal')?.close();
-        window.showToast?.('Issue created!');
-        window.location.href = `/w/${sysTag}/board?issue=${data.id}`;
-      } else {
-        const err = await res.text();
-        window.showToast?.('Error: ' + err, true);
-        if (btn) { btn.textContent = 'Create'; btn.removeAttribute('disabled'); }
-      }
-    });
-
-    // Enter key in title
-    document.getElementById('dash-issue-title')?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') document.getElementById('dash-btn-save-issue')?.click();
-    });
-  </script>
 </MainLayout>

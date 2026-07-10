@@ -1,10 +1,14 @@
 ---
+import { useTranslations } from '../../i18n/ui';
 interface Props {
   sprints?: any[];
   currentSprintId?: string | null;
   workspaceMembers?: any[];
 }
 const { sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.props;
+
+const lang = Astro.locals.lang || 'en';
+const t = useTranslations(lang);
 ---
 <!-- Drawer backdrop -->
 <div id="issue-details-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-40 transition-opacity"></div>
@@ -24,7 +28,7 @@ const { sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.pr
     </div>
     <div class="flex items-center gap-3">
       <button id="btn-delete-issue" class="text-red-400 hover:bg-red-400/10 hover:text-red-300 px-3 py-1.5 rounded-md text-xs font-bold transition-all hidden border border-transparent hover:border-red-400/20">
-        Delete
+        {t('modal.delete')}
       </button>
       <button id="close-modal-btn" class="text-forge-muted hover:text-forge-text hover:bg-forge-panel p-1.5 rounded-md transition-colors border border-transparent hover:border-forge-border/30">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -42,10 +46,10 @@ const { sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.pr
       <div class="space-y-2 relative">
         <label class="text-[10px] font-bold text-forge-muted/70 uppercase tracking-widest flex items-center gap-1.5">
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-          Assignee
+          {t('modal.assignee')}
         </label>
         <select id="modal-issue-assignee" class="w-full appearance-none bg-forge-panel/30 border border-forge-border/40 hover:border-forge-secondary/30 rounded-lg p-2.5 text-sm font-medium text-forge-text focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 transition-colors cursor-pointer">
-          <option value="">Unassigned</option>
+          <option value="">{t('modal.unassigned')}</option>
           {workspaceMembers.map(m => (
             <option value={m.id}>{m.username}</option>
           ))}
@@ -57,10 +61,10 @@ const { sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.pr
       <div class="space-y-2 relative">
         <label class="text-[10px] font-bold text-forge-muted/70 uppercase tracking-widest flex items-center gap-1.5">
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
-          Reporter
+          {t('modal.reporter')}
         </label>
         <select id="modal-issue-reporter" class="w-full appearance-none bg-forge-panel/30 border border-forge-border/40 rounded-lg p-2.5 text-sm font-medium text-forge-muted focus:outline-none cursor-pointer">
-          <option value="system">System</option>
+          <option value="system">{t('modal.system')}</option>
           {workspaceMembers.map(m => (
             <option value={m.id}>{m.username}</option>
           ))}
@@ -75,20 +79,20 @@ const { sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.pr
       <label class="text-[10px] font-bold text-forge-muted/70 uppercase tracking-widest flex justify-between items-center">
         <span class="flex items-center gap-1.5">
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="3" x2="21" y2="7"></line><polyline points="21 3 17 7 21 11"></polyline><path d="M3 13h10V3H3v10z"></path><path d="M3 21h18V13H3v8z"></path></svg>
-          Description
+          {t('modal.description')}
         </span>
       </label>
       <div class="relative group">
-        <textarea id="modal-issue-desc" rows="6" class="w-full bg-forge-panel/40 border border-forge-border/50 rounded-xl p-4 text-[13px] leading-relaxed text-forge-text/90 focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 transition-all placeholder:text-forge-muted/50 resize-y shadow-inner" placeholder="Add a detailed description..."></textarea>
-        <button id="btn-save-desc" class="hidden absolute bottom-3 right-3 bg-forge-primary text-forge-bg text-[11px] uppercase tracking-wider font-bold px-4 py-1.5 rounded-lg hover:bg-forge-primary/90 hover:scale-105 active:scale-95 transition-all shadow-md shadow-forge-primary/20">Save</button>
+        <textarea id="modal-issue-desc" rows="6" class="w-full bg-forge-panel/40 border border-forge-border/50 rounded-xl p-4 text-[13px] leading-relaxed text-forge-text/90 focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 transition-all placeholder:text-forge-muted/50 resize-y shadow-inner" placeholder={t('modal.desc_placeholder') as string}></textarea>
+        <button id="btn-save-desc" class="hidden absolute bottom-3 right-3 bg-forge-primary text-forge-bg text-[11px] uppercase tracking-wider font-bold px-4 py-1.5 rounded-lg hover:bg-forge-primary/90 hover:scale-105 active:scale-95 transition-all shadow-md shadow-forge-primary/20">{t('modal.save')}</button>
       </div>
     </div>
     
     <div class="grid grid-cols-2 gap-6">
       <div class="space-y-2">
-        <label class="text-[10px] font-bold text-forge-muted/70 uppercase tracking-widest">Sprint</label>
+        <label class="text-[10px] font-bold text-forge-muted/70 uppercase tracking-widest">{t('modal.sprint')}</label>
         <select id="modal-issue-sprint" class="w-full bg-forge-panel/40 border border-forge-border/50 rounded-lg p-2.5 text-sm text-forge-text focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 transition-all shadow-sm">
-          <option value="backlog">Backlog</option>
+          <option value="backlog">{t('modal.backlog')}</option>
           {sprints.map((s: any) => (
             <option value={s.id}>{s.name}</option>
           ))}
@@ -96,7 +100,7 @@ const { sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.pr
       </div>
       <div class="space-y-2 relative group/sp">
         <label class="text-[10px] font-bold text-forge-muted/70 uppercase tracking-widest flex justify-between items-center cursor-help">
-          <span>Story Points</span>
+          <span>{t('modal.story_points')}</span>
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-forge-muted hover:text-forge-secondary transition-colors"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
         </label>
         
@@ -118,11 +122,46 @@ const { sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.pr
       </div>
     </div>
     
+    <!-- Time Tracking Section -->
+    <div class="bg-forge-panel/20 border border-forge-border/40 rounded-xl p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-[11px] font-bold text-forge-text uppercase tracking-widest flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-forge-secondary"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          {t('modal.time_tracking')}
+        </h3>
+        <button id="btn-log-work" class="bg-forge-secondary/10 hover:bg-forge-secondary/20 text-forge-secondary text-xs font-bold px-3 py-1.5 rounded-lg border border-forge-secondary/30 transition-all flex items-center gap-1.5">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          {t('modal.log_work')}
+        </button>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-6">
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-bold text-forge-muted/70 uppercase tracking-widest">{t('modal.estimated_hours')}</label>
+          <input type="number" id="modal-issue-estimated" value="0" min="0" step="0.5" class="w-full bg-forge-bg border border-forge-border/50 rounded-lg py-2 px-3 text-sm text-forge-text focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 transition-all font-mono" />
+        </div>
+        <div class="space-y-1.5 flex flex-col justify-end">
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-forge-muted" id="time-tracking-text" data-template={t('modal.logged_estimated')}>{t('modal.logged_estimated').replace('{logged}', '0').replace('{estimated}', '0')}</span>
+            <span class="font-bold" id="time-tracking-percent">0%</span>
+          </div>
+          <div class="h-2.5 w-full bg-forge-bg rounded-full overflow-hidden border border-forge-border/30">
+            <div id="time-tracking-bar" class="h-full bg-forge-secondary transition-all" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Work Logs Container -->
+      <div id="work-logs-container" class="space-y-2 mt-4 pt-4 border-t border-forge-border/30 hidden">
+        <!-- Work logs will be rendered here -->
+      </div>
+    </div>
+    
     <div class="space-y-2 mt-auto pt-6 border-t border-forge-border/30">
       <div class="flex justify-between items-center">
         <label class="text-[10px] font-bold text-forge-muted/70 uppercase tracking-widest flex items-center gap-1.5">
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
-          Attachments
+          {t('modal.attachments')}
         </label>
         <button id="btn-add-attachment-compact" class="hidden text-forge-secondary hover:bg-forge-secondary/10 p-1.5 rounded transition-colors" title="Add Attachment">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -135,13 +174,42 @@ const { sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.pr
         <div class="bg-forge-bg p-3 rounded-full border border-forge-border/40 group-hover:border-forge-secondary/30 group-hover:scale-110 transition-transform mb-3 shadow-sm">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.2 15c.7-1.2 1-2.5.7-3.9-.6-2-2.4-3.5-4.4-3.5h-1.2c-.7-3-3.2-5.2-6.2-5.6-3-.3-5.9 1.3-7.3 4-1.2 2.5-1 6.5.5 8.4"></path><path d="M12 18v-6"></path><path d="M9 15l3-3 3 3"></path></svg>
         </div>
-        <span class="text-sm font-bold tracking-tight">Click or drag files here</span>
+        <span class="text-sm font-bold tracking-tight">{t('modal.click_or_drag')}</span>
         <span class="text-[10px] text-forge-muted/60 mt-1">PNG, JPG, PDF up to 20MB</span>
       </div>
       <input type="file" id="file-attachment" class="hidden" />
     </div>
   </div>
 </div>
+
+<!-- Log Work Modal -->
+<dialog id="log-work-modal" class="bg-forge-panel border border-forge-border rounded-xl p-6 w-full max-w-[400px] text-forge-text shadow-2xl backdrop:bg-black/60">
+  <h2 class="text-lg font-bold mb-5 flex items-center gap-2">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+    {t('modal.log_work')}
+  </h2>
+  <div class="space-y-4">
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-[10px] font-bold uppercase tracking-wider text-forge-muted mb-1.5">{t('modal.time_spent')}</label>
+        <input type="number" id="log-work-hours" step="0.25" min="0.25" class="w-full bg-forge-bg border border-forge-border rounded-lg p-2 text-forge-text focus:border-forge-secondary focus:outline-none font-mono" placeholder="e.g. 2.5">
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold uppercase tracking-wider text-forge-muted mb-1.5">{t('modal.date_worked')}</label>
+        <input type="date" id="log-work-date" class="w-full bg-forge-bg border border-forge-border rounded-lg p-2 text-forge-text focus:border-forge-secondary focus:outline-none font-mono" />
+      </div>
+    </div>
+    <div>
+      <label class="block text-[10px] font-bold uppercase tracking-wider text-forge-muted mb-1.5">{t('modal.work_desc')}</label>
+      <textarea id="log-work-desc" rows="3" class="w-full bg-forge-bg border border-forge-border rounded-lg p-2 text-sm text-forge-text focus:border-forge-secondary focus:outline-none placeholder:text-forge-muted/50" placeholder={t('modal.work_desc_placeholder') as string}></textarea>
+    </div>
+  </div>
+  <div class="flex justify-end gap-3 mt-6">
+    <button type="button" class="px-4 py-2 text-xs font-bold text-forge-muted hover:text-forge-text transition-colors" onclick="document.getElementById('log-work-modal').close()">{t('modal.cancel')}</button>
+    <button type="button" id="btn-save-log-work" class="bg-forge-secondary text-forge-bg text-xs font-bold px-5 py-2 rounded-lg hover:opacity-90 transition-opacity shadow-lg shadow-forge-secondary/20">{t('modal.save_log')}</button>
+  </div>
+</dialog>
+
 
 <script>
   const closeBtn = document.getElementById('close-modal-btn');
@@ -308,10 +376,199 @@ const { sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.pr
     }
   });
 
-  logWorkBtn?.addEventListener('click', () => {
-    // @ts-ignore
-    window.showToast('Log Work modal feature coming in next phase.');
+  // Estimated Hours
+  const estimatedEl = document.getElementById('modal-issue-estimated') as HTMLInputElement;
+  estimatedEl?.addEventListener('change', async () => {
+    const idEl = document.getElementById('modal-issue-id');
+    const issueId = idEl?.getAttribute('data-full-id');
+    if (!issueId) return;
+
+    try {
+      const estimated = parseFloat(estimatedEl.value) || 0;
+      await fetch(`/api/issues/${issueId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estimated_hours: estimated })
+      });
+      if (window.showToast) window.showToast('Estimated hours saved');
+      // @ts-ignore
+      window.refreshTimeTrackingUI(issueId);
+    } catch (e) {
+      console.error('Failed to update estimated hours', e);
+    }
   });
+
+  // Time Tracking Logic
+  logWorkBtn?.addEventListener('click', () => {
+    // Generate local date string YYYY-MM-DD to avoid UTC offset issues
+    const now = new Date();
+    const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    
+    (document.getElementById('log-work-date') as HTMLInputElement).value = localDate;
+    (document.getElementById('log-work-hours') as HTMLInputElement).value = '';
+    (document.getElementById('log-work-desc') as HTMLTextAreaElement).value = '';
+    (document.getElementById('log-work-modal') as HTMLDialogElement).showModal();
+  });
+
+  document.getElementById('btn-save-log-work')?.addEventListener('click', async () => {
+    const idEl = document.getElementById('modal-issue-id');
+    const issueId = idEl?.getAttribute('data-full-id');
+    if (!issueId) return;
+
+    const hours = (document.getElementById('log-work-hours') as HTMLInputElement).value;
+    const date = (document.getElementById('log-work-date') as HTMLInputElement).value;
+    const desc = (document.getElementById('log-work-desc') as HTMLTextAreaElement).value;
+
+    if (!hours || parseFloat(hours) <= 0) {
+      // @ts-ignore
+      if (window.showToast) window.showToast('Enter valid hours', true);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/issues/${issueId}/worklogs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hours_spent: hours, work_date: new Date(date).toISOString(), description: desc })
+      });
+
+      if (res.ok) {
+        (document.getElementById('log-work-modal') as HTMLDialogElement).close();
+        // @ts-ignore
+        if (window.showToast) window.showToast('Work logged successfully!');
+        // @ts-ignore
+        window.loadWorkLogs(issueId);
+      } else {
+        // @ts-ignore
+        if (window.showToast) window.showToast(await res.text(), true);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  });
+
+  // @ts-ignore
+  window.loadWorkLogs = async (issueId: string) => {
+    const container = document.getElementById('work-logs-container');
+    if (!container) return;
+    container.classList.remove('hidden');
+    container.innerHTML = '<div class="text-xs text-forge-muted animate-pulse">Loading logs...</div>';
+
+    try {
+      const res = await fetch(`/api/issues/${issueId}/worklogs`);
+      if (res.ok) {
+        const logs = await res.json();
+        renderWorkLogs(logs);
+        // Also refresh the UI progress bar (we need to get the latest issue details to know the real logged_hours, 
+        // but for now we can just compute from logs and estimated field)
+        // @ts-ignore
+        window.refreshTimeTrackingUI(issueId);
+      }
+    } catch (e) {
+      container.innerHTML = '<div class="text-xs text-red-400">Failed to load work logs</div>';
+    }
+  };
+
+  const renderWorkLogs = (logs: any[]) => {
+    const container = document.getElementById('work-logs-container');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    const esc = (str: any) => {
+      if (typeof str !== 'string') return str;
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    };
+    
+    if (logs.length === 0) {
+      container.classList.add('hidden');
+      return;
+    }
+
+    logs.forEach(log => {
+      const date = new Date(log.work_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      const div = document.createElement('div');
+      div.className = 'flex items-start gap-3 p-3 bg-forge-bg/50 border border-forge-border/40 rounded-lg group';
+      div.innerHTML = `
+        <img src="${esc(log.avatar_url) || '/default-avatar.svg'}" class="w-6 h-6 rounded-full border border-forge-border object-cover shrink-0 mt-0.5" />
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-forge-text">${esc(log.username)}</span>
+            <span class="text-[10px] font-mono text-forge-muted">${date}</span>
+          </div>
+          <div class="text-xs text-forge-text/80 mt-1">${esc(log.description) || '<i class="opacity-50">No description</i>'}</div>
+        </div>
+        <div class="flex flex-col items-end gap-2 shrink-0">
+          <span class="text-xs font-mono font-bold text-forge-secondary bg-forge-secondary/10 px-2 py-0.5 rounded border border-forge-secondary/20">${log.hours_spent}h</span>
+          ${role !== 'viewer' ? `<button class="delete-worklog-btn hidden group-hover:block text-red-400 hover:text-red-300 transition-colors" data-id="${log.id}" title="Delete Log"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>` : ''}
+        </div>
+      `;
+      container.appendChild(div);
+    });
+
+    document.querySelectorAll('.delete-worklog-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+        // @ts-ignore
+        window.forgeConfirm('Delete this work log?', async () => {
+          const res = await fetch(`/api/worklogs/${id}`, { method: 'DELETE' });
+          if (res.ok) {
+            // @ts-ignore
+            const issueId = document.getElementById('modal-issue-id')?.getAttribute('data-full-id');
+            // @ts-ignore
+            window.loadWorkLogs(issueId);
+          }
+        });
+      });
+    });
+  };
+
+  // @ts-ignore
+  window.refreshTimeTrackingUI = async (issueId: string) => {
+    // We need to fetch the issue details to get the exact estimated and logged hours
+    try {
+      const res = await fetch(`/api/issues/${issueId}`);
+      if (res.ok) {
+        const issue = await res.json();
+        const est = parseFloat(issue.estimated_hours) || 0;
+        const logged = parseFloat(issue.logged_hours) || 0;
+        
+        const estInput = document.getElementById('modal-issue-estimated') as HTMLInputElement;
+        if (estInput && document.activeElement !== estInput) estInput.value = est.toString();
+        
+        const text = document.getElementById('time-tracking-text');
+        const pct = document.getElementById('time-tracking-percent');
+        const bar = document.getElementById('time-tracking-bar');
+        
+        if (text) text.textContent = `${logged}h logged / ${est > 0 ? est + 'h estimated' : 'no estimate'}`;
+        
+        if (est > 0) {
+          let percentage = Math.round((logged / est) * 100);
+          if (pct) pct.textContent = `${percentage}%`;
+          
+          let displayPercent = Math.min(percentage, 100);
+          if (bar) {
+            bar.style.width = `${displayPercent}%`;
+            
+            // Thresholds: < 80% Green, 80-100% Orange, > 100% Red
+            let barColor = 'bg-green-500'; // Default Green (safe zone)
+            if (percentage > 100) barColor = 'bg-red-500';
+            else if (percentage >= 80) barColor = 'bg-orange-500';
+            
+            bar.className = `h-full transition-all ${barColor}`;
+            
+            if (percentage > 100 && pct) pct.classList.add('text-red-500');
+            else if (pct) pct.classList.remove('text-red-500');
+          }
+        } else {
+          if (pct) pct.textContent = '0%';
+          if (bar) {
+            bar.style.width = '0%';
+            bar.className = 'h-full bg-forge-secondary transition-all';
+          }
+        }
+      }
+    } catch(e) {}
+  };
 
   // Delete Issue
   const deleteBtn = document.getElementById('btn-delete-issue');
@@ -374,6 +631,11 @@ const { sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.pr
     if (!attachmentsList || !attachBtn || !attachBtnCompact) return;
     attachmentsList.innerHTML = '';
     
+    const esc = (str: any) => {
+      if (typeof str !== 'string') return str;
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    };
+    
     if (data.length > 0) {
       attachBtn.classList.add('hidden');
       attachBtnCompact.classList.remove('hidden');
@@ -382,9 +644,9 @@ const { sprints = [], currentSprintId = null, workspaceMembers = [] } = Astro.pr
         const div = document.createElement('div');
         div.className = 'flex items-center justify-between p-2.5 bg-forge-panel/30 border border-forge-border/40 rounded-lg group';
         div.innerHTML = `
-          <a href="/api/storage/${att.file_path.split('/').pop()}" target="_blank" class="text-[12px] font-mono text-forge-text hover:text-forge-secondary hover:underline truncate max-w-[80%] flex items-center gap-2">
+          <a href="/api/storage/${esc(att.file_path.split('/').pop())}" target="_blank" class="text-[12px] font-mono text-forge-text hover:text-forge-secondary hover:underline truncate max-w-[80%] flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.2 15c.7-1.2 1-2.5.7-3.9-.6-2-2.4-3.5-4.4-3.5h-1.2c-.7-3-3.2-5.2-6.2-5.6-3-.3-5.9 1.3-7.3 4-1.2 2.5-1 6.5.5 8.4"></path><path d="M12 18v-6"></path><path d="M9 15l3-3 3 3"></path></svg>
-            ${att.file_name}
+            ${esc(att.file_name)}
           </a>
           <button class="delete-attachment-btn hidden text-red-400 hover:text-red-300 hover:bg-red-400/10 p-1.5 rounded transition-all opacity-0 group-hover:opacity-100" data-id="${att.id}" title="Delete file">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>

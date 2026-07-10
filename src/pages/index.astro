@@ -2,8 +2,11 @@
 // src/pages/index.astro
 import MainLayout from '../layouts/MainLayout.astro';
 import db from '../lib/db';
+import { useTranslations } from '../i18n/ui';
 
 const user = Astro.locals.user;
+const lang = Astro.locals.lang || 'en';
+const t = useTranslations(lang);
 
 // 1. Obtener Workspaces donde el usuario es miembro (o todos si es sysadmin)
 const workspacesQuery = user.is_sysadmin === 1 
@@ -28,7 +31,7 @@ for (const ws of workspaces) {
 
 // 2. Obtener Tareas Asignadas a mí (My Tasks)
 const myTasks = db.prepare(`
-  SELECT i.id, i.title, i.status, w.sys_tag, w.icon as workspace_icon, w.name as workspace_name
+  SELECT i.id, i.title, i.status, i.sprint_id, w.sys_tag, w.icon as workspace_icon, w.name as workspace_name
   FROM issues i 
   JOIN workspaces w ON i.workspace_id = w.id 
   WHERE i.assignee_id = ? AND i.status != 'done'
@@ -36,18 +39,18 @@ const myTasks = db.prepare(`
 `).all(user.id) as any[];
 ---
 
-<MainLayout title="My Hub">
+<MainLayout title={t('hub.title')}>
   <div class="space-y-8 max-w-5xl mx-auto">
     <header>
-      <h1 class="text-3xl font-bold text-forge-text mb-2">My Hub</h1>
-      <p class="text-forge-muted">Welcome back, {user.username}</p>
+      <h1 class="text-3xl font-bold text-forge-text mb-2">{t('hub.title')}</h1>
+      <p class="text-forge-muted">{t('hub.welcome').replace('{user}', user.username)}</p>
     </header>
 
     <section>
       <div class="flex justify-between items-end mb-4 border-b border-forge-border pb-2">
-        <h2 class="text-xl font-bold text-forge-text">My Workspaces</h2>
+        <h2 class="text-xl font-bold text-forge-text">{t('hub.workspaces')}</h2>
         <button id="btn-create-ws-modal" class="text-xs font-bold bg-forge-secondary text-forge-bg px-3 py-1.5 rounded hover:opacity-90 transition-opacity flex items-center gap-2">
-          <span>+ Create Workspace</span>
+          <span>{t('hub.create_workspace')}</span>
         </button>
       </div>
       
@@ -108,19 +111,19 @@ const myTasks = db.prepare(`
               <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M 20 30 L 80 40 L 50 80 Z" fill="none" stroke="currentColor" class="text-forge-muted" stroke-dasharray="2,2" stroke-width="0.5" /></svg>
             </div>
             <p class="text-forge-muted font-mono mb-2 relative z-10">NO_ORBITAL_DATA</p>
-            <p class="text-forge-text relative z-10">You are not assigned to any workspaces. Create one to begin.</p>
+            <p class="text-forge-text relative z-10">{t('hub.no_workspaces')}</p>
           </div>
         )}
       </div>
     </section>
 
     <section>
-      <h2 class="text-xl font-bold text-forge-text mb-4 border-b border-forge-border pb-2">My Pending Tasks</h2>
+      <h2 class="text-xl font-bold text-forge-text mb-4 border-b border-forge-border pb-2">{t('hub.pending_tasks')}</h2>
       <div class="bg-forge-panel border border-forge-border rounded-lg overflow-hidden">
         <ul class="divide-y divide-forge-border">
           {myTasks.map(task => (
             <li>
-              <a href={`/w/${task.sys_tag}/board?issue=${task.id}`} class="p-4 hover:bg-forge-bg transition-colors flex items-center justify-between group block">
+              <a href={`/w/${task.sys_tag}/board?sprint=${task.sprint_id || 'backlog'}&issue=${task.id}`} class="p-4 hover:bg-forge-bg transition-colors flex items-center justify-between group block">
                 <div class="flex items-center gap-3">
                   <div class="w-8 h-8 rounded shrink-0 flex items-center justify-center bg-forge-bg border border-forge-border font-bold text-forge-secondary overflow-hidden" title={task.workspace_name}>
                     {task.workspace_icon && task.workspace_icon.startsWith('data:image') ? (
@@ -145,7 +148,7 @@ const myTasks = db.prepare(`
                 <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M 10 50 L 50 20 L 90 60" fill="none" stroke="currentColor" class="text-forge-muted" stroke-dasharray="2,2" stroke-width="0.5" /></svg>
               </div>
               <p class="text-forge-muted font-mono mb-2 relative z-10">CLEAR_SKIES</p>
-              <p class="text-forge-text relative z-10">No pending tasks. Forge a new issue to begin.</p>
+              <p class="text-forge-text relative z-10">{t('hub.no_tasks')}</p>
             </li>
           )}
         </ul>
@@ -154,9 +157,9 @@ const myTasks = db.prepare(`
   </div>
 
   <dialog id="new-ws-modal" class="bg-forge-panel border border-forge-border rounded-lg p-6 w-full max-w-[400px] text-forge-text shadow-xl backdrop:bg-black/50">
-    <h2 class="text-xl font-bold mb-4">Create Workspace</h2>
+    <h2 class="text-xl font-bold mb-4">{t('hub.create_workspace').replace('+', '').trim()}</h2>
     <div class="mb-4">
-      <label for="ws-name" class="block text-xs uppercase tracking-wider text-forge-muted mb-1">Name</label>
+      <label for="ws-name" class="block text-xs uppercase tracking-wider text-forge-muted mb-1">{t('modal.title') || 'Name'}</label>
       <input type="text" id="ws-name" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:border-forge-secondary focus:outline-none" placeholder="E.g. Project Orion">
     </div>
     <div class="mb-4">
@@ -165,8 +168,8 @@ const myTasks = db.prepare(`
       <p class="text-[10px] text-forge-muted mt-1">Only lowercase letters, numbers, and dashes.</p>
     </div>
     <div class="flex justify-end gap-3 mt-6">
-      <button type="button" class="px-4 py-2 text-forge-muted hover:text-forge-text" onclick="document.getElementById('new-ws-modal').close()">Cancel</button>
-      <button type="button" id="btn-save-ws" class="bg-forge-secondary text-forge-bg px-4 py-2 rounded font-bold hover:opacity-90 transition-opacity">Create</button>
+      <button type="button" class="px-4 py-2 text-forge-muted hover:text-forge-text" onclick="document.getElementById('new-ws-modal').close()">{t('modal.cancel') || 'Cancel'}</button>
+      <button type="button" id="btn-save-ws" class="bg-forge-secondary text-forge-bg px-4 py-2 rounded font-bold hover:opacity-90 transition-opacity">{t('modal.create') || 'Create'}</button>
     </div>
   </dialog>
 

@@ -15,10 +15,22 @@ if (!ws) return Astro.redirect('/404');
 const access = checkWorkspaceAccess(user.id, user.is_sysadmin, ws.id, 'viewer');
 if (!access.granted) return Astro.redirect('/404');
 
-const firstPage = db.prepare('SELECT id FROM pages WHERE workspace_id = ? ORDER BY created_at ASC LIMIT 1').get(ws.id) as any;
+let targetPageId = null;
 
-if (firstPage) {
-  return Astro.redirect(`/w/${sys_tag}/p/${firstPage.id}`);
+// Intentar usar la última página visitada por el usuario
+if (user.last_page_id) {
+  const lastPage = db.prepare('SELECT id FROM pages WHERE id = ? AND workspace_id = ?').get(user.last_page_id, ws.id) as any;
+  if (lastPage) targetPageId = lastPage.id;
+}
+
+// Fallback a la primera página si no hay historial
+if (!targetPageId) {
+  const firstPage = db.prepare('SELECT id FROM pages WHERE workspace_id = ? ORDER BY created_at ASC LIMIT 1').get(ws.id) as any;
+  if (firstPage) targetPageId = firstPage.id;
+}
+
+if (targetPageId) {
+  return Astro.redirect(`/w/${sys_tag}/p/${targetPageId}`);
 }
 ---
 

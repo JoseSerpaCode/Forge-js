@@ -1,10 +1,19 @@
 ---
 const user = Astro.locals.user;
+import { useTranslations } from '../../i18n/ui';
+const lang = Astro.locals.lang || 'en';
+const t = useTranslations(lang);
 interface Props {
   title?: string;
   workspaceName?: string;
 }
 const { title, workspaceName } = Astro.props;
+
+// Extraer sys_tag de la URL si estamos dentro de un workspace
+const match = Astro.url.pathname.match(/^\/w\/([^/]+)/);
+const sysTag = match ? match[1] : null;
+const workspaceDashboardUrl = sysTag ? `/w/${sysTag}` : '#';
+const currentUrl = Astro.url.pathname;
 ---
 <header class="h-14 bg-forge-panel/80 backdrop-blur-md border-b border-forge-border flex items-center justify-between px-6 shrink-0 relative z-40">
   {user?.is_sysadmin === 1 && (
@@ -20,11 +29,11 @@ const { title, workspaceName } = Astro.props;
         <div class="hidden sm:flex items-center gap-2 text-sm text-forge-muted font-medium ml-1 select-none">
           {workspaceName && (
             <>
-              <span class="text-forge-text truncate max-w-[150px]">{workspaceName}</span>
+              <a href={workspaceDashboardUrl} class="text-forge-text hover:text-forge-secondary transition-colors truncate max-w-[150px] cursor-pointer" title={`Go to ${workspaceName} Dashboard`}>{workspaceName}</a>
               <span class="text-forge-border">/</span>
             </>
           )}
-          <span class={workspaceName ? 'text-forge-secondary' : 'text-forge-text'}>{title.split(' - ')[0]}</span>
+          <a href={currentUrl} class={`${workspaceName ? 'text-forge-secondary hover:text-forge-text' : 'text-forge-text hover:text-forge-secondary'} transition-colors cursor-pointer`}>{title.split(' - ')[0]}</a>
         </div>
       )}
     </div>
@@ -33,7 +42,7 @@ const { title, workspaceName } = Astro.props;
       <svg class="absolute left-3 top-2 w-4 h-4 text-forge-muted" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>
-      <input type="text" id="global-search" aria-label="Global Search" placeholder="Search across Forge (Press '/')" class="w-full bg-forge-bg/50 border border-forge-border rounded-lg text-sm pl-9 pr-12 py-1.5 focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 text-forge-text placeholder:text-forge-muted transition-all" />
+      <input type="text" id="global-search" aria-label="Global Search" placeholder={t('hub.search_placeholder') || "Search across Forge (Press '/')" } class="w-full bg-forge-bg/50 border border-forge-border rounded-lg text-sm pl-9 pr-12 py-1.5 focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 text-forge-text placeholder:text-forge-muted transition-all" />
       <span class="absolute right-2 top-1.5 text-[10px] text-forge-muted font-mono border border-forge-border rounded px-1.5 py-0.5 bg-forge-panel" aria-hidden="true">/</span>
       
       <!-- Search Dropdown -->
@@ -45,7 +54,15 @@ const { title, workspaceName } = Astro.props;
     </div>
   </div>
   <div class="flex items-center gap-3">
-    <button id="btn-show-docs" class="text-forge-muted hover:text-forge-secondary transition-colors p-1.5 rounded hover:bg-forge-bg hidden sm:block" title="Documentation" aria-label="Documentation">
+    <form method="post" action="/api/lang" class="hidden sm:block">
+      <input type="hidden" name="current_path" value={currentUrl} />
+      <button type="submit" name="lang" value={lang === 'en' ? 'es' : 'en'} class="text-forge-muted hover:text-forge-secondary transition-colors p-1.5 rounded hover:bg-forge-bg text-sm font-medium flex items-center gap-1" title="Change Language">
+        {lang === 'en' ? '🇬🇧 EN' : '🇪🇸 ES'}
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="opacity-50"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+    </form>
+
+    <button id="btn-show-docs" class="text-forge-muted hover:text-forge-secondary transition-colors p-1.5 rounded hover:bg-forge-bg hidden sm:block" title={t('topbar.docs')} aria-label={t('topbar.docs')}>
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
     </button>
 
@@ -58,8 +75,8 @@ const { title, workspaceName } = Astro.props;
       
       <div id="notif-dropdown" class="hidden absolute right-0 top-full mt-2 w-80 bg-forge-panel border border-forge-border rounded-lg shadow-2xl z-50 overflow-hidden">
         <div class="p-3 border-b border-forge-border flex justify-between items-center bg-forge-bg/50">
-          <span class="text-xs font-bold uppercase tracking-widest text-forge-text">Notifications</span>
-          <button class="text-[10px] text-forge-secondary hover:underline">Mark all as read</button>
+          <span class="text-xs font-bold uppercase tracking-widest text-forge-text">{t('sidebar.notifications') || 'Notifications'}</span>
+          <button class="text-[10px] text-forge-secondary hover:underline">{t('notifications.markAllRead') || 'Mark all as read'}</button>
         </div>
         <ul id="notif-list" class="max-h-80 overflow-y-auto">
           <!-- Dynamic notifications -->
@@ -155,7 +172,15 @@ const { title, workspaceName } = Astro.props;
 
   document.addEventListener('keydown', (e) => {
     // Open search with '/' key
-    if (e.key === '/' && document.activeElement !== searchInput) {
+    const active = document.activeElement as HTMLElement | null;
+    const isEditable = active && (
+      active.tagName === 'INPUT' || 
+      active.tagName === 'TEXTAREA' || 
+      active.isContentEditable ||
+      active.closest('[contenteditable="true"]')
+    );
+    
+    if (e.key === '/' && document.activeElement !== searchInput && !isEditable) {
       e.preventDefault();
       searchInput?.focus();
     }
@@ -278,7 +303,7 @@ const { title, workspaceName } = Astro.props;
                 <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><circle cx="50" cy="50" r="20" fill="none" stroke="currentColor" class="text-forge-muted" stroke-dasharray="2,2" stroke-width="0.5" /></svg>
               </div>
               <p class="text-forge-muted font-mono mb-2 relative z-10 text-xs">SILENT_COMM</p>
-              <p class="text-forge-text relative z-10 text-xs">No new notifications.</p>
+              <p class="text-forge-text relative z-10 text-xs">No new notifications</p>
             </li>
           `;
         } else {
@@ -298,7 +323,7 @@ const { title, workspaceName } = Astro.props;
 
             notifList.innerHTML += `
               <li class="relative group/notif p-3 border-b border-forge-border transition-colors ${n.is_read ? 'opacity-60' : 'bg-forge-bg'} ${n.type !== 'invite' ? 'hover:bg-forge-panel' : ''}">
-                <a href="${n.type !== 'invite' ? esc(n.link_url || '#') : '#'}" class="block ${n.type !== 'invite' ? 'pr-6' : ''}">
+                <a href="${n.type !== 'invite' ? esc(n.link_url || '#') : '#'}" data-id="${n.id}" class="btn-notif-link block ${n.type !== 'invite' ? 'pr-6' : ''}">
                   <div class="flex justify-between items-start mb-1">
                     <span class="text-xs font-bold ${n.is_read ? 'text-forge-muted' : 'text-forge-secondary'} truncate">${esc(n.title)}</span>
                     <span class="text-[10px] text-forge-muted shrink-0 ml-2">${date}</span>
@@ -356,6 +381,20 @@ const { title, workspaceName } = Astro.props;
               }
             });
           });
+
+          notifList.querySelectorAll('.btn-notif-link').forEach(link => {
+            link.addEventListener('click', async (e) => {
+              if (link.getAttribute('href') === '#') return;
+              // Don't prevent default, let it navigate, but fire request first
+              const id = link.getAttribute('data-id');
+              fetch('/api/user/notifications', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'mark_read', id }),
+                keepalive: true
+              });
+            });
+          });
         }
       }
     } catch (e) {
@@ -363,8 +402,9 @@ const { title, workspaceName } = Astro.props;
     }
   };
 
-  // Initial fetch
+  // Initial fetch and poll
   fetchNotifications();
+  setInterval(fetchNotifications, 30000); // Poll every 30 seconds
 
   notifBtn?.addEventListener('click', async (e) => {
     e.stopPropagation();

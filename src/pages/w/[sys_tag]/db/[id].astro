@@ -1,0 +1,254 @@
+---
+import MainLayout from '../../../../layouts/MainLayout.astro';
+import db from '../../../../lib/db';
+import { checkWorkspaceAccess } from '../../../../lib/guard';
+
+const { sys_tag, id } = Astro.params;
+const user = Astro.locals.user;
+
+if (!user) return Astro.redirect('/login');
+
+const workspace = db.prepare('SELECT id, name FROM workspaces WHERE sys_tag = ?').get(sys_tag) as any;
+if (!workspace) return Astro.redirect('/404');
+
+const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspace.id, 'viewer');
+if (!access.granted) return new Response('Access Denied', { status: 403 });
+const canEdit = access.role !== 'viewer';
+
+const database = db.prepare('SELECT * FROM dynamic_databases WHERE id = ? AND workspace_id = ?').get(id, workspace.id) as any;
+if (!database) return Astro.redirect('/404');
+
+const schema = JSON.parse(database.schema_json);
+const columns = schema.columns || [];
+
+// Fetch entries for table
+const entries = db.prepare(`
+  SELECT id, payload_json, created_at
+  FROM dynamic_entries
+  WHERE database_id = ?
+  ORDER BY created_at DESC
+  LIMIT 500
+`).all(database.id) as any[];
+
+const view = db.prepare('SELECT * FROM dynamic_views WHERE database_id = ? LIMIT 1').get(database.id) as any;
+let visibleColumns = columns.map((c: any) => c.id);
+if (view && view.visible_columns_json) {
+  try { visibleColumns = JSON.parse(view.visible_columns_json); } catch(e){}
+}
+---
+
+<MainLayout title={`${database.icon || ''} ${database.name} — ${workspace.name}`} workspaceId={workspace.id}>
+  <div class="h-full flex flex-col -mx-4 -mt-4 p-4 lg:p-6 lg:-m-6 lg:h-[calc(100vh-2rem)]">
+    
+    <header class="flex flex-col md:flex-row md:items-center justify-between mb-6 shrink-0 gap-4">
+      <div class="flex items-center gap-5">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-forge-panel to-forge-panel/50 border border-forge-border flex items-center justify-center text-3xl shadow-sm">
+          {database.icon || '🗄️'}
+        </div>
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <a href={`/w/${sys_tag}/db`} class="text-xs text-forge-muted hover:text-forge-secondary transition-colors font-bold tracking-wide uppercase">Tables</a>
+            <span class="text-forge-muted/50 text-xs">/</span>
+            <h1 class="text-2xl font-bold text-forge-text leading-none">{database.name}</h1>
+          </div>
+          {database.description && <p class="text-sm text-forge-muted">{database.description}</p>}
+        </div>
+      </div>
+      
+      <div class="flex gap-3 items-center">
+        {canEdit && (
+          <>
+            <button id="btn-delete-db" class="text-forge-muted hover:text-red-400 p-2 rounded-lg transition-all hover:bg-forge-panel" title="Delete Table">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+            </button>
+            <button id="btn-add-row" class="bg-forge-text text-forge-bg text-sm font-bold px-5 py-2 rounded-xl hover:opacity-90 transition-all shadow-sm flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              New Row
+            </button>
+          </>
+        )}
+      </div>
+    </header>
+
+    <div class="flex-1 bg-forge-panel border border-forge-border rounded-xl overflow-hidden flex flex-col shadow-sm">
+      <div class="overflow-auto flex-1 custom-scrollbar">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead class="sticky top-0 bg-forge-panel z-10 shadow-[0_1px_0_var(--forge-border)]">
+            <tr>
+              {columns.filter((c: any) => visibleColumns.includes(c.id)).map((col: any) => (
+                <th class="px-4 py-2.5 font-bold text-xs uppercase tracking-wider text-forge-muted whitespace-nowrap bg-forge-panel">
+                  <div class="flex items-center gap-1.5">
+                    {col.type === 'text' && <svg class="opacity-50" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>}
+                    {col.type === 'number' && <svg class="opacity-50" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>}
+                    {col.type === 'select' && <svg class="opacity-50" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>}
+                    {col.name}
+                  </div>
+                </th>
+              ))}
+              <th class="w-10 bg-forge-panel"></th> <!-- Actions -->
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-forge-border/40 text-forge-text">
+            {entries.length === 0 ? (
+              <tr>
+                <td colspan={visibleColumns.length + 1} class="px-4 py-12 text-center text-forge-muted text-xs">
+                  This view is empty. Click "New Row" to add data.
+                </td>
+              </tr>
+            ) : (
+              entries.map(entry => {
+                const payload = JSON.parse(entry.payload_json);
+                return (
+                  <tr class="hover:bg-forge-bg/30 transition-colors group">
+                    {columns.filter((c: any) => visibleColumns.includes(c.id)).map((col: any) => {
+                      const val = payload[col.id];
+                      return (
+                        <td class="px-4 py-2 truncate max-w-[200px]">
+                          {col.type === 'select' && val ? (
+                            <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-forge-secondary/10 text-forge-secondary border border-forge-secondary/20">{val}</span>
+                          ) : (
+                            <span class={val ? '' : 'text-forge-muted/30 italic'}>{val !== null && val !== undefined && val !== '' ? val : 'Empty'}</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                    <td class="px-4 py-2 text-right">
+                      {canEdit && (
+                        <button class="btn-delete-row opacity-0 group-hover:opacity-100 text-forge-muted hover:text-red-400 p-1 transition-all" data-id={entry.id} title="Delete Row">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Row Modal -->
+  {canEdit && (
+    <dialog id="new-row-modal" class="bg-forge-panel border border-forge-border rounded-2xl p-0 w-full max-w-[500px] text-forge-text shadow-2xl backdrop:bg-black/80 backdrop:backdrop-blur-sm">
+      <div class="px-6 py-5 border-b border-forge-border/40 flex justify-between items-center bg-forge-panel rounded-t-2xl">
+        <h2 class="text-lg font-bold flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-forge-bg flex items-center justify-center border border-forge-border shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-forge-secondary"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
+          Add New Row
+        </h2>
+        <button type="button" class="text-forge-muted hover:text-forge-text p-2 hover:bg-forge-bg rounded-lg transition-colors" onclick="document.getElementById('new-row-modal').close()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      
+      <form id="new-row-form" class="p-6 space-y-5 max-h-[60vh] overflow-y-auto custom-scrollbar">
+        {columns.map((col: any) => (
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-forge-muted mb-2 flex items-center gap-1.5">
+              {col.name}
+              {col.type === 'number' && <span class="bg-forge-bg border border-forge-border px-1.5 py-0.5 rounded text-[8px] font-mono text-forge-secondary">NUMBER</span>}
+              {col.type === 'select' && <span class="bg-forge-bg border border-forge-border px-1.5 py-0.5 rounded text-[8px] font-mono text-forge-secondary">SELECT</span>}
+            </label>
+            
+            {col.type === 'select' ? (
+              <select name={col.id} class="w-full bg-forge-bg border border-forge-border rounded-xl p-3 text-sm text-forge-text focus:border-forge-secondary focus:outline-none transition-colors shadow-sm">
+                <option value="">-- Leave Empty --</option>
+                {(col.options || []).map((opt: any) => <option value={opt}>{opt}</option>)}
+              </select>
+            ) : col.type === 'number' ? (
+              <input type="number" step="any" name={col.id} class="w-full bg-forge-bg border border-forge-border rounded-xl p-3 text-sm text-forge-text focus:border-forge-secondary focus:outline-none transition-colors shadow-sm" placeholder="Enter a number">
+            ) : (
+              <input type="text" name={col.id} class="w-full bg-forge-bg border border-forge-border rounded-xl p-3 text-sm text-forge-text focus:border-forge-secondary focus:outline-none transition-colors shadow-sm" placeholder="Enter text">
+            )}
+          </div>
+        ))}
+      </form>
+      
+      <div class="px-6 py-5 border-t border-forge-border/40 bg-forge-panel flex justify-end gap-3 rounded-b-2xl">
+        <button type="button" class="px-5 py-2.5 text-sm font-bold text-forge-muted hover:text-forge-text hover:bg-forge-bg rounded-xl transition-colors" onclick="document.getElementById('new-row-modal').close()">Cancel</button>
+        <button type="button" id="btn-save-row" class="bg-forge-secondary text-forge-bg text-sm font-bold px-6 py-2.5 rounded-xl hover:scale-105 transition-all shadow-[0_0_15px_rgba(255,93,0,0.3)]">Save Row</button>
+      </div>
+    </dialog>
+  )}
+
+  <script define:vars={{ sysTag: sys_tag, dbId: id, dbName: database.name }}>
+    const newRowBtn = document.getElementById('btn-add-row');
+    const modal = document.getElementById('new-row-modal');
+    const saveBtn = document.getElementById('btn-save-row');
+    const form = document.getElementById('new-row-form');
+
+    newRowBtn?.addEventListener('click', () => modal?.showModal());
+
+    saveBtn?.addEventListener('click', async () => {
+      const formData = new FormData(form);
+      const payload = {};
+      formData.forEach((value, key) => {
+        if (value.trim() !== '') {
+          payload[key] = value.trim();
+        }
+      });
+
+      saveBtn.textContent = 'Saving...';
+      saveBtn.disabled = true;
+
+      try {
+        const res = await fetch(`/api/w/${sysTag}/db/${dbId}/entries`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          window.location.reload();
+        } else {
+          window.showToast?.(await res.text(), true);
+          saveBtn.textContent = 'Save Row';
+          saveBtn.disabled = false;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    });
+
+    // Delete Database Logic
+    const btnDeleteDb = document.getElementById('btn-delete-db');
+    btnDeleteDb?.addEventListener('click', () => {
+      window.forgeConfirm?.(`Are you sure you want to permanently delete the table "${dbName}" and all its rows? This cannot be undone.`, async () => {
+        try {
+          btnDeleteDb.disabled = true;
+          const res = await fetch(`/api/w/${sysTag}/db/${dbId}`, { method: 'DELETE' });
+          if (res.ok) window.location.href = `/w/${sysTag}/db`;
+          else window.showToast?.('Error deleting table', true);
+        } catch(err) {
+          console.error(err);
+        }
+      }, 'Delete Table');
+    });
+
+    // Delete Row Logic
+    document.querySelectorAll('.btn-delete-row').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        window.forgeConfirm?.('Are you sure you want to delete this row?', async () => {
+          try {
+            const res = await fetch(`/api/w/${sysTag}/db/${dbId}/entries/${id}`, { method: 'DELETE' });
+            if (res.ok) window.location.reload();
+            else window.showToast?.('Error deleting row', true);
+          } catch(err) {
+            console.error(err);
+          }
+        });
+      });
+    });
+  </script>
+</MainLayout>
+
+<style>
+  .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--forge-border); border-radius: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--forge-muted); }
+</style>

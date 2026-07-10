@@ -1,5 +1,9 @@
 ---
 import MainLayout from '../layouts/MainLayout.astro';
+import { useTranslations } from '../i18n/ui';
+
+const lang = Astro.locals?.lang || 'en';
+const t = useTranslations(lang);
 ---
 
 <MainLayout title="Page Not Found | Forge OS">
@@ -14,13 +18,13 @@ import MainLayout from '../layouts/MainLayout.astro';
     </div>
     
     <h1 class="text-6xl font-black text-forge-text mb-4 tracking-tighter drop-shadow-[0_0_15px_rgba(255,93,0,0.3)]">404</h1>
-    <h2 class="text-2xl font-bold text-forge-text mb-4">Workspace or Page Not Found</h2>
+    <h2 class="text-2xl font-bold text-forge-text mb-4">{t('404.title')}</h2>
     <p class="text-forge-muted max-w-md mb-8">
-      The project you are looking for does not exist, was deleted, or you don't have permissions to view it.
+      {t('404.desc')}
     </p>
     
     <a href="/" class="px-6 py-3 bg-forge-primary hover:bg-forge-accent-hover text-forge-bg font-bold rounded-lg shadow-[0_0_15px_var(--forge-accent-primary)] transition-all transform hover:-translate-y-1">
-      Return to Hub
+      {t('404.back')}
     </a>
   </div>
 </MainLayout>

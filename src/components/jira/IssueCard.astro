@@ -18,9 +18,13 @@ interface Props {
 }
 
 const { issue, canEdit = false } = Astro.props;
+
+import { useTranslations } from '../../i18n/ui';
+const lang = Astro.locals.lang || 'en';
+const t = useTranslations(lang);
 ---
 <!-- Componente IssueCard.astro -->
-<div id={issue.id} draggable={canEdit ? "true" : "false"} data-points={issue.story_points} data-position={issue.position} data-sprint-id={issue.sprint_id || 'backlog'} data-assignee-id={issue.assignee_id || ''} data-reporter-id={issue.reporter_id || ''} data-assignee={issue.assignee_username || 'Unassigned'} data-reporter={issue.reporter_username || 'System'} 
+<div id={issue.id} draggable={canEdit ? "true" : "false"} data-points={issue.story_points} data-position={issue.position} data-sprint-id={issue.sprint_id || 'backlog'} data-assignee-id={issue.assignee_id || ''} data-reporter-id={issue.reporter_id || ''} data-assignee={issue.assignee_username || 'Unassigned'} data-reporter={issue.reporter_username || 'System'} data-description={issue.description || ''} 
   class={`issue-card group bg-forge-panel border-l-4 p-4 rounded-md shadow-lg hover:-translate-y-0.5 hover:shadow-xl transition-all ${canEdit ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} mb-3 
     ${issue.type === 'bug' ? 'border-l-red-500 border-t-forge-border border-r-forge-border border-b-forge-border' : 
       issue.type === 'story' ? 'border-l-green-500 border-t-forge-border border-r-forge-border border-b-forge-border' : 
@@ -37,7 +41,7 @@ const { issue, canEdit = false } = Astro.props;
     </div>
   </div>
   <h4 class="text-forge-text font-bold text-sm mb-1 group-hover:text-forge-secondary transition-colors">{issue.title}</h4>
-  <p class="text-forge-muted text-xs line-clamp-2 mb-3">{issue.description || 'No description provided.'}</p>
+  <p class="text-forge-muted text-xs line-clamp-2 mb-3">{issue.description || t('modal.no_description')}</p>
   <div class="flex items-center gap-2">
     <span class="issue-type-badge px-2 py-0.5 rounded text-[10px] font-mono bg-forge-bg text-forge-muted border border-forge-border uppercase">
       {issue.type}

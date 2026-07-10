@@ -107,7 +107,7 @@ function getInitials(username: string) {
           idEl.textContent = card.id.substring(0, 8).toUpperCase();
           idEl.setAttribute('data-full-id', card.id);
           (titleEl as HTMLInputElement).value = card.querySelector('h4')?.textContent || '';
-          descEl.value = card.querySelector('p')?.textContent || '';
+          descEl.value = card.getAttribute('data-description') || '';
           pointsEl.value = card.getAttribute('data-points') || '0';
           
           const sprintEl = document.getElementById('modal-issue-sprint') as HTMLSelectElement;
@@ -136,6 +136,10 @@ function getInitials(username: string) {
           
           // @ts-ignore
           if (window.loadIssueAttachments) window.loadIssueAttachments(card.id);
+          // @ts-ignore
+          if (window.loadWorkLogs) window.loadWorkLogs(card.id);
+          // @ts-ignore
+          if (window.refreshTimeTrackingUI) window.refreshTimeTrackingUI(card.id);
 
           modal.classList.remove('translate-x-full');
           document.getElementById('issue-details-backdrop')?.classList.remove('hidden');

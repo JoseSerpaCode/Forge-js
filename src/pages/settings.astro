@@ -11,126 +11,325 @@ const memberships = db.prepare(`
   JOIN workspaces w ON w.id = wm.workspace_id
   WHERE wm.user_id = ?
 `).all(user.id) as any[];
+
+const userProfile = db.prepare('SELECT bio, pronouns, public_email, github_id, google_id, notif_mute_all, notif_mute_assign, notif_mute_mention, notif_mute_sprint, notif_mute_system FROM users WHERE id = ?').get(user.id) as any || {};
+import { useTranslations } from '../i18n/ui';
+const lang = Astro.locals.lang || 'en';
+const t = useTranslations(lang);
 ---
 
-<MainLayout title="Settings">
-  <div class="max-w-4xl mx-auto mt-4 sm:mt-10 p-0 sm:p-6 space-y-6 sm:space-y-8">
+<MainLayout title={t('user.settings.title')}>
+  <div class="max-w-5xl mx-auto mt-4 sm:mt-8 p-0 sm:p-6 pb-20">
     
-    <!-- User Settings -->
-    <div class="bg-forge-panel border border-forge-border rounded-lg shadow-lg p-6">
-      <div class="flex items-center gap-6 mb-6">
-        <div class="relative group cursor-pointer w-20 h-20 rounded-full border-2 border-forge-border bg-forge-bg flex items-center justify-center shrink-0 overflow-hidden" id="avatar-preview-container">
-          {user.avatar_url ? (
-            <img src={user.avatar_url} class="w-full h-full object-cover" id="avatar-preview-img" alt="User Avatar" loading="lazy" />
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-forge-secondary" id="avatar-preview-default"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          )}
-          <div class="absolute inset-0 bg-black/60 hidden group-hover:flex items-center justify-center transition-all z-10">
-            <span class="text-[10px] font-bold text-white uppercase tracking-widest">Change</span>
-          </div>
-          <input type="file" id="avatar-file-input" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer z-20" title="Upload new avatar" />
-        </div>
-        <div>
-          <h1 class="text-2xl font-bold text-forge-text">User Settings</h1>
-          <p class="text-forge-muted text-sm mt-1">Manage your profile and preferences</p>
-        </div>
+    <div class="border-b border-forge-border/40 pb-5 mb-8 flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-semibold text-forge-text">{t('user.settings.title')}</h1>
+        <p class="text-forge-muted text-sm mt-1">{t('user.settings.desc')}</p>
       </div>
-      
-      <div class="space-y-4 max-w-xl">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-bold text-forge-muted uppercase mb-1">Username</label>
-            <input type="text" id="username-input" value={user.username} class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-secondary" />
-          </div>
-          <div>
-            <label class="block text-sm font-bold text-forge-muted uppercase mb-1">Theme</label>
-            <select id="theme-selector" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-secondary">
-              <option value="dark">Forge Dark (Orange)</option>
-              <option value="ocean">Ocean Dark (Blue)</option>
-              <option value="light">Light Mode</option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="border-t border-forge-border pt-4 mt-4">
-          <h3 class="text-sm font-bold text-forge-text mb-4">Change Password</h3>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-xs font-bold text-forge-muted uppercase mb-1">Current Password</label>
-              <input type="password" id="current-password" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-secondary" />
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-forge-muted uppercase mb-1">New Password</label>
-              <input type="password" id="new-password" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-secondary" />
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-forge-muted uppercase mb-1">Confirm New</label>
-              <input type="password" id="confirm-password" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-secondary" />
-            </div>
-          </div>
-        </div>
-        
-        <div class="flex justify-start pt-2">
-          <button id="btn-save-settings" class="bg-forge-primary text-forge-bg font-bold py-2 px-6 rounded hover:bg-forge-primary/90 transition-colors mt-4 w-full sm:w-auto">
-            Save Changes
-          </button>
-        </div>
-      </div>
+      <button id="btn-logout" class="bg-forge-panel border border-forge-border/60 hover:border-red-500/50 hover:bg-red-500/10 text-forge-muted hover:text-red-400 font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 text-sm shadow-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        {t('user.settings.signout')}
+      </button>
     </div>
 
-    <!-- Workspace Management -->
-    <div class="bg-forge-panel border border-forge-border rounded-lg shadow-lg p-6">
-      <h2 class="text-2xl font-bold text-forge-text mb-6">Workspaces</h2>
+    <div class="space-y-10">
       
-      <div class="grid grid-cols-1 gap-6">
+      <!-- Public Profile Section -->
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="md:col-span-1">
+          <h2 class="text-base font-semibold text-forge-text">{t('user.settings.public_profile')}</h2>
+          <p class="text-sm text-forge-muted mt-1">{t('user.settings.public_desc')}</p>
+        </div>
         
-        <!-- My Workspaces List -->
-        <div>
-          <h3 class="text-lg font-bold text-forge-secondary mb-4">My Memberships</h3>
-          {memberships.length === 0 ? (
-            <p class="text-forge-muted italic text-sm">You are not a member of any workspace.</p>
-          ) : (
-            <ul class="space-y-3">
-              {memberships.map((ws) => (
-                <li class="bg-forge-bg border border-forge-border rounded p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div class="w-full sm:w-auto overflow-hidden">
-                    <div class="font-bold text-forge-text">{ws.name}</div>
-                    <div class="text-xs text-forge-muted flex items-center gap-2 mt-1">
-                      <span class="bg-forge-panel px-1.5 py-0.5 rounded font-mono">#{ws.sys_tag}</span>
-                      <span class="text-forge-secondary uppercase">{ws.ws_role}</span>
-                    </div>
+        <div class="md:col-span-2 bg-forge-panel border border-forge-border/60 rounded-xl shadow-sm overflow-hidden flex flex-col">
+          <div class="p-6 space-y-6 flex-1">
+            <!-- Avatar -->
+            <div class="flex items-center gap-6">
+              <div class="relative group cursor-pointer w-24 h-24 rounded-full border border-forge-border/40 bg-forge-bg flex items-center justify-center overflow-hidden shadow-sm shrink-0" id="avatar-preview-container" data-user-id={user.id}>
+                {user.avatar_url ? (
+                  <img src={user.avatar_url} class="w-full h-full object-cover" id="avatar-preview-img" alt="User Avatar" loading="lazy" />
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-forge-muted" id="avatar-preview-default"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                )}
+                <!-- Hover Edit Overlay -->
+                <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center transition-all z-10 text-white">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                </div>
+                <input type="file" id="avatar-file-input" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer z-20" title="Upload new avatar" />
+              </div>
+              <div>
+                <h3 class="font-semibold text-forge-text text-sm mb-1">{t('user.settings.picture')}</h3>
+                <p class="text-xs text-forge-muted">{t('user.settings.picture_desc')}</p>
+              </div>
+            </div>
+
+            <div class="w-full h-px bg-forge-border/40"></div>
+
+            <!-- Form -->
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-semibold text-forge-text mb-2">{t('user.settings.bio')}</label>
+                <textarea id="profile-bio" rows="3" class="w-full bg-forge-bg border border-forge-border/60 rounded-md p-3 text-sm text-forge-text focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary shadow-sm transition-all resize-y placeholder:text-forge-muted/40" placeholder={t('user.settings.bio_placeholder') || "Tell us a little bit about yourself..."}>{userProfile.bio || ''}</textarea>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold text-forge-text mb-2">Pronouns</label>
+                  <select id="profile-pronouns" class="w-full bg-forge-bg border border-forge-border/60 rounded-md p-2.5 text-sm text-forge-text focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary shadow-sm transition-all cursor-pointer">
+                    <option value="" selected={!userProfile.pronouns}>{t('user.settings.dont_specify')}</option>
+                    <option value="they/them" selected={userProfile.pronouns === 'they/them'}>{t('user.settings.they_them')}</option>
+                    <option value="she/her" selected={userProfile.pronouns === 'she/her'}>{t('user.settings.she_her')}</option>
+                    <option value="he/him" selected={userProfile.pronouns === 'he/him'}>{t('user.settings.he_him')}</option>
+                    <option value="custom" selected={userProfile.pronouns === 'custom'}>{t('user.settings.custom')}</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-forge-text mb-2">Public email</label>
+                  <select class="w-full bg-forge-bg border border-forge-border/60 rounded-md p-2.5 text-sm text-forge-text focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary shadow-sm transition-all cursor-pointer">
+                    <option value="">Select a verified email...</option>
+                    <option value={userProfile.public_email} selected={!!userProfile.public_email}>{userProfile.public_email || 'No email added'}</option>
+                  </select>
+                  <input type="hidden" id="profile-email" value={userProfile.public_email || ''} />
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Card Footer -->
+          <div class="bg-forge-bg px-6 py-4 border-t border-forge-border/40 flex justify-end">
+              <button id="btn-save-profile" class="w-full bg-forge-primary text-forge-bg font-bold py-2 px-4 rounded hover:bg-forge-primary/90 transition-colors">
+                {t('user.settings.save_profile')}
+              </button>
+          </div>
+        </div>
+      </section>
+
+      <div class="h-px w-full bg-forge-border/40"></div>
+
+      <!-- Account Settings Section -->
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="md:col-span-1">
+          <h2 class="text-base font-semibold text-forge-text">{t('user.settings.account')}</h2>
+          <p class="text-sm text-forge-muted mt-1">{t('user.settings.account_desc')}</p>
+        </div>
+        
+        <div class="md:col-span-2 space-y-6">
+          <div class="bg-forge-panel border border-forge-border/60 rounded-xl shadow-sm overflow-hidden flex flex-col">
+            <div class="p-6 space-y-6 flex-1">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold text-forge-text mb-2">Username</label>
+                  <input type="text" id="username-input" value={user.username} class="w-full bg-forge-bg border border-forge-border/60 rounded-md p-2.5 text-sm text-forge-text focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary shadow-sm" />
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-forge-text mb-2">{t('user.settings.theme')}</label>
+                  <select id="theme-selector" class="w-full bg-forge-bg border border-forge-border/60 rounded-md p-2.5 text-sm text-forge-text focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary shadow-sm cursor-pointer">
+                    <option value="dark">{t('user.settings.dark')}</option>
+                    <option value="light">{t('user.settings.light')}</option>
+                  </select>
+                </div>
+                
+                <div class="mb-4">
+                  <label class="block text-sm font-semibold text-forge-text mb-2">{t('user.settings.language')}</label>
+                  <form method="post" action="/api/lang">
+                    <input type="hidden" name="current_path" value="/settings" />
+                    <select name="lang" onchange="this.form.submit()" class="w-full bg-forge-bg border border-forge-border/60 rounded-md p-2.5 text-sm text-forge-text focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary shadow-sm cursor-pointer">
+                      <option value="en" selected={lang === 'en'}>🇬🇧 English</option>
+                      <option value="es" selected={lang === 'es'}>🇪🇸 Español</option>
+                    </select>
+                  </form>
+                </div>
+              </div>
+              
+              <div class="w-full h-px bg-forge-border/40"></div>
+
+              <div class="space-y-4">
+                <h3 class="font-semibold text-forge-text text-sm">{t('user.settings.change_password')}</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <input type="password" id="current-password" placeholder={t('user.settings.old_password') || "Old password"} class="w-full bg-forge-bg border border-forge-border/60 rounded-md p-2.5 text-sm text-forge-text focus:outline-none focus:border-forge-secondary shadow-sm" />
+                  <input type="password" id="new-password" placeholder={t('user.settings.new_password') || "New password"} class="w-full bg-forge-bg border border-forge-border/60 rounded-md p-2.5 text-sm text-forge-text focus:outline-none focus:border-forge-secondary shadow-sm" />
+                  <input type="password" id="confirm-password" placeholder={t('user.settings.confirm_password') || "Confirm new"} class="w-full bg-forge-bg border border-forge-border/60 rounded-md p-2.5 text-sm text-forge-text focus:outline-none focus:border-forge-secondary shadow-sm" />
+                </div>
+              </div>
+            </div>
+            <!-- Card Footer -->
+            <div class="bg-forge-bg px-6 py-4 border-t border-forge-border/40 flex justify-end">
+              <button id="btn-save-settings" class="bg-forge-panel border border-forge-border/60 hover:bg-forge-border/40 text-forge-text font-bold py-2 px-6 rounded-md transition-colors text-sm shadow-sm">
+                {t('user.settings.save_account')}
+              </button>
+            </div>
+          </div>
+
+          <!-- Connected Services -->
+          <div class="bg-forge-panel border border-forge-border/60 rounded-xl shadow-sm overflow-hidden p-6">
+            <h3 class="font-semibold text-forge-text text-sm mb-4">{t('user.settings.connected')}</h3>
+            <div class="space-y-3">
+              <!-- Google -->
+              <div class="flex items-center justify-between p-3 border border-forge-border/60 rounded-md bg-forge-bg shadow-sm">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 bg-white rounded-full p-1.5 flex items-center justify-center border border-forge-border/30">
+                    <svg viewBox="0 0 48 48" class="w-full h-full"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
                   </div>
-                  
-                  {ws.ws_role === 'owner' ? (
-                    <div class="flex gap-2 w-full sm:w-auto">
-                      <a href={`/w/${ws.sys_tag}/settings`} class="flex-1 sm:flex-none justify-center text-xs text-forge-muted hover:text-forge-secondary border border-transparent hover:border-forge-secondary/30 bg-forge-panel hover:bg-forge-secondary/10 px-3 py-1.5 rounded transition-colors flex items-center gap-1 cursor-pointer" title="Workspace Settings">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l-.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-                        Settings
-                      </a>
-                      <button class="flex-1 sm:flex-none justify-center btn-delete-ws text-xs bg-red-500/10 text-red-400 border border-red-500/30 px-3 py-1.5 rounded hover:bg-red-500/20 transition-colors" data-id={ws.id}>
-                        Delete
-                      </button>
-                    </div>
-                  ) : (
-                    <button class="w-full sm:w-auto btn-leave-ws text-xs bg-forge-panel text-forge-muted border border-forge-border px-3 py-1.5 rounded hover:text-forge-text transition-colors" data-id={ws.id} data-user-id={user.id}>
-                      Leave
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
+                  <div>
+                    <h4 class="font-semibold text-forge-text text-sm leading-tight">{t('user.settings.google')}</h4>
+                    <p class="text-[11px] text-forge-muted">{userProfile.google_id ? t('user.settings.connected') : t('user.settings.disconnect')}</p>
+                  </div>
+                </div>
+                <button onclick="window.showToast('Google OAuth integration coming soon!')" class="text-xs font-semibold px-4 py-1.5 rounded bg-forge-panel border border-forge-border/60 hover:bg-forge-border/40 transition-colors text-forge-text">
+                  {userProfile.google_id ? t('user.settings.disconnect') : t('user.settings.connect')}
+                </button>
+              </div>
+              
+              <!-- GitHub -->
+              <div class="flex items-center justify-between p-3 border border-forge-border/60 rounded-md bg-forge-bg shadow-sm">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 bg-white rounded-full p-1 flex items-center justify-center border border-forge-border/30">
+                    <svg viewBox="0 0 24 24" class="w-full h-full text-black"><path fill="currentColor" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-forge-text text-sm leading-tight">{t('user.settings.github')}</h4>
+                    <p class="text-[11px] text-forge-muted">{userProfile.github_id ? t('user.settings.connected') : t('user.settings.disconnect')}</p>
+                  </div>
+                </div>
+                <button onclick="window.showToast('GitHub OAuth integration coming soon!')" class="text-xs font-semibold px-4 py-1.5 rounded bg-forge-panel border border-forge-border/60 hover:bg-forge-border/40 transition-colors text-forge-text">
+                  {userProfile.github_id ? t('user.settings.disconnect') : t('user.settings.connect')}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-
-      </div>
+      </section>
     </div>
-    
-  </div>
+
+      <div class="h-px w-full bg-forge-border/40 my-10"></div>
+
+      <!-- Notifications Settings -->
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="md:col-span-1">
+          <h2 class="text-base font-semibold text-forge-text">{t('user.settings.notifs')}</h2>
+          <p class="text-sm text-forge-muted mt-1">{t('user.settings.notifs_desc')}</p>
+        </div>
+        <div class="md:col-span-2">
+          <div class="bg-forge-panel border border-forge-border/60 rounded-xl shadow-sm overflow-hidden p-0 space-y-0">
+            <div class="p-6 border-b border-forge-border/40">
+              <label class="flex items-center justify-between cursor-pointer group">
+                <div>
+                  <span class="text-sm font-semibold text-forge-text block mb-1">{t('user.settings.mute_all')}</span>
+                  <p class="text-xs text-forge-muted">{t('user.settings.mute_all_desc')}</p>
+                </div>
+                <div class="relative inline-flex items-center">
+                  <input type="checkbox" id="notif-mute-all" class="sr-only peer" ${userProfile.notif_mute_all ? 'checked' : ''} />
+                  <div class="w-11 h-6 bg-forge-bg peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-forge-muted after:border-forge-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500 peer-checked:after:bg-white border border-forge-border/60 group-hover:border-forge-border transition-colors"></div>
+                </div>
+              </label>
+            </div>
+            
+            <div class="p-6 space-y-6 opacity-100 transition-opacity bg-forge-bg/30" id="notif-categories" style="${userProfile.notif_mute_all ? 'opacity: 0.4; pointer-events: none;' : ''}">
+              <label class="flex items-center justify-between cursor-pointer group">
+                <div>
+                  <span class="text-sm font-medium text-forge-text block mb-0.5">{t('user.settings.mute_assign')}</span>
+                  <p class="text-xs text-forge-muted">{t('user.settings.mute_assign_desc')}</p>
+                </div>
+                <div class="relative inline-flex items-center">
+                  <input type="checkbox" id="notif-mute-assign" class="sr-only peer" ${userProfile.notif_mute_assign ? 'checked' : ''} />
+                  <div class="w-9 h-5 bg-forge-bg peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-forge-muted after:border-forge-border after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-forge-primary peer-checked:after:bg-white border border-forge-border/60 group-hover:border-forge-border transition-colors"></div>
+                </div>
+              </label>
+              
+              <label class="flex items-center justify-between cursor-pointer group">
+                <div>
+                  <span class="text-sm font-medium text-forge-text block mb-0.5">{t('user.settings.mute_mention')}</span>
+                  <p class="text-xs text-forge-muted">{t('user.settings.mute_mention_desc')}</p>
+                </div>
+                <div class="relative inline-flex items-center">
+                  <input type="checkbox" id="notif-mute-mention" class="sr-only peer" ${userProfile.notif_mute_mention ? 'checked' : ''} />
+                  <div class="w-9 h-5 bg-forge-bg peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-forge-muted after:border-forge-border after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-forge-primary peer-checked:after:bg-white border border-forge-border/60 group-hover:border-forge-border transition-colors"></div>
+                </div>
+              </label>
+              
+              <label class="flex items-center justify-between cursor-pointer group">
+                <div>
+                  <span class="text-sm font-medium text-forge-text block mb-0.5">{t('user.settings.mute_sprint')}</span>
+                  <p class="text-xs text-forge-muted">{t('user.settings.mute_sprint_desc')}</p>
+                </div>
+                <div class="relative inline-flex items-center">
+                  <input type="checkbox" id="notif-mute-sprint" class="sr-only peer" ${userProfile.notif_mute_sprint ? 'checked' : ''} />
+                  <div class="w-9 h-5 bg-forge-bg peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-forge-muted after:border-forge-border after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-forge-primary peer-checked:after:bg-white border border-forge-border/60 group-hover:border-forge-border transition-colors"></div>
+                </div>
+              </label>
+              
+              <label class="flex items-center justify-between cursor-pointer group">
+                <div>
+                  <span class="text-sm font-medium text-forge-text block mb-0.5">{t('user.settings.mute_system')}</span>
+                  <p class="text-xs text-forge-muted">{t('user.settings.mute_system_desc')}</p>
+                </div>
+                <div class="relative inline-flex items-center">
+                  <input type="checkbox" id="notif-mute-system" class="sr-only peer" ${userProfile.notif_mute_system ? 'checked' : ''} />
+                  <div class="w-9 h-5 bg-forge-bg peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-forge-muted after:border-forge-border after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-forge-primary peer-checked:after:bg-white border border-forge-border/60 group-hover:border-forge-border transition-colors"></div>
+                </div>
+              </label>
+            </div>
+            <div class="flex justify-end p-6 border-t border-forge-border/40 bg-forge-bg/10">
+              <button id="btn-save-notifs" class="bg-forge-primary text-forge-bg font-bold py-2 px-6 rounded-md hover:bg-forge-primary/90 transition-colors text-sm shadow-sm">
+                {t('user.settings.save_notifs')}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <div class="h-px w-full bg-forge-border/40 my-10"></div>
+      
+      <!-- Workspace Management -->
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="md:col-span-1">
+          <h2 class="text-base font-semibold text-forge-text">{t('user.settings.ws')}</h2>
+          <p class="text-sm text-forge-muted mt-1">{t('user.settings.ws_desc')}</p>
+        </div>
+        
+        <div class="md:col-span-2">
+        <h3 class="text-sm font-semibold text-forge-muted uppercase tracking-wider mb-4">{t('user.settings.my_memberships')}</h3>
+        
+        {memberships.length === 0 ? (
+          <p class="text-forge-muted italic text-sm">{t('user.settings.no_memberships')}</p>
+        ) : (
+          <div class="border border-forge-border/60 rounded-md bg-forge-panel shadow-sm divide-y divide-forge-border/40">
+            {memberships.map((ws) => (
+              <div class="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="w-full sm:w-auto overflow-hidden">
+                  <div class="font-semibold text-forge-text text-base">{ws.name}</div>
+                  <div class="text-xs text-forge-muted flex items-center gap-2 mt-1">
+                    <span class="bg-forge-bg border border-forge-border/60 px-1.5 py-0.5 rounded font-mono shadow-sm">#{ws.sys_tag}</span>
+                    <span class={`uppercase font-semibold ${ws.ws_role === 'owner' ? 'text-forge-secondary' : 'text-forge-text'}`}>{ws.ws_role}</span>
+                  </div>
+                </div>
+                
+                {ws.ws_role === 'owner' ? (
+                  <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <a href={`/w/${ws.sys_tag}/settings`} class="text-xs font-semibold px-4 py-2 rounded-md bg-forge-bg border border-forge-border/60 hover:bg-forge-border/40 transition-colors shadow-sm text-forge-text flex items-center gap-1.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                      {t('user.settings.manage_ws')}
+                    </a>
+                    <button class="btn-delete-ws text-xs font-semibold px-4 py-2 rounded-md bg-forge-bg border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors shadow-sm" data-id={ws.id}>
+                      {t('user.settings.delete_ws')}
+                    </button>
+                  </div>
+                ) : (
+                  <button class="btn-leave-ws w-full sm:w-auto text-xs font-semibold px-4 py-2 rounded-md bg-forge-bg border border-forge-border/60 text-forge-text hover:bg-forge-border/40 transition-colors shadow-sm" data-id={ws.id} data-user-id={user.id}>
+                    {t('user.settings.leave_ws')}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+        </div>
+      </section>
+    </div>
 </MainLayout>
 
-<script>
+<script is:inline>
+  const userId = document.getElementById('avatar-preview-container')?.getAttribute('data-user-id');
   // Restore theme dropdown from localStorage
-  const themeSelector = document.getElementById('theme-selector') as HTMLSelectElement;
+  const themeSelector = document.getElementById('theme-selector');
   if (themeSelector) {
     const currentTheme = localStorage.getItem('forge_theme') || 'dark';
     themeSelector.value = currentTheme;
@@ -143,11 +342,11 @@ const memberships = db.prepare(`
     });
   }
 
-  let newAvatarBase64: string | null = null;
-  const avatarInput = document.getElementById('avatar-file-input') as HTMLInputElement;
+  let newAvatarUrl = null;
+  const avatarInput = document.getElementById('avatar-file-input');
   
   avatarInput?.addEventListener('change', (e) => {
-    const file = (e.target as HTMLInputElement).files?.[0];
+    const file = e.target.files?.[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) {
         // @ts-ignore
@@ -176,45 +375,104 @@ const memberships = db.prepare(`
           const ctx = canvas.getContext('2d');
           if (ctx) ctx.drawImage(img, 0, 0, width, height);
 
-          // Magia: Convertir a WebP con calidad del 80%
-          newAvatarBase64 = canvas.toDataURL('image/webp', 0.8);
-          
-          let avatarPreview = document.getElementById('avatar-preview-img') as HTMLImageElement;
-          if (avatarPreview) {
-            avatarPreview.src = newAvatarBase64;
-          } else {
-            const container = document.getElementById('avatar-preview-container');
-            const defaultIcon = document.getElementById('avatar-preview-default');
-            if (defaultIcon) defaultIcon.style.display = 'none';
-            
-            const newImg = document.createElement('img');
-            newImg.src = newAvatarBase64;
-            newImg.id = 'avatar-preview-img';
-            newImg.className = 'w-full h-full object-cover z-0';
-            container?.insertBefore(newImg, container.firstChild);
-          }
+          // Convert to WebP and Upload
+          canvas.toBlob(async (blob) => {
+            if (blob) {
+              const formData = new FormData();
+              formData.append('entity_type', 'user');
+              formData.append('entity_id', userId); // You might need to set data-user-id on body or pass it in script
+              formData.append('file', blob, 'avatar.webp');
+
+              // @ts-ignore
+              if (window.showToast) window.showToast('Uploading avatar...');
+
+              try {
+                const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                if (res.ok) {
+                  const data = await res.json();
+                  newAvatarUrl = data.url;
+                  
+                  let avatarPreview = document.getElementById('avatar-preview-img');
+                  if (avatarPreview) {
+                    avatarPreview.src = newAvatarUrl;
+                  } else {
+                    const container = document.getElementById('avatar-preview-container');
+                    const defaultIcon = document.getElementById('avatar-preview-default');
+                    if (defaultIcon) defaultIcon.style.display = 'none';
+                    
+                    const newImg = document.createElement('img');
+                    newImg.src = newAvatarUrl;
+                    newImg.id = 'avatar-preview-img';
+                    newImg.className = 'w-full h-full object-cover z-0';
+                    container?.insertBefore(newImg, container.firstChild);
+                  }
+                  // @ts-ignore
+                  if (window.showToast) window.showToast('Avatar uploaded!');
+                } else {
+                  // @ts-ignore
+                  if (window.showToast) window.showToast('Failed to upload avatar', true);
+                }
+              } catch (e) {
+                console.error(e);
+              }
+            }
+          }, 'image/webp', 0.8);
         };
-        img.src = e.target?.result as string;
+        img.src = e.target?.result;
       };
       reader.readAsDataURL(file);
     }
   });
 
+  const btnSaveProfile = document.getElementById('btn-save-profile');
+    btnSaveProfile?.addEventListener('click', async () => {
+      const bio = document.getElementById('profile-bio').value;
+      const pronouns = document.getElementById('profile-pronouns').value;
+      const public_email = document.getElementById('profile-email').value;
+
+      btnSaveProfile.innerHTML = 'Saving...';
+      try {
+        const res = await fetch('/api/users/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bio, pronouns, public_email })
+        });
+        if (res.ok) window.showToast?.('Profile updated successfully!');
+        else window.showToast?.('Failed to update profile', true);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        btnSaveProfile.innerHTML = 'Update Profile';
+      }
+    });
+
+    const btnLogout = document.getElementById('btn-logout');
+    btnLogout?.addEventListener('click', () => {
+      window.forgeConfirm?.('Are you sure you want to sign out?', async () => {
+        try {
+          const res = await fetch('/api/auth/logout', { method: 'POST' });
+          if (res.ok) window.location.href = '/login';
+        } catch (e) {
+          console.error(e);
+        }
+      });
+    });
+
   // User settings save
   document.getElementById('btn-save-settings')?.addEventListener('click', async () => {
-    const newUsername = (document.getElementById('username-input') as HTMLInputElement).value;
-    const currentPassword = (document.getElementById('current-password') as HTMLInputElement).value;
-    const newPassword = (document.getElementById('new-password') as HTMLInputElement).value;
-    const confirmPassword = (document.getElementById('confirm-password') as HTMLInputElement).value;
+    const newUsername = document.getElementById('username-input').value;
+    const currentPassword = document.getElementById('current-password').value;
+    const newPassword = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
 
     if (newPassword && newPassword !== confirmPassword) {
       // @ts-ignore
       return window.showToast('New passwords do not match!', true);
     }
 
-    const payload: any = { username: newUsername };
-    if (newAvatarBase64) {
-      payload.avatar_url = newAvatarBase64;
+    const payload = { username: newUsername };
+    if (newAvatarUrl) {
+      payload.avatar_url = newAvatarUrl;
     }
     if (currentPassword && newPassword) {
       payload.current_password = currentPassword;
@@ -237,10 +495,51 @@ const memberships = db.prepare(`
     }
   });
 
+  // Notifications logic
+  const muteAllChk = document.getElementById('notif-mute-all');
+  const catDiv = document.getElementById('notif-categories');
+  muteAllChk?.addEventListener('change', (e) => {
+    if (e.target.checked) {
+      catDiv.style.opacity = '0.5';
+      catDiv.style.pointerEvents = 'none';
+    } else {
+      catDiv.style.opacity = '1';
+      catDiv.style.pointerEvents = 'auto';
+    }
+  });
+
+  document.getElementById('btn-save-notifs')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.innerHTML = 'Saving...';
+    try {
+      const payload = {
+        notif_mute_all: muteAllChk.checked ? 1 : 0,
+        notif_mute_assign: document.getElementById('notif-mute-assign').checked ? 1 : 0,
+        notif_mute_mention: document.getElementById('notif-mute-mention').checked ? 1 : 0,
+        notif_mute_sprint: document.getElementById('notif-mute-sprint').checked ? 1 : 0,
+        notif_mute_system: document.getElementById('notif-mute-system').checked ? 1 : 0,
+      };
+      const res = await fetch('/api/user/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        window.showToast?.('Notification preferences saved!');
+      } else {
+        window.showToast?.('Failed to save preferences', true);
+      }
+    } catch(err) {
+      console.error(err);
+    } finally {
+      btn.innerHTML = 'Save Notifications';
+    }
+  });
+
   // Delete Workspace
   document.querySelectorAll('.btn-delete-ws').forEach(btn => {
     btn.addEventListener('click', async (e) => {
-      const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+      const id = e.currentTarget.getAttribute('data-id');
       // @ts-ignore
       window.forgeConfirm('DANGER: Are you sure you want to completely delete this workspace and ALL its contents? This cannot be undone.', async () => {
         const res = await fetch(`/api/workspaces/${id}`, { method: 'DELETE' });
@@ -257,8 +556,8 @@ const memberships = db.prepare(`
   // Leave Workspace
   document.querySelectorAll('.btn-leave-ws').forEach(btn => {
     btn.addEventListener('click', async (e) => {
-      const wsId = (e.currentTarget as HTMLElement).getAttribute('data-id');
-      const userId = (e.currentTarget as HTMLElement).getAttribute('data-user-id');
+      const wsId = e.currentTarget.getAttribute('data-id');
+      const userId = e.currentTarget.getAttribute('data-user-id');
       
       // @ts-ignore
       window.forgeConfirm('Are you sure you want to leave this workspace?', async () => {

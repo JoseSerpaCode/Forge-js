@@ -2,8 +2,11 @@
 // src/pages/login.astro
 import '../styles/themes.css';
 
+import { useTranslations } from '../i18n/ui';
 const user = Astro.locals.user;
 if (user) return Astro.redirect('/');
+const lang = Astro.locals.lang || 'en';
+const t = useTranslations(lang);
 ---
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
@@ -20,23 +23,23 @@ if (user) return Astro.redirect('/');
         <span class="text-3xl font-black text-white">F</span>
       </div>
       <h1 class="text-2xl font-black tracking-wider text-forge-text mb-2">FORGE OS</h1>
-      <p class="text-forge-muted text-sm font-mono">AUTHORIZED PERSONNEL ONLY</p>
+      <p class="text-forge-muted text-sm font-mono">{t('auth.authorized')}</p>
     </div>
     <form id="login-form" class="flex flex-col gap-4">
       <div>
-        <label for="username" class="block text-xs font-mono text-forge-text mb-1 uppercase">Username</label>
+        <label for="username" class="block text-xs font-mono text-forge-text mb-1 uppercase">{t('auth.username')}</label>
         <input type="text" id="username" name="username" class="w-full bg-forge-bg border border-forge-border p-2 rounded text-forge-text focus:outline-none focus:border-forge-secondary" required />
       </div>
       <div class="mb-6">
-        <label for="password" class="block text-sm font-bold text-forge-muted uppercase tracking-widest mb-1">Password</label>
+        <label for="password" class="block text-sm font-bold text-forge-muted uppercase tracking-widest mb-1">{t('auth.password')}</label>
         <input type="password" id="password" name="password" class="w-full bg-forge-bg border border-forge-border p-2 rounded text-forge-text focus:outline-none focus:border-forge-secondary" required />
       </div>
-      <button type="submit" class="mt-4 bg-forge-primary text-forge-bg font-bold uppercase tracking-widest py-2 rounded hover:bg-forge-primary/80 transition-colors">Submit</button>
+      <button type="submit" class="mt-4 bg-forge-primary text-forge-bg font-bold uppercase tracking-widest py-2 rounded hover:bg-forge-primary/80 transition-colors">{t('auth.submit')}</button>
       <p id="error-msg" class="text-red-500 text-sm mt-2 hidden"></p>
     </form>
     
     <div class="mt-6 text-center">
-      <a href="/register" class="text-forge-secondary text-sm hover:underline">Don't have an account? Register</a>
+      <a href="/register" class="text-forge-secondary text-sm hover:underline">{t('auth.no_account')}</a>
     </div>
   </div>
 
@@ -54,7 +57,7 @@ if (user) return Astro.redirect('/');
       } else {
         const errorMsg = document.getElementById('error-msg');
         if (errorMsg) {
-          errorMsg.textContent = 'Invalid credentials';
+          errorMsg.textContent = 'Invalid credentials'; // Handled via API message or static, let's keep it simple
           errorMsg.classList.remove('hidden');
         }
       }
