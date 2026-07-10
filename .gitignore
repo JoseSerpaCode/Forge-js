@@ -32,3 +32,4 @@ pnpm-debug.log*
 *.db
 *.db-*
 cookies.txt
+.data/
