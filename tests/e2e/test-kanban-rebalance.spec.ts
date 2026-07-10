@@ -1,26 +1,24 @@
 import { test, expect } from '@playwright/test';
 import db from '../../src/lib/db';
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 
 test('Kanban: Positional rebalancing resolves collisions in Backlog (sprint_id IS NULL)', async ({ request, page }) => {
-  // 1. Iniciar sesión para obtener las cookies de sesión
-  await page.goto('/login');
-  await page.fill('input[name="username"]', 'jose');
-  await page.fill('input[name="password"]', '#juniorManda1924');
-  await page.click('button[type="submit"]');
-  await page.waitForLoadState('networkidle');
+  // 1. Iniciar sesión para obtener las cookies de sesión (CREAR USUARIO Y SESIÓN DIRECTAMENTE)
+  db.prepare("INSERT OR IGNORE INTO users (id, username, password_hash, is_sysadmin) VALUES ('user-rebalance', 'rebalance_user', ?, 1)").run(bcrypt.hashSync('#juniorManda1924', 10));
 
-  // Obtener headers de la página autenticada para inyectarlos en page.request
-  const cookies = await page.context().cookies();
-  const cookieHeader = cookies.map(c => `${c.name}=${c.value}`).join('; ');
+  const sessionId = crypto.randomBytes(16).toString('hex');
+  const expiresAt = Date.now() + 1000 * 60 * 60 * 24;
+  db.prepare("INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)").run(sessionId, 'user-rebalance', expiresAt);
+
+  const cookieHeader = `forge_session=${sessionId}`;
 
   // 2. Crear un workspace dedicado para evitar colisiones con test-kanban-security
-  db.prepare("INSERT OR IGNORE INTO workspaces (id, name, sys_tag, created_by) VALUES ('ws-rebalance', 'Rebalance WS', 'ws-rebalance', 'test-user-jose')").run();
-  db.prepare("INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, ws_role) VALUES ('ws-rebalance', 'test-user-jose', 'owner')").run();
+  db.prepare("INSERT OR IGNORE INTO workspaces (id, name, sys_tag, created_by) VALUES ('ws-rebalance', 'Rebalance WS', 'ws-rebalance', 'user-rebalance')").run();
+  db.prepare("INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, ws_role) VALUES ('ws-rebalance', 'user-rebalance', 'owner')").run();
   db.prepare("DELETE FROM issues WHERE workspace_id = 'ws-rebalance'").run();
   
-  const reporter = db.prepare("SELECT id FROM users WHERE username = 'jose'").get() as { id: string };
-  const reporterId = reporter?.id || 'unknown';
+  const reporterId = 'user-rebalance';
 
   const issue1 = 'issue-pos-1';
   const issue2 = 'issue-pos-2';

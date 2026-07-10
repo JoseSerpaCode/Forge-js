@@ -7,7 +7,7 @@ test('Search dropdown does not hide when clicking hint', async ({ page }) => {
   const dbPath = path.resolve('forge.db');
   const db = new Database(dbPath);
   
-  const user = db.prepare('SELECT id FROM users LIMIT 1').get();
+  const user = db.prepare('SELECT id FROM users LIMIT 1').get() as any;
   if (!user) throw new Error('No user found to test with');
   
   const sessionId = 'test-session-12345';
