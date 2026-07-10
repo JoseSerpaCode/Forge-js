@@ -240,6 +240,9 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 `);
 
+// Insert SYSTEM user for automated messages
+db.exec(`INSERT OR IGNORE INTO users (id, username, password_hash, is_sysadmin) VALUES ('system', 'Forge System', 'none', 0)`);
+
 // 6. KB ↔ Kanban Integration: Bidirectional links + shared labels
 db.exec(`
 CREATE TABLE IF NOT EXISTS labels (
