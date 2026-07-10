@@ -1,6 +1,29 @@
 // src/lib/automations.ts
 import EventEmitter from 'events';
+import dns from 'dns/promises';
 import db from './db';
+
+function isBlockedIP(ip: string): boolean {
+  if (ip === '::1') return true;
+  if (ip.includes(':')) {
+    const ipLower = ip.toLowerCase();
+    if (ipLower.startsWith('fc') || ipLower.startsWith('fd') || ipLower.startsWith('fe80')) return true;
+    return false;
+  }
+  
+  const parts = ip.split('.').map(Number);
+  if (parts.length !== 4) return false;
+  
+  const [a, b] = parts;
+  if (a === 127) return true; // Loopback
+  if (a === 10) return true; // Private 10.x
+  if (a === 172 && b >= 16 && b <= 31) return true; // Private 172.16.x - 172.31.x
+  if (a === 192 && b === 168) return true; // Private 192.168.x
+  if (a === 169 && b === 254) return true; // Cloud Metadata
+  if (a === 0) return true; // 0.0.0.0
+  
+  return false;
+}
 
 export const ForgeEvents = new EventEmitter();
 
@@ -28,10 +51,17 @@ ForgeEvents.on('issue.status_changed', async ({ issueId, workspaceId, oldStatus,
           console.error('[SYS.WEBHOOK] Webhook must use HTTPS:', payloadConfig.url);
           continue;
         }
-        const hostname = webhookUrl.hostname.toLowerCase();
-        const blockedPatterns = ['localhost', '127.', '0.0.0.0', '169.254.', '10.', '172.16.', '172.17.', '172.18.', '172.19.', '172.20.', '172.21.', '172.22.', '172.23.', '172.24.', '172.25.', '172.26.', '172.27.', '172.28.', '172.29.', '172.30.', '172.31.', '192.168.', '[::1]', '::1'];
-        if (blockedPatterns.some(p => hostname.startsWith(p) || hostname === p.replace('.', ''))) {
-          console.error('[SYS.WEBHOOK] Blocked SSRF attempt to private network:', payloadConfig.url);
+        let resolvedIp: string;
+        try {
+          const lookup = await dns.lookup(webhookUrl.hostname);
+          resolvedIp = lookup.address;
+        } catch (err) {
+          console.error('[SYS.WEBHOOK] DNS lookup failed:', webhookUrl.hostname);
+          continue;
+        }
+
+        if (isBlockedIP(resolvedIp)) {
+          console.error(`[SYS.WEBHOOK] Blocked SSRF attempt to private network (Resolved IP: ${resolvedIp}):`, payloadConfig.url);
           continue;
         }
         fetch(webhookUrl.toString(), {
