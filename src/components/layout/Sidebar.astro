@@ -36,7 +36,7 @@ const isOwner = userRole === 'owner' || userRole === 'sysadmin';
 <aside id="app-sidebar" class="fixed md:static inset-y-0 left-0 z-50 w-60 bg-forge-panel border-r border-forge-border flex flex-col h-full shrink-0 transition-transform duration-300 ease-in-out -translate-x-full md:translate-x-0">
   
   <!-- Logo -->
-  <a href="/" class="h-14 px-4 border-b border-forge-border flex items-center gap-2.5 hover:bg-forge-bg transition-colors shrink-0 group">
+  <a href="/" class="h-14 px-4 border-b border-forge-border flex items-center gap-2.5 hover:bg-forge-bg transition-colors shrink-0 group" aria-label="Home">
     <div class="w-7 h-7 rounded-lg flex items-center justify-center font-black text-white text-xs bg-forge-primary transition-all group-hover:scale-110 group-hover:rotate-3 shadow-[0_0_12px_rgba(255,93,0,0.4)]">
       F
     </div>
@@ -45,7 +45,7 @@ const isOwner = userRole === 'owner' || userRole === 'sysadmin';
 
   <!-- Workspace switcher -->
   {workspaceName && (
-    <a href="/" class="mx-3 mt-3 mb-1 flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-forge-border/50 bg-forge-bg/30 hover:border-forge-secondary/50 hover:bg-forge-bg transition-colors group text-left shrink-0" title="Switch workspace">
+    <a href="/" class="mx-3 mt-3 mb-1 flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-forge-border/50 bg-forge-bg/30 hover:border-forge-secondary/50 hover:bg-forge-bg transition-colors group text-left shrink-0" title="Switch workspace" aria-label="Switch workspace">
       <div class="flex-1 min-w-0">
         <div class="text-[9px] text-forge-muted font-bold tracking-widest uppercase">Workspace</div>
         <span class="text-xs font-bold text-forge-text truncate group-hover:text-forge-secondary transition-colors block">{workspaceName}</span>
@@ -72,6 +72,7 @@ const isOwner = userRole === 'owner' || userRole === 'sysadmin';
         <a 
           href={`/w/${sys_tag}/board`} 
           class={`sidebar-link ${isBoard ? 'active' : ''}`}
+          aria-current={isBoard ? 'page' : undefined}
         >
           <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="18"/><rect x="10" y="3" width="5" height="11"/><rect x="17" y="3" width="5" height="7"/></svg>
           Kanban Board
@@ -81,6 +82,7 @@ const isOwner = userRole === 'owner' || userRole === 'sysadmin';
         <a 
           href={`/w/${sys_tag}/p`} 
           class={`sidebar-link ${isKB ? 'active' : ''}`}
+          aria-current={isKB ? 'page' : undefined}
         >
           <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
           Knowledge Base
@@ -94,6 +96,7 @@ const isOwner = userRole === 'owner' || userRole === 'sysadmin';
           <a 
             href={`/w/${sys_tag}/settings`} 
             class={`sidebar-link ${isSettings ? 'active' : ''}`}
+            aria-current={isSettings ? 'page' : undefined}
           >
             <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             Ajustes

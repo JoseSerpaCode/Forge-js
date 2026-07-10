@@ -9,6 +9,8 @@ if (user) return Astro.redirect('/');
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+  <meta name="description" content="Login to Forge OS workspace." />
   <title>Login | Forge JS</title>
 </head>
 <body class="bg-forge-bg text-white font-sans h-screen flex flex-col items-center justify-center">
@@ -22,12 +24,12 @@ if (user) return Astro.redirect('/');
     </div>
     <form id="login-form" class="flex flex-col gap-4">
       <div>
-        <label class="block text-xs font-mono text-forge-text mb-1 uppercase">Username</label>
-        <input type="text" name="username" class="w-full bg-forge-bg border border-forge-border p-2 rounded text-forge-text focus:outline-none focus:border-forge-secondary" required />
+        <label for="username" class="block text-xs font-mono text-forge-text mb-1 uppercase">Username</label>
+        <input type="text" id="username" name="username" class="w-full bg-forge-bg border border-forge-border p-2 rounded text-forge-text focus:outline-none focus:border-forge-secondary" required />
       </div>
       <div class="mb-6">
-        <label class="block text-sm font-bold text-forge-muted uppercase tracking-widest mb-1">Password</label>
-        <input type="password" name="password" class="w-full bg-forge-bg border border-forge-border p-2 rounded text-forge-text focus:outline-none focus:border-forge-secondary" required />
+        <label for="password" class="block text-sm font-bold text-forge-muted uppercase tracking-widest mb-1">Password</label>
+        <input type="password" id="password" name="password" class="w-full bg-forge-bg border border-forge-border p-2 rounded text-forge-text focus:outline-none focus:border-forge-secondary" required />
       </div>
       <button type="submit" class="mt-4 bg-forge-primary text-forge-bg font-bold uppercase tracking-widest py-2 rounded hover:bg-forge-primary/80 transition-colors">Submit</button>
       <p id="error-msg" class="text-red-500 text-sm mt-2 hidden"></p>

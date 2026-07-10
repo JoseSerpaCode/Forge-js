@@ -156,11 +156,11 @@ const myTasks = db.prepare(`
   <dialog id="new-ws-modal" class="bg-forge-panel border border-forge-border rounded-lg p-6 w-full max-w-[400px] text-forge-text shadow-xl backdrop:bg-black/50">
     <h2 class="text-xl font-bold mb-4">Create Workspace</h2>
     <div class="mb-4">
-      <label class="block text-xs uppercase tracking-wider text-forge-muted mb-1">Name</label>
+      <label for="ws-name" class="block text-xs uppercase tracking-wider text-forge-muted mb-1">Name</label>
       <input type="text" id="ws-name" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:border-forge-secondary focus:outline-none" placeholder="E.g. Project Orion">
     </div>
     <div class="mb-4">
-      <label class="block text-xs uppercase tracking-wider text-forge-muted mb-1">System Tag (URL)</label>
+      <label for="ws-tag" class="block text-xs uppercase tracking-wider text-forge-muted mb-1">System Tag (URL)</label>
       <input type="text" id="ws-tag" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:border-forge-secondary focus:outline-none" placeholder="e.g. project-orion">
       <p class="text-[10px] text-forge-muted mt-1">Only lowercase letters, numbers, and dashes.</p>
     </div>
