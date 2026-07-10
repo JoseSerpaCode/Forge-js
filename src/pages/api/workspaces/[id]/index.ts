@@ -2,6 +2,8 @@ import type { APIRoute } from 'astro';
 import db from '../../../../lib/db';
 import { checkWorkspaceAccess } from '../../../../lib/guard';
 
+import { WorkspaceService, ApiError } from '../../../../services/WorkspaceService';
+
 export const DELETE: APIRoute = async ({ params, locals }) => {
   const user = locals.user;
   const workspaceId = params.id;
@@ -9,27 +11,13 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
   if (!user) return new Response('Unauthorized', { status: 401 });
   if (!workspaceId) return new Response('Missing workspace ID', { status: 400 });
 
-  // Only owner can delete
-  const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspaceId, 'owner');
-  if (!access.granted) {
-    if (access.reason === 'not_member') return new Response('Not Found', { status: 404 });
-    return new Response(access.error || 'Forbidden', { status: 403 });
-  }
-
   try {
-    // Relying on CASCADE in SQLite schema to delete pages, issues, etc.
-    const ws = db.prepare('SELECT sys_tag FROM workspaces WHERE id = ?').get(workspaceId) as any;
-    
-    // Let's explicitly trigger a delete
-    db.prepare('DELETE FROM workspaces WHERE id = ?').run(workspaceId);
-    
-    // Clear last_workspace_id if users were pointing to it
-    if (ws) {
-      db.prepare('UPDATE users SET last_workspace_id = NULL WHERE last_workspace_id = ?').run(ws.sys_tag);
-    }
-    
+    await WorkspaceService.delete(workspaceId, user.id, user.is_sysadmin);
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (err: any) {
+    if (err instanceof ApiError) {
+      return new Response(err.message, { status: err.statusCode });
+    }
     return new Response(err.message, { status: 500 });
   }
 };

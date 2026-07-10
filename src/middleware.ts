@@ -25,14 +25,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
     context.cookies.delete('forge_session', { path: '/' });
     context.locals.user = null;
     if (isPublicRoute) return next();
-    return context.redirect('/login');
+    return context.url.pathname.startsWith('/api/') 
+      ? new Response(JSON.stringify({ error: 'Session Expired' }), { status: 401 }) 
+      : context.redirect('/login');
   }
 
   // Update last_workspace_id if we are navigating to a workspace
   const match = context.url.pathname.match(/^\/w\/([^/]+)/);
   if (match && match[1]) {
     const sysTag = match[1];
-    // [M-1 FIX] Only update last_workspace_id if the user is actually a member (or sysadmin)
     const isMember = sessionData.is_sysadmin === 1
       ? true
       : db.prepare(
@@ -45,25 +46,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
   }
 
-  // Inject role context based on current workspace
-  // SECURITY WARNING: sessionData.role is derived from last_workspace_id, which is fallible 
-  // with parallel tabs. This field is EXCLUSIVELY for UI presentation (e.g. Sidebar text).
-  // NEVER use sessionData.role or user.role for backend authorization decisions. 
-  // Always use guard.ts (checkWorkspaceAccess) which queries the DB directly.
-  const currentWsTag = sessionData.last_workspace_id;
-  if (sessionData.is_sysadmin === 1) {
-    sessionData.role = 'sysadmin';
-  } else if (currentWsTag) {
-    const roleQuery = db.prepare('SELECT wm.ws_role FROM workspace_members wm JOIN workspaces w ON w.id = wm.workspace_id WHERE w.sys_tag = ? AND wm.user_id = ?').get(currentWsTag, sessionData.id) as any;
-    sessionData.role = roleQuery ? roleQuery.ws_role : 'user';
-  } else {
-    sessionData.role = 'user';
-  }
-
-  // Inyectar usuario
+  // Inject user to locals for APIs and Astro components
   context.locals.user = sessionData;
 
-  if (context.url.pathname === '/login') {
+  // Basic API global security rules
+  // If hitting an API that expects workspace ID, we could validate here.
+  // But for now, we just pass the valid session.
+
+  if (context.url.pathname === '/login' || context.url.pathname === '/register') {
     return context.redirect('/');
   }
 

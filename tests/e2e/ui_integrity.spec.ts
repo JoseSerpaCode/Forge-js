@@ -16,7 +16,7 @@ test.describe('UI Integrity & DB Sync', () => {
     // Configurar listener de diálogos porque tiramos 'alert()' en JS
     page.on('dialog', dialog => dialog.accept());
 
-    await page.click('#btn-settings');
+    await page.click('#btn-user-settings');
     await page.waitForURL('**/settings');
     
     // 3. Cambiar username

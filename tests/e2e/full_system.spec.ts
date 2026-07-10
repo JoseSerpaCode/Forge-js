@@ -70,7 +70,7 @@ test.describe('Forge OS - Full System Omnibus Validation', () => {
 
     // === V12: Settings y DB Update ===
     // Navegar a settings
-    await page.click('#btn-settings');
+    await page.click('#btn-user-settings');
     await page.waitForURL('**/settings');
     
     await expect(page.locator('#username-input')).toHaveValue('jose');
