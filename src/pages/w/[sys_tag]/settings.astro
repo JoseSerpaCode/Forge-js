@@ -2,10 +2,10 @@
 import MainLayout from '../../../layouts/MainLayout.astro';
 import db from '../../../lib/db';
 import { checkWorkspaceAccess } from '../../../lib/guard';
-import { useTranslation } from '../../../i18n/ui';
+import { useTranslations } from '../../../i18n/ui';
 
 const user = Astro.locals.user;
-const t = useTranslation(Astro.locals.lang || 'en');
+const t = useTranslations(Astro.locals.lang || 'en');
 if (!user) return Astro.redirect('/login');
 
 const { sys_tag } = Astro.params;
