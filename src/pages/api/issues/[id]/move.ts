@@ -96,8 +96,8 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
     
     db.prepare(sql).run(...updateParams);
     
-    db.prepare('INSERT INTO audit_logs (id, user_id, action, entity_type, entity_id, details_json) VALUES (?, ?, ?, ?, ?, ?)').run(
-      crypto.randomUUID(), user.id, 'ISSUE_MOVED', 'issue', issueId, JSON.stringify({ oldStatus: oldIssue.status, newStatus: status, oldPosition: oldIssue.position, newPosition: finalPosition })
+    db.prepare('INSERT INTO audit_logs (id, workspace_id, user_id, action, entity_type, entity_id, details_json) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+      crypto.randomUUID(), oldIssue.workspace_id, user.id, 'ISSUE_MOVED', 'issue', issueId, JSON.stringify({ oldStatus: oldIssue.status, newStatus: status, oldPosition: oldIssue.position, newPosition: finalPosition })
     );
   });
   

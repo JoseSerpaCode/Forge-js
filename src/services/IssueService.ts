@@ -1,6 +1,7 @@
 import db from '../lib/db';
 import { checkWorkspaceAccess } from '../lib/guard';
 import type { Issue } from '../types/db';
+import { NotificationService } from './NotificationService';
 import crypto from 'crypto';
 
 export class ApiError extends Error {
@@ -30,17 +31,20 @@ export class IssueService {
       throw new ApiError(403, access.error || 'Forbidden');
     }
 
-    // Protect immutable fields
-    delete data.id;
-    delete data.workspace_id;
-    delete data.reporter_id;
-    delete data.created_at;
+    // Whitelist allowed fields to prevent SQL injection via keys
+    const allowedFields = ['title', 'description', 'status', 'priority', 'points', 'assignee_id', 'sprint_id', 'position', 'due_date'];
+    const safeData: any = {};
+    for (const key of Object.keys(data)) {
+      if (allowedFields.includes(key)) {
+        safeData[key] = data[key];
+      }
+    }
 
-    const keys = Object.keys(data);
+    const keys = Object.keys(safeData);
     if (keys.length === 0) return { success: true };
 
     const setClause = keys.map(k => `${k} = ?`).join(', ');
-    const values = Object.values(data);
+    const values = Object.values(safeData);
     
     // Add updated_at
     const finalClause = `${setClause}, updated_at = CURRENT_TIMESTAMP`;
@@ -51,18 +55,14 @@ export class IssueService {
     // Automation logic could be hooked here (EventEmitter pattern)
 
     // Assignee Notification Hook
-    if (data.assignee_id !== undefined && data.assignee_id !== null) {
+    if (data.assignee_id !== undefined && data.assignee_id !== null && data.assignee_id !== userId) {
       const ws = db.prepare('SELECT sys_tag FROM workspaces WHERE id = ?').get(issue.workspace_id) as any;
       if (ws) {
-        db.prepare(`
-          INSERT INTO notifications (id, user_id, title, message, type, link_url)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `).run(
-          crypto.randomUUID(), 
-          data.assignee_id, 
-          'Task Assigned', 
-          `${username} assigned you to issue ${issueId.substring(0,8)}`, 
-          'info', 
+        NotificationService.notify(
+          data.assignee_id,
+          'assign',
+          'Task Assigned',
+          `${username} assigned you to issue ${issueId.substring(0,8)}`,
           `/w/${ws.sys_tag}/board?issue=${issueId}`
         );
       }

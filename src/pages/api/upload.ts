@@ -16,19 +16,32 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   if (!file || !entityType || !entityId) return new Response('Missing data', { status: 400 });
 
-  if (entityType !== 'issue' && entityType !== 'page') {
+  if (entityType !== 'issue' && entityType !== 'page' && entityType !== 'user' && entityType !== 'workspace') {
     return new Response('Invalid entity type', { status: 400 });
   }
 
-  const table = entityType === 'issue' ? 'issues' : 'pages';
-  const entity = db.prepare(`SELECT workspace_id FROM ${table} WHERE id = ?`).get(entityId) as any;
-  if (!entity) return new Response('Entity not found', { status: 404 });
+  // Security check for issues/pages
+  if (entityType === 'issue' || entityType === 'page') {
+    const table = entityType === 'issue' ? 'issues' : 'pages';
+    const entity = db.prepare(`SELECT workspace_id FROM ${table} WHERE id = ?`).get(entityId) as any;
+    if (!entity) return new Response('Entity not found', { status: 404 });
 
-  const { checkWorkspaceAccess } = await import('../../lib/guard');
-  const access = checkWorkspaceAccess(user.id, user.is_sysadmin, entity.workspace_id, 'editor');
-  if (!access.granted) {
-    if (access.reason === 'not_member') return new Response('Not Found', { status: 404 });
-    return new Response(access.error || 'Forbidden', { status: 403 });
+    const { checkWorkspaceAccess } = await import('../../lib/guard');
+    const access = checkWorkspaceAccess(user.id, user.is_sysadmin, entity.workspace_id, 'editor');
+    if (!access.granted) {
+      if (access.reason === 'not_member') return new Response('Not Found', { status: 404 });
+      return new Response(access.error || 'Forbidden', { status: 403 });
+    }
+  }
+
+  // Security check for users/workspaces
+  if (entityType === 'user' && entityId !== user.id && user.is_sysadmin !== 1) {
+    return new Response('Forbidden', { status: 403 });
+  }
+  if (entityType === 'workspace') {
+    const { checkWorkspaceAccess } = await import('../../lib/guard');
+    const access = checkWorkspaceAccess(user.id, user.is_sysadmin, entityId, 'owner');
+    if (!access.granted) return new Response('Forbidden', { status: 403 });
   }
 
   // [A-4 FIX] Enforce file size limit (10 MB)
@@ -64,9 +77,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
   // Serve through a secure API endpoint
   const fileUrl = `/api/storage/${fileName}`;
 
-  db.prepare('INSERT INTO attachments (id, entity_type, entity_id, file_name, file_path, mime_type, size_bytes, uploaded_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
-    crypto.randomUUID(), entityType, entityId, file.name, fileUrl, file.type, file.size, user.id
-  );
+  // Only track attachments for issues/pages in the attachments table (to show in UI)
+  if (entityType === 'issue' || entityType === 'page') {
+    db.prepare('INSERT INTO attachments (id, entity_type, entity_id, file_name, file_path, mime_type, size_bytes, uploaded_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
+      crypto.randomUUID(), entityType, entityId, file.name, fileUrl, file.type, file.size, user.id
+    );
+  }
 
   return new Response(JSON.stringify({ url: fileUrl }), { status: 200 });
 };

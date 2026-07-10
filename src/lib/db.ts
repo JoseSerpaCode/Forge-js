@@ -13,6 +13,9 @@ db.pragma('foreign_keys = ON'); // Vital para los CASCADE DELETES
 db.pragma('temp_store = MEMORY');
 db.pragma('cache_size = -64000'); // 64MB de caché
 
+process.on('SIGINT', () => { db.close(); process.exit(); });
+process.on('SIGTERM', () => { db.close(); process.exit(); });
+
 // 2. Diccionario de Datos: Global System & Auth Layer
 db.exec(`
 CREATE TABLE IF NOT EXISTS users (
@@ -22,8 +25,14 @@ CREATE TABLE IF NOT EXISTS users (
  is_sysadmin BOOLEAN DEFAULT 0 CHECK(is_sysadmin IN (0, 1)),
  avatar_url TEXT DEFAULT '/default-avatar.svg',
  theme_preference TEXT DEFAULT 'dark',
- last_workspace_id TEXT,
- created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  last_workspace_id TEXT,
+  bio TEXT,
+  pronouns TEXT,
+  public_email TEXT,
+  github_id TEXT,
+  google_id TEXT,
+  last_page_id TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
@@ -103,10 +112,30 @@ CREATE TABLE IF NOT EXISTS work_logs (
  user_id TEXT NOT NULL,
  hours_spent REAL NOT NULL,
  description TEXT,
+ work_date DATETIME DEFAULT CURRENT_TIMESTAMP,
  logged_at DATETIME DEFAULT CURRENT_TIMESTAMP,
  FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE,
  FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+-- Triggers para mantener sincronizado logged_hours en issues (Opción B: Denormalización Atómica Segura)
+CREATE TRIGGER IF NOT EXISTS trg_work_logs_insert
+AFTER INSERT ON work_logs
+BEGIN
+  UPDATE issues SET logged_hours = logged_hours + NEW.hours_spent WHERE id = NEW.issue_id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_work_logs_delete
+AFTER DELETE ON work_logs
+BEGIN
+  UPDATE issues SET logged_hours = MAX(0.0, logged_hours - OLD.hours_spent) WHERE id = OLD.issue_id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_work_logs_update
+AFTER UPDATE OF hours_spent ON work_logs
+BEGIN
+  UPDATE issues SET logged_hours = MAX(0.0, logged_hours - OLD.hours_spent + NEW.hours_spent) WHERE id = NEW.issue_id;
+END;
 
 CREATE TABLE IF NOT EXISTS pages (
  id TEXT PRIMARY KEY,
@@ -218,14 +247,57 @@ CREATE TABLE IF NOT EXISTS automations (
 
 CREATE TABLE IF NOT EXISTS audit_logs (
  id TEXT PRIMARY KEY,
+ workspace_id TEXT NOT NULL,
  user_id TEXT,
  action TEXT NOT NULL,
  entity_type TEXT NOT NULL,
  entity_id TEXT NOT NULL,
  details_json TEXT,
  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
- FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+ FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+ FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
 );
+
+-- Dynamic Databases (Fase 1)
+CREATE TABLE IF NOT EXISTS dynamic_databases (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  sys_tag TEXT NOT NULL,
+  description TEXT,
+  icon TEXT,
+  schema_json TEXT NOT NULL, -- { columns: [{ id: 'col_xxx', name: 'Precio', type: 'number', indexed: true }] }
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS dynamic_entries (
+  id TEXT PRIMARY KEY,
+  database_id TEXT NOT NULL,
+  payload_json TEXT NOT NULL, -- { col_xxx: 125.50 }
+  created_by TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (database_id) REFERENCES dynamic_databases(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS dynamic_views (
+  id TEXT PRIMARY KEY,
+  database_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL, -- 'table', 'gallery'
+  filters_json TEXT,
+  sort_json TEXT,
+  visible_columns_json TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (database_id) REFERENCES dynamic_databases(id) ON DELETE CASCADE
+);
+
+-- Indexes for basic lookup
+CREATE INDEX IF NOT EXISTS idx_dynamic_databases_ws ON dynamic_databases(workspace_id);
+CREATE INDEX IF NOT EXISTS idx_dynamic_entries_db ON dynamic_entries(database_id);
+CREATE INDEX IF NOT EXISTS idx_dynamic_views_db ON dynamic_views(database_id);
 
 CREATE TABLE IF NOT EXISTS notifications (
  id TEXT PRIMARY KEY,
@@ -300,9 +372,29 @@ CREATE INDEX IF NOT EXISTS idx_milestones_workspace ON milestones(workspace_id);
 try {
   db.exec(`ALTER TABLE sprints ADD COLUMN goal TEXT`);
 } catch {}
+try { db.exec(`ALTER TABLE users ADD COLUMN bio TEXT`); } catch {}
+try { db.exec(`ALTER TABLE users ADD COLUMN pronouns TEXT`); } catch {}
+try { db.exec(`ALTER TABLE users ADD COLUMN public_email TEXT`); } catch {}
+try { db.exec(`ALTER TABLE users ADD COLUMN github_id TEXT`); } catch {}
+try { db.exec(`ALTER TABLE users ADD COLUMN google_id TEXT`); } catch {}
+try { db.exec(`ALTER TABLE users ADD COLUMN last_page_id TEXT`); } catch {}
+// Notification preferences
+try { db.exec(`ALTER TABLE users ADD COLUMN notif_mute_all BOOLEAN DEFAULT 0`); } catch {}
+try { db.exec(`ALTER TABLE users ADD COLUMN notif_mute_assign BOOLEAN DEFAULT 0`); } catch {}
+try { db.exec(`ALTER TABLE users ADD COLUMN notif_mute_mention BOOLEAN DEFAULT 0`); } catch {}
+try { db.exec(`ALTER TABLE users ADD COLUMN notif_mute_sprint BOOLEAN DEFAULT 0`); } catch {}
+try { db.exec(`ALTER TABLE users ADD COLUMN notif_mute_system BOOLEAN DEFAULT 0`); } catch {}
 // Add priority column to issues if not present
 try {
   db.exec(`ALTER TABLE issues ADD COLUMN due_date DATETIME`);
+} catch {}
+// Add workspace_id to audit_logs if not present (migration)
+try {
+  db.exec(`ALTER TABLE audit_logs ADD COLUMN workspace_id TEXT`);
+} catch {}
+// Add work_date to work_logs if not present (migration)
+try {
+  db.exec(`ALTER TABLE work_logs ADD COLUMN work_date DATETIME DEFAULT CURRENT_TIMESTAMP`);
 } catch {}
 
 export default db;
