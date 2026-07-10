@@ -15,7 +15,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // Validación de Sesión contra Base de Datos Real
   const sessionData = db.prepare(`
-    SELECT u.id, u.username, u.avatar_url, u.is_sysadmin, u.theme_preference, u.last_workspace_id, s.expires_at 
+    SELECT u.id, u.username, u.avatar_url, u.is_sysadmin, u.theme_preference, u.last_workspace_id, u.last_page_id, s.expires_at 
     FROM sessions s 
     JOIN users u ON s.user_id = u.id 
     WHERE s.id = ?
@@ -44,7 +44,26 @@ export const onRequest = defineMiddleware(async (context, next) => {
       db.prepare('UPDATE users SET last_workspace_id = ? WHERE id = ?').run(sysTag, sessionData.id);
       sessionData.last_workspace_id = sysTag;
     }
+    
+    // Update last_page_id if we are navigating to a specific page
+    const pageMatch = context.url.pathname.match(/^\/w\/[^/]+\/p\/([a-zA-Z0-9-]+)$/);
+    if (pageMatch && pageMatch[1]) {
+      const pageId = pageMatch[1];
+      if (isMember && sessionData.last_page_id !== pageId) {
+        // Solo actualizamos si la página pertenece al workspace (esto ya se valida en la vista, pero previene spam DB)
+        db.prepare('UPDATE users SET last_page_id = ? WHERE id = ?').run(pageId, sessionData.id);
+        sessionData.last_page_id = pageId;
+      }
+    }
   }
+
+  // Parse language from cookie or auto-detect from browser
+  let langPref = context.cookies.get('forge_lang')?.value;
+  if (!langPref) {
+    const acceptLang = context.request.headers.get('accept-language') || '';
+    langPref = acceptLang.toLowerCase().startsWith('es') ? 'es' : 'en';
+  }
+  context.locals.lang = (langPref === 'es') ? 'es' : 'en';
 
   // Inject user to locals for APIs and Astro components
   context.locals.user = sessionData;

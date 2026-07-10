@@ -12,6 +12,7 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/check": "^0.9.9",
     "@astrojs/node": "^11.0.2",
     "@editorjs/checklist": "^1.6.0",
     "@editorjs/editorjs": "^2.31.6",
@@ -28,7 +29,8 @@
     "express": "^5.2.1",
     "isomorphic-dompurify": "^3.18.0",
     "socket.io": "^4.8.3",
-    "tailwindcss": "^4.3.2"
+    "tailwindcss": "^4.3.2",
+    "typescript": "^6.0.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",

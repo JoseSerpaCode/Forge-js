@@ -8,5 +8,6 @@ declare namespace App {
       is_sysadmin: 0 | 1;
       theme_preference: string;
     } | null;
+    lang: 'en' | 'es';
   }
 }
