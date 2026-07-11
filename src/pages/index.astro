@@ -8,9 +8,9 @@ const user = Astro.locals.user;
 const lang = Astro.locals.lang || 'en';
 const t = useTranslations(lang);
 
-// 1. Obtener Workspaces donde el usuario es miembro (o todos si es sysadmin)
+// 1. Obtener Workspaces donde el usuario es miembro (o todos si es sysadmin, excluyendo los temporales de invitados)
 const workspacesQuery = user.is_sysadmin === 1 
-  ? 'SELECT id, name, sys_tag, icon, \'sysadmin\' as role FROM workspaces'
+  ? 'SELECT id, name, sys_tag, icon, \'sysadmin\' as role FROM workspaces WHERE sys_tag NOT LIKE \'guest-%\''
   : 'SELECT w.id, w.name, w.sys_tag, w.icon, wm.ws_role as role FROM workspaces w JOIN workspace_members wm ON w.id = wm.workspace_id WHERE wm.user_id = ?';
 
 const workspaces = user.is_sysadmin === 1 ? db.prepare(workspacesQuery).all() as any[] : db.prepare(workspacesQuery).all(user.id) as any[];
