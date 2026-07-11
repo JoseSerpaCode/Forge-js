@@ -1,10 +1,17 @@
 // src/lib/automations.ts
 import EventEmitter from 'events';
 import dns from 'dns/promises';
+import { Agent, fetch as undiciFetch } from 'undici';
 import db from './db';
 
 function isBlockedIP(ip: string): boolean {
   if (ip === '::1') return true;
+  
+  // Handle IPv4-mapped IPv6 addresses (e.g. ::ffff:192.168.1.1)
+  if (ip.toLowerCase().startsWith('::ffff:')) {
+    ip = ip.substring(7);
+  }
+
   if (ip.includes(':')) {
     const ipLower = ip.toLowerCase();
     if (ipLower.startsWith('fc') || ipLower.startsWith('fd') || ipLower.startsWith('fe80')) return true;
@@ -60,12 +67,24 @@ ForgeEvents.on('issue.status_changed', async ({ issueId, workspaceId, oldStatus,
           continue;
         }
 
+        // Chequeo contra rangos privados post-resolución
         if (isBlockedIP(resolvedIp)) {
           console.error(`[SYS.WEBHOOK] Blocked SSRF attempt to private network (Resolved IP: ${resolvedIp}):`, payloadConfig.url);
           continue;
         }
-        fetch(webhookUrl.toString(), {
+
+        const pinnedAgent = new Agent({
+          connect: {
+            lookup: (lookupHostname, options, callback) => {
+              // Forced pinned IP to prevent TOCTOU DNS Rebinding
+              callback(null, [{ address: resolvedIp, family: resolvedIp.includes(':') ? 6 : 4 }]);
+            }
+          }
+        });
+
+        undiciFetch(webhookUrl.toString(), {
           method: 'POST',
+          dispatcher: pinnedAgent,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ event: 'issue_completed', issueId })
         }).catch(err => console.error('[SYS.WEBHOOK] Fallo al emitir webhook', err));

@@ -180,14 +180,14 @@ const priorityColor: Record<string, string> = {
 };
 ---
 
-<MainLayout title={`Dashboard — ${workspace.name}`} workspaceId={workspace.id}>
+<MainLayout title={`${t('sidebar.dashboard')} — ${workspace.name}`} workspaceId={workspace.id}>
   <div class="space-y-6 max-w-[1400px]">
     
     <!-- Header -->
     <header class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-forge-text">{workspace.name}</h1>
-        <p class="text-sm text-forge-muted mt-0.5">Dashboard — workspace overview</p>
+        <p class="text-sm text-forge-muted mt-0.5">{t('sidebar.dashboard')} — workspace overview</p>
       </div>
       <div class="flex gap-2">
         <a href={`/w/${sys_tag}/board`} class="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded bg-forge-secondary text-forge-bg hover:opacity-90 transition-opacity">
@@ -347,10 +347,44 @@ const priorityColor: Record<string, string> = {
           </div>
         )}
       </div>
+
+      <!-- My Tasks -->
+      <div class="bg-forge-panel border border-forge-border rounded-xl p-5">
+        <h2 class="font-bold text-forge-text flex items-center gap-2 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          {t('dashboard.my_tasks')}
+        </h2>
+        {myTasks.length === 0 ? (
+          <div class="text-sm text-forge-muted text-center py-6">
+            <p>{t('dashboard.no_tasks')}</p>
+            <p class="text-xs mt-1">{t('dashboard.all_caught_up')}</p>
+          </div>
+        ) : (
+          <div class="space-y-2">
+            {myTasks.map(task => (
+              <a 
+                href={`/w/${sys_tag}/board?sprint=${task.sprint_id || 'backlog'}&issue=${task.id}`}
+                class="flex items-center gap-2 p-2 rounded hover:bg-forge-bg transition-colors group"
+              >
+                <span class={`text-[10px] font-bold shrink-0 ${priorityColor[task.priority] || 'text-forge-muted'}`} title={task.priority}>
+                  {task.priority === 'highest' ? '▲▲' : task.priority === 'high' ? '▲' : task.priority === 'low' ? '▼' : task.priority === 'lowest' ? '▼▼' : '●'}
+                </span>
+                <span class="text-xs text-forge-text group-hover:text-forge-secondary transition-colors flex-1 truncate">{task.title}</span>
+                <span class={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${statusColor[task.status] || 'bg-forge-muted/20 text-forge-muted'}`}>
+                  {task.status.replace('_', ' ').replace('-', ' ')}
+                </span>
+              </a>
+            ))}
+            <a href={`/w/${sys_tag}/board`} class="block text-center text-xs text-forge-muted hover:text-forge-secondary transition-colors pt-2 border-t border-forge-border mt-2">
+              {t('dashboard.view_all_board')}
+            </a>
+          </div>
+        )}
+      </div>
     </div>
 
-    <!-- Bottom Row: Activity + Workload + My Tasks -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Bottom Row: Activity + Workload -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       
       <!-- Recent Activity -->
       <div class="bg-forge-panel border border-forge-border rounded-xl p-5">
@@ -418,39 +452,6 @@ const priorityColor: Record<string, string> = {
         )}
       </div>
 
-      <!-- My Tasks in this workspace -->
-      <div class="bg-forge-panel border border-forge-border rounded-xl p-5">
-        <h2 class="font-bold text-forge-text flex items-center gap-2 mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          {t('dashboard.my_tasks')}
-        </h2>
-        {myTasks.length === 0 ? (
-          <div class="text-sm text-forge-muted text-center py-6">
-            <p>{t('dashboard.no_tasks')}</p>
-            <p class="text-xs mt-1">{t('dashboard.all_caught_up')}</p>
-          </div>
-        ) : (
-          <div class="space-y-2">
-            {myTasks.map(task => (
-              <a 
-                href={`/w/${sys_tag}/board?sprint=${task.sprint_id || 'backlog'}&issue=${task.id}`}
-                class="flex items-center gap-2 p-2 rounded hover:bg-forge-bg transition-colors group"
-              >
-                <span class={`text-[10px] font-bold shrink-0 ${priorityColor[task.priority] || 'text-forge-muted'}`} title={task.priority}>
-                  {task.priority === 'highest' ? '▲▲' : task.priority === 'high' ? '▲' : task.priority === 'low' ? '▼' : task.priority === 'lowest' ? '▼▼' : '●'}
-                </span>
-                <span class="text-xs text-forge-text group-hover:text-forge-secondary transition-colors flex-1 truncate">{task.title}</span>
-                <span class={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${statusColor[task.status] || 'bg-forge-muted/20 text-forge-muted'}`}>
-                  {task.status.replace('_', ' ').replace('-', ' ')}
-                </span>
-              </a>
-            ))}
-            <a href={`/w/${sys_tag}/board`} class="block text-center text-xs text-forge-muted hover:text-forge-secondary transition-colors pt-2 border-t border-forge-border mt-2">
-              {t('dashboard.view_all_board')}
-            </a>
-          </div>
-        )}
-      </div>
     </div>
   </div>
 

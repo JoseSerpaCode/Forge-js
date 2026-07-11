@@ -33,7 +33,7 @@ const currentUrl = Astro.url.pathname;
               <span class="text-forge-border">/</span>
             </>
           )}
-          <a href={currentUrl} class={`${workspaceName ? 'text-forge-secondary hover:text-forge-text' : 'text-forge-text hover:text-forge-secondary'} transition-colors cursor-pointer`}>{title.split(' - ')[0]}</a>
+          <a href={currentUrl} class={`${workspaceName ? 'text-forge-secondary hover:text-forge-text' : 'text-forge-text hover:text-forge-secondary'} transition-colors cursor-pointer`}>{title.split(' — ')[0].split(' - ')[0]}</a>
         </div>
       )}
     </div>
