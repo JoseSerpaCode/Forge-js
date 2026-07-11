@@ -2,6 +2,7 @@
 
 **Forge JS** es un sistema operativo de trabajo colaborativo multi-inquilino (multi-tenant), diseñado con un frontend Vanilla JS superrápido sobre Astro y un backend optimizado en NodeJS con SQLite.
 
+![Version](https://img.shields.io/github/package-json/v/JoseSerpaCode/Forge-js?color=blue&label=version)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
 ![Orion's Forge Screenshot](./public/screenshot.png)
