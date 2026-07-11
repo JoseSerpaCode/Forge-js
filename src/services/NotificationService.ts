@@ -26,10 +26,24 @@ export const NotificationService = {
     if (type === 'system' && user.notif_mute_system) return;
 
     // 4. Insert notification
+    const notifId = crypto.randomUUID();
+    const createdAt = new Date().toISOString();
+    
     db.prepare(`
-      INSERT INTO notifications (id, user_id, type, title, message, link_url)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(crypto.randomUUID(), userId, type, title, message, linkUrl || null);
+      INSERT INTO notifications (id, user_id, type, title, message, link_url, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(notifId, userId, type, title, message, linkUrl || null, createdAt);
+
+    // 5. Broadcast to Socket.io
+    process.emit('forge_notification', {
+      id: notifId,
+      userId,
+      type,
+      title,
+      message,
+      link_url: linkUrl || null,
+      created_at: createdAt
+    });
   },
 
   getUnreadCount(userId: string) {

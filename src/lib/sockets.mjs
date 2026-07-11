@@ -18,6 +18,9 @@ export function setupSockets(io) {
   });
 
   io.on('connection', (socket) => {
+    // Unirse a su room personal para recibir notificaciones
+    socket.join(socket.userId);
+    
     socket.on('join_channel', (channelId) => {
       // 1. Validar que el channel exista y obtener el workspace_id
       const channel = db.prepare('SELECT workspace_id FROM channels WHERE id = ?').get(channelId);
@@ -94,5 +97,10 @@ export function setupSockets(io) {
         }
       }
     } catch(e) {}
+  });
+
+  process.on('forge_notification', (data) => {
+    // Send to specific user room
+    io.to(data.userId).emit('user_notification', data);
   });
 }

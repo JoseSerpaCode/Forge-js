@@ -51,6 +51,17 @@ Astro.response.headers.set('Pragma', 'no-cache');
         document.documentElement.setAttribute('data-theme', savedTheme);
       }
     </script>
+    <script src="/socket.io/socket.io.js" is:inline></script>
+    <script is:inline>
+      window.socket = io();
+      window.socket.on('user_notification', (data) => {
+        if (window.showToast) {
+          window.showToast(data.title + ': ' + data.message);
+        }
+        // Emit custom event so TopBar can catch it
+        window.dispatchEvent(new CustomEvent('forge_new_notif', { detail: data }));
+      });
+    </script>
   </head>
   <body class="bg-forge-bg text-forge-text flex h-screen overflow-hidden" data-user-role={user?.role} data-is-sysadmin={user?.is_sysadmin}>
     <Sidebar workspaceId={workspaceId} workspaceName={workspaceName} />
