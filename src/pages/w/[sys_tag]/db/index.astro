@@ -9,6 +9,7 @@ const user = Astro.locals.user;
 const t = useTranslations(Astro.locals.lang || 'en');
 
 if (!user) return Astro.redirect('/login');
+if (user.is_guest) return Astro.redirect('/register');
 
 const workspace = db.prepare('SELECT id, name FROM workspaces WHERE sys_tag = ?').get(sys_tag) as any;
 if (!workspace) return Astro.redirect('/404');

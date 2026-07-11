@@ -85,9 +85,15 @@ const automations = db.prepare(`
     <div class="bg-forge-panel border border-forge-border rounded-lg shadow-lg p-6">
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-xl font-bold text-forge-text">{t('ws.settings.members')}</h2>
-        <button id="btn-add-member" class="bg-forge-bg border border-forge-border text-forge-text px-3 py-1.5 text-sm rounded hover:border-forge-secondary transition-colors">
-          {t('ws.settings.invite')}
-        </button>
+        {user.is_guest ? (
+          <span class="text-xs text-forge-secondary font-medium px-3 py-1 bg-forge-secondary/10 rounded border border-forge-secondary/20">
+            Create an account to invite users
+          </span>
+        ) : (
+          <button id="btn-add-member" class="bg-forge-bg border border-forge-border text-forge-text px-3 py-1.5 text-sm rounded hover:border-forge-secondary transition-colors">
+            {t('ws.settings.invite')}
+          </button>
+        )}
       </div>
 
       <div class="space-y-3">

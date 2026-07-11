@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS users (
  id TEXT PRIMARY KEY,
  username TEXT UNIQUE NOT NULL,
  password_hash TEXT NOT NULL,
+ is_guest BOOLEAN DEFAULT 0 CHECK(is_guest IN (0, 1)),
  is_sysadmin BOOLEAN DEFAULT 0 CHECK(is_sysadmin IN (0, 1)),
  avatar_url TEXT DEFAULT '/default-avatar.svg',
  theme_preference TEXT DEFAULT 'dark',
@@ -53,6 +54,12 @@ CREATE TABLE IF NOT EXISTS workspaces (
  FOREIGN KEY (created_by) REFERENCES users(id)
 );
 `);
+
+try {
+  db.exec('ALTER TABLE users ADD COLUMN is_guest BOOLEAN DEFAULT 0 CHECK(is_guest IN (0, 1))');
+} catch (e) {
+  // Ignorar error si la columna ya existe
+}
 
 // 3. Diccionario de Datos: Aislamiento Multi-Tenant (El Pivote)
 db.exec(`

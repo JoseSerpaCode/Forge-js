@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { checkRateLimit } from '../../../lib/rateLimit';
 
-export const POST: APIRoute = async ({ request, cookies }) => {
+export const POST: APIRoute = async ({ request, cookies, locals }) => {
   try {
     const { username, password } = await request.json();
 
@@ -43,35 +43,40 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return new Response(JSON.stringify({ error: 'Password cannot exceed 128 characters' }), { status: 400 });
     }
     
-    // Check if user exists
     const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
     if (existing) {
       return new Response(JSON.stringify({ error: 'Username already taken' }), { status: 409 });
     }
 
-    const userId = crypto.randomUUID();
     const passwordHash = bcrypt.hashSync(password, 10);
-    
-    // Default avatar
     const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
 
-    db.prepare('INSERT INTO users (id, username, password_hash, avatar_url) VALUES (?, ?, ?, ?)').run(
-      userId, username, passwordHash, avatarUrl
-    );
+    const currentUser = locals.user;
     
-    // Auto-login after registration
-    const sessionId = crypto.randomUUID();
-    const expiresAt = Date.now() + 1000 * 60 * 60 * 24 * 30; // 30 días
-    
-    db.prepare('INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)').run(sessionId, userId, expiresAt);
-    
-    cookies.set('forge_session', sessionId, {
-      path: '/',
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 30
-    });
+    if (currentUser && currentUser.is_guest === 1) {
+      // Upgrade existing guest account
+      db.prepare('UPDATE users SET username = ?, password_hash = ?, avatar_url = ?, is_guest = 0 WHERE id = ?').run(
+        username, passwordHash, avatarUrl, currentUser.id
+      );
+    } else {
+      // Create entirely new user
+      const userId = crypto.randomUUID();
+      db.prepare('INSERT INTO users (id, username, password_hash, avatar_url) VALUES (?, ?, ?, ?)').run(
+        userId, username, passwordHash, avatarUrl
+      );
+      
+      const sessionId = crypto.randomUUID();
+      const expiresAt = Date.now() + 1000 * 60 * 60 * 24 * 30; // 30 días
+      db.prepare('INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)').run(sessionId, userId, expiresAt);
+      
+      cookies.set('forge_session', sessionId, {
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 30
+      });
+    }
     
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (err) {

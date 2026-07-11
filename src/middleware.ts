@@ -1,21 +1,65 @@
 import { defineMiddleware } from 'astro:middleware';
 import db from './lib/db';
 
+import crypto from 'crypto';
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const sessionId = context.cookies.get('forge_session')?.value;
   const isPublicRoute = context.url.pathname === '/login' || context.url.pathname === '/register' || context.url.pathname.startsWith('/api/auth');
 
   if (!sessionId) {
-    context.locals.user = null;
-    if (isPublicRoute) return next();
-    return context.url.pathname.startsWith('/api/') 
-      ? new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 }) 
-      : context.redirect('/login');
+    if (isPublicRoute) {
+      context.locals.user = null;
+      return next();
+    }
+    
+    // Si es un API call sin sesión, devolvemos 401
+    if (context.url.pathname.startsWith('/api/')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+    }
+
+    // Auto-login as GUEST for web routes
+    const guestId = crypto.randomUUID();
+    const newSessionId = crypto.randomUUID();
+    
+    // Insert Guest User
+    db.prepare(`
+      INSERT INTO users (id, username, password_hash, is_guest) 
+      VALUES (?, ?, ?, 1)
+    `).run(guestId, `Guest_${guestId.substring(0, 8)}`, 'guest');
+    
+    // Create Default Workspace for Guest
+    const wsId = crypto.randomUUID();
+    const sysTag = `guest-${guestId.substring(0, 8)}`;
+    db.prepare(`
+      INSERT INTO workspaces (id, name, sys_tag, created_by) 
+      VALUES (?, ?, ?, ?)
+    `).run(wsId, 'My Workspace', sysTag, guestId);
+    
+    db.prepare(`
+      INSERT INTO workspace_members (workspace_id, user_id, ws_role) 
+      VALUES (?, ?, 'admin')
+    `).run(wsId, guestId);
+    
+    // Create Session
+    const expiresAt = Date.now() + 1000 * 60 * 60 * 24 * 30; // 30 days
+    db.prepare(`INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)`).run(newSessionId, guestId, expiresAt);
+    
+    // Set Cookie
+    context.cookies.set('forge_session', newSessionId, {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 30
+    });
+    
+    // Redirect guest to their new workspace
+    return context.redirect(`/w/${sysTag}`);
   }
 
   // Validación de Sesión contra Base de Datos Real
   const sessionData = db.prepare(`
-    SELECT u.id, u.username, u.avatar_url, u.is_sysadmin, u.theme_preference, u.last_workspace_id, u.last_page_id, s.expires_at 
+    SELECT u.id, u.username, u.avatar_url, u.is_sysadmin, u.is_guest, u.theme_preference, u.last_workspace_id, u.last_page_id, s.expires_at 
     FROM sessions s 
     JOIN users u ON s.user_id = u.id 
     WHERE s.id = ?

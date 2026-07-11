@@ -128,8 +128,8 @@ const isOwner = userRole === 'owner' || userRole === 'sysadmin';
 
   <!-- User Footer -->
   <div class="p-3 border-t border-forge-border shrink-0">
-    <a href="/settings" class="flex items-center gap-2.5 hover:bg-forge-bg p-2 -mx-1 rounded-lg transition-colors group" id="btn-user-settings" title="Account Settings">
-      {user?.avatar_url ? (
+    <a href={user?.is_guest ? "/register" : "/settings"} class="flex items-center gap-2.5 hover:bg-forge-bg p-2 -mx-1 rounded-lg transition-colors group" id="btn-user-settings" title={user?.is_guest ? "Create Account to Save Data" : "Account Settings"}>
+      {user?.avatar_url && !user.is_guest ? (
         <img src={user.avatar_url} class="w-7 h-7 rounded-full border border-forge-border bg-forge-bg object-cover shrink-0" alt={`${user.username} avatar`} />
       ) : (
         <div class="w-7 h-7 rounded-full border border-forge-border bg-forge-bg flex items-center justify-center text-forge-secondary shrink-0">
@@ -137,8 +137,8 @@ const isOwner = userRole === 'owner' || userRole === 'sysadmin';
         </div>
       )}
       <div class="flex-1 min-w-0">
-        <div class="text-xs font-bold text-forge-text truncate group-hover:text-forge-secondary transition-colors">{user?.username || 'Guest'}</div>
-        <div class="text-[10px] text-forge-muted font-mono uppercase truncate">{userRole}</div>
+        <div class="text-xs font-bold text-forge-text truncate group-hover:text-forge-secondary transition-colors">{user?.is_guest ? 'Guest' : (user?.username || 'Guest')}</div>
+        <div class={`text-[10px] font-mono uppercase truncate ${user?.is_guest ? 'text-forge-secondary' : 'text-forge-muted'}`}>{user?.is_guest ? 'Unregistered' : userRole}</div>
       </div>
       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-muted shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
     </a>
