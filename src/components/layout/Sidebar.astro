@@ -93,8 +93,9 @@ const isOwner = userRole === 'owner' || userRole === 'sysadmin';
         {/* Dynamic Databases */}
         <a 
           href={`/w/${sys_tag}/db`} 
-          class={`sidebar-link ${isDB ? 'active' : ''}`}
+          class={`sidebar-link guest-db-link ${isDB ? 'active' : ''}`}
           aria-current={isDB ? 'page' : undefined}
+          data-guest={user?.is_guest ? 'true' : 'false'}
         >
           <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
           {t('sidebar.databases')}
@@ -178,3 +179,22 @@ const isOwner = userRole === 'owner' || userRole === 'sysadmin';
     flex-shrink: 0;
   }
 </style>
+
+<script>
+  // Intercept Databases click for guests
+  document.querySelectorAll('.guest-db-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      if (link.getAttribute('data-guest') === 'true') {
+        e.preventDefault();
+        // @ts-ignore
+        if (window.showToast) {
+          // @ts-ignore
+          window.showToast('Please create an account to use Dynamic Databases.', true);
+        }
+        setTimeout(() => {
+          window.location.href = '/register';
+        }, 1500);
+      }
+    });
+  });
+</script>

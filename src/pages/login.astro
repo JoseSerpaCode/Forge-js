@@ -4,7 +4,7 @@ import '../styles/themes.css';
 
 import { useTranslations } from '../i18n/ui';
 const user = Astro.locals.user;
-if (user) return Astro.redirect('/');
+if (user && !user.is_guest) return Astro.redirect('/');
 const lang = Astro.locals.lang || 'en';
 const t = useTranslations(lang);
 ---
