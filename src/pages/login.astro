@@ -3,8 +3,14 @@
 import '../styles/themes.css';
 
 import { useTranslations } from '../i18n/ui';
+import db from '../lib/db';
 const user = Astro.locals.user!;
 if (user && !user.is_guest) return Astro.redirect('/');
+
+let guestWorkspaces: any[] = [];
+if (user && user.is_guest) {
+  guestWorkspaces = db.prepare(`SELECT w.id, w.name FROM workspaces w JOIN workspace_members wm ON w.id = wm.workspace_id WHERE wm.user_id = ?`).all(user.id);
+}
 const lang = Astro.locals.lang || 'en';
 const t = useTranslations(lang);
 ---
@@ -43,25 +49,74 @@ const t = useTranslations(lang);
     </div>
   </div>
 
-  <script>
-    document.getElementById('login-form')?.addEventListener('submit', async (e) => {
+  {guestWorkspaces.length > 0 && (
+    <dialog id="guest-ws-modal" class="bg-forge-panel border border-forge-border rounded-lg p-6 w-full max-w-[400px] text-forge-text shadow-xl backdrop:bg-black/50">
+      <h2 class="text-xl font-bold mb-4">Transfer Guest Workspaces</h2>
+      <p class="text-sm text-forge-muted mb-4">You have guest workspaces. Select the ones you want to transfer to your existing account. Unselected ones will be permanently deleted.</p>
+      <div class="flex flex-col gap-2 mb-6">
+        {guestWorkspaces.map(ws => (
+          <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-forge-bg rounded border border-forge-border">
+            <input type="checkbox" name="keep_ws" value={ws.id} checked class="accent-forge-primary" />
+            <span class="text-sm font-medium">{ws.name}</span>
+          </label>
+        ))}
+      </div>
+      <div class="flex justify-end gap-3 mt-4">
+        <button type="button" id="btn-discard-all" class="px-4 py-2 text-forge-muted hover:text-red-400 text-sm">Discard All</button>
+        <button type="button" id="btn-confirm-transfer" class="bg-forge-secondary text-forge-bg px-4 py-2 rounded font-bold hover:opacity-90 transition-opacity text-sm">Continue Login</button>
+      </div>
+    </dialog>
+  )}
+
+  <script define:vars={{ hasGuestWorkspaces: guestWorkspaces.length > 0 }}>
+    const form = document.getElementById('login-form');
+    const modal = document.getElementById('guest-ws-modal');
+    const btnConfirm = document.getElementById('btn-confirm-transfer');
+    const btnDiscard = document.getElementById('btn-discard-all');
+
+    let formDataObj = {};
+
+    form?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const fd = new FormData(e.target as HTMLFormElement);
+      const fd = new FormData(e.target);
+      formDataObj = Object.fromEntries(fd);
+      
+      if (hasGuestWorkspaces && modal) {
+        modal.showModal();
+      } else {
+        await submitLogin(formDataObj);
+      }
+    });
+
+    btnConfirm?.addEventListener('click', async () => {
+      const selected = Array.from(document.querySelectorAll('input[name="keep_ws"]:checked')).map(cb => cb.value);
+      formDataObj.keep_workspaces = selected;
+      modal.close();
+      await submitLogin(formDataObj);
+    });
+
+    btnDiscard?.addEventListener('click', async () => {
+      formDataObj.keep_workspaces = [];
+      modal.close();
+      await submitLogin(formDataObj);
+    });
+
+    async function submitLogin(data) {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(Object.fromEntries(fd))
+        body: JSON.stringify(data)
       });
       if (res.ok) {
         window.location.href = '/';
       } else {
         const errorMsg = document.getElementById('error-msg');
         if (errorMsg) {
-          errorMsg.textContent = 'Invalid credentials'; // Handled via API message or static, let's keep it simple
+          errorMsg.textContent = 'Invalid credentials';
           errorMsg.classList.remove('hidden');
         }
       }
-    });
+    }
   </script>
 </body>
 </html>

@@ -6,7 +6,7 @@ import { checkRateLimit } from '../../../lib/rateLimit';
 
 export const POST: APIRoute = async ({ request, cookies, locals }) => {
   try {
-    const { username, password } = await request.json();
+    const { username, password, keep_workspaces } = await request.json();
 
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || request.headers.get('cf-connecting-ip') || 'unknown';
     const rateCheck = checkRateLimit(ip);
@@ -58,6 +58,15 @@ export const POST: APIRoute = async ({ request, cookies, locals }) => {
       db.prepare('UPDATE users SET username = ?, password_hash = ?, avatar_url = ?, is_guest = 0 WHERE id = ?').run(
         username, passwordHash, avatarUrl, currentUser.id
       );
+
+      if (Array.isArray(keep_workspaces)) {
+        const userWorkspaces = db.prepare('SELECT workspace_id FROM workspace_members WHERE user_id = ?').all(currentUser.id) as any[];
+        for (const uw of userWorkspaces) {
+           if (!keep_workspaces.includes(uw.workspace_id)) {
+               db.prepare('DELETE FROM workspaces WHERE id = ?').run(uw.workspace_id);
+           }
+        }
+      }
     } else {
       // Create entirely new user
       const userId = crypto.randomUUID();
