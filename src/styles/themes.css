@@ -12,8 +12,10 @@
   
   /* State Colors */
   --color-forge-secondary: var(--forge-accent-secondary);
-  --color-forge-success: #10B981;
-  --color-forge-error: #EF4444;
+  --color-forge-success: var(--forge-success);
+  --color-forge-error: var(--forge-error);
+  --color-forge-warning: var(--forge-warning);
+  --color-forge-info: var(--forge-info);
 
   /* Typography & Structure */
   --color-forge-border: var(--forge-border);
@@ -33,6 +35,12 @@
     --forge-accent-primary: #FF5D00;
     --forge-accent-primary-hover: #E05200;
     --forge-accent-secondary: #00E5FF;
+
+    /* State Colors */
+    --forge-success: #10B981;
+    --forge-error: #EF4444;
+    --forge-warning: #F59E0B;
+    --forge-info: #3B82F6;
   }
   
   [data-theme="dark"] { 
@@ -46,6 +54,11 @@
     --forge-accent-primary: #FF5D00;
     --forge-accent-primary-hover: #E05200;
     --forge-accent-secondary: #00E5FF;
+
+    --forge-success: #10B981;
+    --forge-error: #EF4444;
+    --forge-warning: #F59E0B;
+    --forge-info: #3B82F6;
   }
 
   [data-theme="ocean"] { 
@@ -59,6 +72,11 @@
     --forge-accent-primary: #3B82F6;
     --forge-accent-primary-hover: #2563EB;
     --forge-accent-secondary: #0EA5E9;
+
+    --forge-success: #10B981;
+    --forge-error: #EF4444;
+    --forge-warning: #F59E0B;
+    --forge-info: #0EA5E9;
   }
 
   [data-theme="light"] {
@@ -72,6 +90,11 @@
     --forge-accent-primary: #3B82F6;
     --forge-accent-primary-hover: #2563EB;
     --forge-accent-secondary: #0EA5E9;
+
+    --forge-success: #059669;
+    --forge-error: #DC2626;
+    --forge-warning: #D97706;
+    --forge-info: #0284C7;
   }
   
   body { 

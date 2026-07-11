@@ -110,11 +110,11 @@ if (activeSprintId) {
         
         {access.role !== 'viewer' && activeSprintId && currentSprintObj && (
           <div class="flex items-center gap-1 bg-forge-bg rounded-md border border-forge-border/50 p-1">
-            <button id="btn-toggle-sprint" data-sprint-id={activeSprintId} data-current-status={currentSprintObj.status} class={`font-bold px-3 py-1 rounded text-xs transition-colors ${currentSprintObj.status === 'planned' ? 'bg-green-600 text-white hover:bg-green-500' : currentSprintObj.status === 'active' ? 'bg-forge-primary text-forge-bg hover:opacity-90' : 'bg-forge-secondary text-forge-bg hover:opacity-90'}`}>
+            <button id="btn-toggle-sprint" data-sprint-id={activeSprintId} data-current-status={currentSprintObj.status} class={`font-bold px-3 py-1 rounded text-xs transition-colors ${currentSprintObj.status === 'planned' ? 'bg-forge-success text-white hover:opacity-90' : currentSprintObj.status === 'active' ? 'bg-forge-primary text-forge-bg hover:opacity-90' : 'bg-forge-secondary text-forge-bg hover:opacity-90'}`}>
               {currentSprintObj.status === 'planned' ? 'Start' : currentSprintObj.status === 'active' ? 'Complete' : 'Reopen'}
             </button>
             {currentSprintObj.status === 'active' && (
-              <button id="btn-deactivate-sprint" data-sprint-id={activeSprintId} class="text-forge-muted hover:text-red-400 px-2 py-1 rounded transition-colors" title="Deactivate Sprint">
+              <button id="btn-deactivate-sprint" data-sprint-id={activeSprintId} class="text-forge-muted hover:text-forge-error px-2 py-1 rounded transition-colors" title="Deactivate Sprint">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
               </button>
             )}

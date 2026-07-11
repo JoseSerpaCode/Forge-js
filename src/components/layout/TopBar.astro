@@ -87,8 +87,8 @@ const currentUrl = Astro.url.pathname;
           {notifications.map((n: any) => (
             <li class={`p-3 border-b border-forge-border/40 transition-colors ${n.is_read ? 'opacity-70 bg-forge-bg/20' : 'bg-forge-secondary/5'}`}>
               <a href={n.link_url || '#'} class="block" data-notif-id={n.id}>
-                <div class="flex items-center gap-2 mb-1">
-                  <span class={`w-2 h-2 rounded-full shrink-0 ${n.type === 'assign' ? 'bg-blue-400' : n.type === 'mention' ? 'bg-yellow-400' : n.type === 'system' ? 'bg-red-400' : 'bg-forge-primary'}`}></span>
+                <div class="flex items-start gap-3">
+                  <span class={`w-2 h-2 rounded-full shrink-0 ${n.type === 'assign' ? 'bg-forge-info' : n.type === 'mention' ? 'bg-forge-warning' : n.type === 'system' ? 'bg-forge-error' : 'bg-forge-primary'}`}></span>
                   <span class="text-xs font-bold text-forge-text">{n.title}</span>
                 </div>
                 <p class="text-[11px] text-forge-muted line-clamp-2 pl-4 leading-tight">{n.message}</p>
@@ -355,14 +355,16 @@ const currentUrl = Astro.url.pathname;
               `;
             }
 
+            const colorClass = n.type === 'assign' ? 'bg-forge-info' : n.type === 'mention' ? 'bg-forge-warning' : n.type === 'system' ? 'bg-forge-error' : 'bg-forge-primary';
+
             notifList.innerHTML += `
               <li class="relative group/notif p-3 border-b border-forge-border transition-colors ${n.is_read ? 'opacity-60' : 'bg-forge-bg'} ${n.type !== 'invite' ? 'hover:bg-forge-panel' : ''}">
                 <a href="${n.type !== 'invite' ? esc(n.link_url || '#') : '#'}" data-id="${n.id}" class="btn-notif-link block ${n.type !== 'invite' ? 'pr-6' : ''}">
-                  <div class="flex justify-between items-start mb-1">
-                    <span class="text-xs font-bold ${n.is_read ? 'text-forge-muted' : 'text-forge-secondary'} truncate">${esc(n.title)}</span>
-                    <span class="text-[10px] text-forge-muted shrink-0 ml-2">${date}</span>
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="w-2 h-2 rounded-full shrink-0 ${colorClass}"></span>
+                    <span class="text-xs font-bold text-forge-text">${esc(n.title)}</span>
                   </div>
-                  <p class="text-xs text-forge-text break-words">${esc(n.message)}</p>
+                  <p class="text-[11px] text-forge-muted line-clamp-2 pl-4 leading-tight">${esc(n.message)}</p>
                 </a>
                 ${actionHtml}
                 ${n.type !== 'invite' ? `
@@ -482,7 +484,7 @@ const currentUrl = Astro.url.pathname;
     if (list) {
       const li = document.createElement('li');
       li.className = 'p-3 border-b border-forge-border/40 transition-colors bg-forge-secondary/5';
-      const colorClass = data.type === 'assign' ? 'bg-blue-400' : data.type === 'mention' ? 'bg-yellow-400' : data.type === 'system' ? 'bg-red-400' : 'bg-forge-primary';
+      const colorClass = data.type === 'assign' ? 'bg-forge-info' : data.type === 'mention' ? 'bg-forge-warning' : data.type === 'system' ? 'bg-forge-error' : 'bg-forge-primary';
       li.innerHTML = `
         <a href="${data.link_url || '#'}" class="block" data-notif-id="${data.id}">
           <div class="flex items-center gap-2 mb-1">
