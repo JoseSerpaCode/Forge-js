@@ -1,8 +1,8 @@
 ---
-const user = Astro.locals.user;
+const user = Astro.locals.user!;
 import { useTranslations } from '../../i18n/ui';
 import pkg from '../../../package.json';
-import { NotificationService } from '../../services/NotificationService';
+import { NotificationService } from '../../lib/NotificationService';
 const lang = Astro.locals.lang || 'en';
 const t = useTranslations(lang);
 const version = pkg.version;
@@ -528,7 +528,7 @@ const currentUrl = Astro.url.pathname;
         }
       } else if (type === 'user') {
         e.preventDefault();
-        window.showToast('User profiles coming soon');
+        window.showToast?.('User profiles coming soon');
       } else {
         searchDropdown?.classList.add('hidden');
       }

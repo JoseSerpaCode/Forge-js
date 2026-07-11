@@ -1,9 +1,8 @@
 import type { APIRoute } from 'astro';
-import { NotificationService } from '../../../services/NotificationService';
+import { NotificationService } from '../../../lib/NotificationService';
 
 export const POST: APIRoute = async ({ locals }) => {
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   try {
     NotificationService.markAsRead(user.id);

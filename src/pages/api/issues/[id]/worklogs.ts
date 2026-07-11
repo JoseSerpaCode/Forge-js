@@ -5,8 +5,7 @@ import crypto from 'crypto';
 
 export const GET: APIRoute = async ({ params, locals }) => {
   const issueId = params.id;
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const issue = db.prepare('SELECT workspace_id FROM issues WHERE id = ?').get(issueId) as any;
   if (!issue) return new Response('Not found', { status: 404 });
@@ -27,8 +26,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
 
 export const POST: APIRoute = async ({ params, request, locals }) => {
   const issueId = params.id;
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const issue = db.prepare('SELECT workspace_id FROM issues WHERE id = ?').get(issueId) as any;
   if (!issue) return new Response('Not found', { status: 404 });

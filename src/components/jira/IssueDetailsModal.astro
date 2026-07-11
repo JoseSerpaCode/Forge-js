@@ -745,8 +745,7 @@ const t = useTranslations(lang);
     } else {
       if (file.size > 20 * 1024 * 1024) {
          // @ts-ignore
-         window.showToast('Max file size is 20MB', true);
-         attachBtn.innerHTML = originalText;
+         window.showToast?.('Max file size is 20MB', true);
          return;
       }
       uploadFile(file, file.name);

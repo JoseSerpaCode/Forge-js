@@ -6,7 +6,7 @@ import { checkWorkspaceAccess } from '../../../lib/guard';
 import { useTranslations } from '../../../i18n/ui';
 
 const { sys_tag } = Astro.params;
-const user = Astro.locals.user;
+const user = Astro.locals.user!;
 const lang = Astro.locals.lang || 'en';
 const t = useTranslations(lang);
 

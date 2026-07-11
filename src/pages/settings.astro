@@ -2,7 +2,7 @@
 import MainLayout from '../layouts/MainLayout.astro';
 import db from '../lib/db';
 
-const user = Astro.locals.user;
+const user = Astro.locals.user!;
 if (!user) return Astro.redirect('/login');
 if (user.is_guest) return Astro.redirect('/register');
 

@@ -113,8 +113,10 @@ function formatDate(dateStr: string | undefined) {
   import EditorJS from '@editorjs/editorjs';
   import Header from '@editorjs/header';
   import List from '@editorjs/list';
+  // @ts-ignore
   import Checklist from '@editorjs/checklist';
   import Quote from '@editorjs/quote';
+  // @ts-ignore
   import Marker from '@editorjs/marker';
   import InlineCode from '@editorjs/inline-code';
 
@@ -125,7 +127,7 @@ function formatDate(dateStr: string | undefined) {
   if (editorDiv) {
     const pageId = editorDiv.dataset.pageId;
     const canEdit = editorDiv.dataset.canEdit === 'true';
-    let initialData = {};
+    let initialData: any = { blocks: [] };
     try {
       if (editorDiv.dataset.initialContent && editorDiv.dataset.initialContent !== 'null') {
         initialData = JSON.parse(editorDiv.dataset.initialContent);

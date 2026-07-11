@@ -5,8 +5,7 @@ import crypto from 'crypto';
 
 export const GET: APIRoute = async ({ params, request, locals }) => {
   const { sys_tag, id } = params;
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   // 1. Resolve Workspace and DB
   const database = db.prepare('SELECT id, workspace_id, schema_json FROM dynamic_databases WHERE id = ?').get(id) as any;
@@ -49,8 +48,7 @@ const escapeHtml = (unsafe: string) => {
 
 export const POST: APIRoute = async ({ params, request, locals }) => {
   const { sys_tag, id } = params;
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const database = db.prepare('SELECT id, workspace_id, schema_json FROM dynamic_databases WHERE id = ?').get(id) as any;
   if (!database) return new Response('Database not found', { status: 404 });

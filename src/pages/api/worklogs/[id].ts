@@ -5,8 +5,7 @@ import crypto from 'crypto';
 
 export const PATCH: APIRoute = async ({ params, request, locals }) => {
   const logId = params.id;
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const log = db.prepare(`
     SELECT wl.*, i.workspace_id 
@@ -54,8 +53,7 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
 
 export const DELETE: APIRoute = async ({ params, locals }) => {
   const logId = params.id;
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const log = db.prepare(`
     SELECT wl.*, i.workspace_id 

@@ -6,8 +6,7 @@ import path from 'path';
 import crypto from 'crypto';
 
 export const POST: APIRoute = async ({ request, locals }) => {
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const formData = await request.formData();
   const file = formData.get('file') as File;

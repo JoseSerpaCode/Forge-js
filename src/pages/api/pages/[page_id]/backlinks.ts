@@ -4,8 +4,7 @@ import { checkWorkspaceAccess } from '../../../../lib/guard';
 
 // GET /api/pages/[page_id]/backlinks → list issues that reference this page
 export const GET: APIRoute = async ({ params, locals }) => {
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const { page_id } = params;
   if (!page_id) return new Response('Bad Request', { status: 400 });

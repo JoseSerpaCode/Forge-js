@@ -3,8 +3,7 @@ import db from '../../../../lib/db';
 import { checkWorkspaceAccess } from '../../../../lib/guard';
 
 export const GET: APIRoute = async ({ params, locals }) => {
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const { entity_type, entity_id } = params;
   if (!entity_type || !entity_id) return new Response('Bad Request', { status: 400 });

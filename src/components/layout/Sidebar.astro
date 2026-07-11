@@ -5,7 +5,7 @@ interface Props {
   workspaceName?: string;
 }
 const { workspaceId, workspaceName } = Astro.props;
-const user = Astro.locals.user;
+const user = Astro.locals.user!;
 import db from '../../lib/db';
 import { useTranslations } from '../../i18n/ui';
 const lang = Astro.locals.lang || 'en';

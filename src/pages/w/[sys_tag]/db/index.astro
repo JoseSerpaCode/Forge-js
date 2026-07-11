@@ -5,7 +5,7 @@ import { checkWorkspaceAccess } from '../../../../lib/guard';
 import { useTranslations } from '../../../../i18n/ui';
 
 const { sys_tag } = Astro.params;
-const user = Astro.locals.user;
+const user = Astro.locals.user!;
 const t = useTranslations(Astro.locals.lang || 'en');
 
 if (!user) return Astro.redirect('/login');

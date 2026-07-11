@@ -4,7 +4,7 @@ import PageTree from '../../../../components/notion/PageTree.astro';
 import db from '../../../../lib/db';
 import { checkWorkspaceAccess } from '../../../../lib/guard';
 
-const user = Astro.locals.user;
+const user = Astro.locals.user!;
 if (!user) return Astro.redirect('/login');
 
 const { sys_tag } = Astro.params;

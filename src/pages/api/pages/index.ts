@@ -4,8 +4,8 @@ import { checkWorkspaceAccess } from '../../../lib/guard';
 import crypto from 'crypto';
 
 export const POST: APIRoute = async ({ request, locals }) => {
-  const user = locals.user;
-  if (!user || !user.last_workspace_id) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
+  if (!user?.last_workspace_id) return new Response('Bad Request', { status: 400 });
 
   try {
     const data = await request.json();

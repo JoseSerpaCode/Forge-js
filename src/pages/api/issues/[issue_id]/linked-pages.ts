@@ -5,8 +5,7 @@ import crypto from 'crypto';
 
 // GET /api/issues/[issue_id]/linked-pages → list linked KB pages
 export const GET: APIRoute = async ({ params, locals }) => {
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const { issue_id } = params;
   if (!issue_id) return new Response('Bad Request', { status: 400 });
@@ -31,8 +30,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
 
 // POST /api/issues/[issue_id]/linked-pages → link a page to this issue
 export const POST: APIRoute = async ({ params, request, locals }) => {
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const { issue_id } = params;
   if (!issue_id) return new Response('Bad Request', { status: 400 });
@@ -66,8 +64,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
 
 // DELETE /api/issues/[issue_id]/linked-pages → unlink
 export const DELETE: APIRoute = async ({ params, request, locals }) => {
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const { issue_id } = params;
   if (!issue_id) return new Response('Bad Request', { status: 400 });

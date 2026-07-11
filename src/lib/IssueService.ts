@@ -36,7 +36,7 @@ export class IssueService {
     const safeData: any = {};
     for (const key of Object.keys(data)) {
       if (allowedFields.includes(key)) {
-        safeData[key] = data[key];
+        safeData[key] = data[key as keyof Partial<Issue>];
       }
     }
 

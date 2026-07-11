@@ -6,9 +6,8 @@ import crypto from 'crypto';
 
 export const PATCH: APIRoute = async ({ params, request, locals }) => {
   const issueId = params.id;
-  const user = locals.user;
+  const user = locals.user!;
   
-  if (!user) return new Response('Unauthorized', { status: 401 });
   
   const body = await request.json();
   const position = body.position;

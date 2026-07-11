@@ -4,8 +4,7 @@ import { checkWorkspaceAccess } from '../../../../lib/guard';
 import crypto from 'crypto';
 
 export const GET: APIRoute = async ({ params, locals }) => {
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const workspaceId = params.workspace_id;
   if (!workspaceId) return new Response('Bad Request', { status: 400 });
@@ -27,8 +26,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
 };
 
 export const POST: APIRoute = async ({ params, request, locals }) => {
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const workspaceId = params.workspace_id;
   if (!workspaceId) return new Response('Bad Request', { status: 400 });

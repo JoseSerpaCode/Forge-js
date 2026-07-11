@@ -4,7 +4,7 @@ import MainLayout from '../layouts/MainLayout.astro';
 import db from '../lib/db';
 import { useTranslations } from '../i18n/ui';
 
-const user = Astro.locals.user;
+const user = Astro.locals.user!;
 const lang = Astro.locals.lang || 'en';
 const t = useTranslations(lang);
 

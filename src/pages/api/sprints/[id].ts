@@ -4,8 +4,8 @@ import { checkWorkspaceAccess } from '../../../lib/guard';
 
 export const PATCH: APIRoute = async ({ params, request, locals }) => {
   const { id } = params;
-  const user = locals.user;
-  if (!id || !user) return new Response('Unauthorized/Bad Request', { status: 401 });
+  const user = locals.user!;
+  if (!id) return new Response('Bad Request', { status: 400 });
 
   try {
     const data = await request.json();

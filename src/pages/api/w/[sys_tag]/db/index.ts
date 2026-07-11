@@ -5,8 +5,7 @@ import crypto from 'crypto';
 
 export const GET: APIRoute = async ({ params, locals }) => {
   const { sys_tag } = params;
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const workspace = db.prepare('SELECT id FROM workspaces WHERE sys_tag = ?').get(sys_tag) as any;
   if (!workspace) return new Response('Workspace not found', { status: 404 });
@@ -29,8 +28,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
 
 export const POST: APIRoute = async ({ params, request, locals }) => {
   const { sys_tag } = params;
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const workspace = db.prepare('SELECT id FROM workspaces WHERE sys_tag = ?').get(sys_tag) as any;
   if (!workspace) return new Response('Workspace not found', { status: 404 });

@@ -2,8 +2,7 @@ import type { APIRoute } from 'astro';
 import db from '../../../lib/db';
 
 export const GET: APIRoute = async ({ request, locals }) => {
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const url = new URL(request.url);
   const q = url.searchParams.get('q');

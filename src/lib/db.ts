@@ -4,7 +4,7 @@ import path from 'path';
 // Asegurar que la base de datos se guarda en la raíz del proyecto
 const dbPath = process.env.NODE_ENV === 'test' ? path.join(process.cwd(), 'forge_test.db') : 
 path.join(process.cwd(), 'forge.db');
-const db = new Database(dbPath, { verbose: process.env.NODE_ENV === 'development' ? console.log : null });
+const db = new Database(dbPath, { verbose: process.env.NODE_ENV === 'development' ? console.log : undefined });
 
 // Optimizaciones Críticas Obligatorias
 db.pragma('journal_mode = WAL');
@@ -391,6 +391,7 @@ try { db.exec(`ALTER TABLE users ADD COLUMN notif_mute_assign BOOLEAN DEFAULT 0`
 try { db.exec(`ALTER TABLE users ADD COLUMN notif_mute_mention BOOLEAN DEFAULT 0`); } catch {}
 try { db.exec(`ALTER TABLE users ADD COLUMN notif_mute_sprint BOOLEAN DEFAULT 0`); } catch {}
 try { db.exec(`ALTER TABLE users ADD COLUMN notif_mute_system BOOLEAN DEFAULT 0`); } catch {}
+try { db.exec(`ALTER TABLE notifications ADD COLUMN type TEXT DEFAULT 'info'`); } catch {}
 // Add priority column to issues if not present
 try {
   db.exec(`ALTER TABLE issues ADD COLUMN due_date DATETIME`);

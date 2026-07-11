@@ -4,8 +4,7 @@ import { checkWorkspaceAccess } from '../../../../../../../lib/guard';
 
 export const DELETE: APIRoute = async ({ params, locals }) => {
   const { sys_tag, id, entry_id } = params;
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const database = db.prepare('SELECT id, workspace_id FROM dynamic_databases WHERE id = ?').get(id) as any;
   if (!database) return new Response('Database not found', { status: 404 });

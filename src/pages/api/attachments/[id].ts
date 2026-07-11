@@ -5,8 +5,7 @@ import path from 'path';
 import { checkWorkspaceAccess } from '../../../lib/guard';
 
 export const DELETE: APIRoute = async ({ params, locals }) => {
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const { id } = params;
   if (!id) return new Response('Bad Request', { status: 400 });

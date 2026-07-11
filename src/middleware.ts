@@ -5,7 +5,7 @@ import crypto from 'crypto';
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const sessionId = context.cookies.get('forge_session')?.value;
-  const isPublicRoute = context.url.pathname === '/login' || context.url.pathname === '/register' || context.url.pathname.startsWith('/api/auth');
+  const isPublicRoute = context.url.pathname === '/login' || context.url.pathname === '/register' || context.url.pathname === '/api/auth/login' || context.url.pathname === '/api/auth/register';
 
   if (!sessionId) {
     if (isPublicRoute) {

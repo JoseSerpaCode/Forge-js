@@ -11,6 +11,8 @@ export const ui = {
     'sidebar.knowledge': 'Knowledge Base',
     'sidebar.databases': 'Databases',
     'sidebar.settings': 'Settings',
+    'sidebar.notifications': 'Notifications',
+    'notifications.markAllRead': 'Mark all as read',
 
     // TopBar
     'topbar.docs': 'Docs',
@@ -140,7 +142,6 @@ export const ui = {
     'hub.pending_tasks': 'My Pending Tasks',
     'hub.no_workspaces': 'You are not assigned to any workspaces. Create one to begin.',
     'hub.no_tasks': 'No pending tasks. Forge a new issue to begin.',
-    'hub.search_placeholder': 'Search across Forge (Press \'/\')',
 
     // Auth & Misc
     'auth.authorized': 'AUTHORIZED PERSONNEL ONLY',
@@ -245,6 +246,8 @@ export const ui = {
     'sidebar.knowledge': 'Base de Conocimiento',
     'sidebar.databases': 'Bases de Datos',
     'sidebar.settings': 'Ajustes',
+    'sidebar.notifications': 'Notificaciones',
+    'notifications.markAllRead': 'Marcar todo como leído',
 
     // TopBar
     'topbar.docs': 'Documentación',
@@ -374,7 +377,6 @@ export const ui = {
     'hub.pending_tasks': 'Mis Tareas Pendientes',
     'hub.no_workspaces': 'No estás asignado a ningún workspace. Crea uno para empezar.',
     'hub.no_tasks': 'No tienes tareas pendientes. Forja un nuevo ticket para comenzar.',
-    'hub.search_placeholder': 'Buscar en Forge (Presiona \'/\')',
 
     // Auth & Misc
     'auth.authorized': 'SÓLO PERSONAL AUTORIZADO',

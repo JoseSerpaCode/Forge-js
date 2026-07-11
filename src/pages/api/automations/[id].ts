@@ -4,8 +4,7 @@ import { checkWorkspaceAccess } from '../../../lib/guard';
 import crypto from 'crypto';
 
 export const DELETE: APIRoute = async ({ params, locals }) => {
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const id = params.id;
   const rule = db.prepare('SELECT workspace_id, name FROM automations WHERE id = ?').get(id) as any;
@@ -24,8 +23,7 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
 };
 
 export const PATCH: APIRoute = async ({ params, request, locals }) => {
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const id = params.id;
   const rule = db.prepare('SELECT workspace_id, name FROM automations WHERE id = ?').get(id) as any;

@@ -3,8 +3,7 @@ import db from '../../../lib/db';
 import bcrypt from 'bcryptjs';
 
 export const POST: APIRoute = async ({ request, locals }) => {
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   try {
     const data = await request.json();

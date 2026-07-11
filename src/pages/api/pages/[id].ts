@@ -5,7 +5,6 @@ import { sanitizeEditorBlocks } from '../../../lib/sanitizer';
 
 // Helper to resolve workspace and check permissions
 function authorize(user: any, requiredRole: 'owner' | 'editor' | 'viewer', pageId: string) {
-  if (!user) return { error: new Response('Unauthorized', { status: 401 }) };
 
   // [A-3 FIX] Look up the page first to get its actual workspace_id from DB
   // Never rely on user.last_workspace_id which can be stale with multiple tabs

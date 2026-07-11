@@ -5,9 +5,8 @@ import crypto from 'crypto';
 
 // Add a member
 export const POST: APIRoute = async ({ request, params, locals }) => {
-  const user = locals.user;
+  const user = locals.user!;
   const workspaceId = params.id;
-  if (!user) return new Response('Unauthorized', { status: 401 });
 
   const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspaceId as string, 'owner');
   if (!access.granted) {
@@ -69,9 +68,8 @@ export const POST: APIRoute = async ({ request, params, locals }) => {
 
 // Update a member's role
 export const PATCH: APIRoute = async ({ request, params, locals }) => {
-  const user = locals.user;
+  const user = locals.user!;
   const workspaceId = params.id;
-  if (!user) return new Response('Unauthorized', { status: 401 });
 
   const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspaceId as string, 'owner');
   if (!access.granted) {
@@ -106,9 +104,8 @@ export const PATCH: APIRoute = async ({ request, params, locals }) => {
 
 // Remove a member
 export const DELETE: APIRoute = async ({ request, params, locals }) => {
-  const user = locals.user;
+  const user = locals.user!;
   const workspaceId = params.id;
-  if (!user) return new Response('Unauthorized', { status: 401 });
 
   try {
     const body = await request.json();

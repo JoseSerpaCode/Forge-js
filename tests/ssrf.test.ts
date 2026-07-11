@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ForgeEvents } from '../src/lib/automations';
 import db from '../src/lib/db';
 import dns from 'dns/promises';
+import { fetch as undiciFetch } from 'undici';
 
 vi.mock('../src/lib/db', () => ({
   default: {
@@ -15,12 +16,17 @@ vi.mock('dns/promises', () => ({
   }
 }));
 
+vi.mock('undici', () => ({
+  fetch: vi.fn(),
+  Agent: vi.fn()
+}));
+
 describe('SSRF Protection in Automations', () => {
   let fetchSpy: any;
   let consoleSpy: any;
 
   beforeEach(() => {
-    fetchSpy = vi.spyOn(global, 'fetch').mockImplementation(() => Promise.resolve(new Response()));
+    fetchSpy = (undiciFetch as any).mockResolvedValue(new Response());
     consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 

@@ -2,13 +2,12 @@ import type { APIRoute } from 'astro';
 import db from '../../../../lib/db';
 import { checkWorkspaceAccess } from '../../../../lib/guard';
 
-import { WorkspaceService, ApiError } from '../../../../services/WorkspaceService';
+import { WorkspaceService, ApiError } from '../../../../lib/WorkspaceService';
 
 export const DELETE: APIRoute = async ({ params, locals }) => {
-  const user = locals.user;
+  const user = locals.user!;
   const workspaceId = params.id;
   
-  if (!user) return new Response('Unauthorized', { status: 401 });
   if (!workspaceId) return new Response('Missing workspace ID', { status: 400 });
 
   try {
@@ -23,10 +22,9 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
 };
 
 export const PATCH: APIRoute = async ({ request, params, locals }) => {
-  const user = locals.user;
+  const user = locals.user!;
   const workspaceId = params.id;
   
-  if (!user) return new Response('Unauthorized', { status: 401 });
   if (!workspaceId) return new Response('Missing workspace ID', { status: 400 });
 
   // Only owner can edit

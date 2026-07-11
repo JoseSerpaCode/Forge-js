@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { IssueService, ApiError } from '../../../services/IssueService';
+import { IssueService, ApiError } from '../../../lib/IssueService';
 
 const handleApiError = (err: any) => {
   if (err instanceof ApiError) {
@@ -11,8 +11,8 @@ const handleApiError = (err: any) => {
 
 export const PATCH: APIRoute = async ({ params, request, locals }) => {
   const { id } = params;
-  const user = locals.user;
-  if (!user || !id) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
+  if (!id) return new Response('Bad Request', { status: 400 });
 
   try {
     const data = await request.json();
@@ -25,8 +25,8 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
 
 export const DELETE: APIRoute = async ({ params, locals }) => {
   const { id } = params;
-  const user = locals.user;
-  if (!user || !id) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
+  if (!id) return new Response('Bad Request', { status: 400 });
 
   try {
     await IssueService.delete(id, user.id, user.is_sysadmin);

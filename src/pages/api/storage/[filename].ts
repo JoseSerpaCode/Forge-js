@@ -8,8 +8,7 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
   const { filename } = params;
   if (!filename) return new Response('Bad Request', { status: 400 });
 
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   // 1. Find the attachment record to get entity context
   const fileUrl = `/api/storage/${filename}`;

@@ -4,8 +4,7 @@ import { checkWorkspaceAccess } from '../../../../lib/guard';
 
 export const GET: APIRoute = async ({ params, locals }) => {
   const sprintId = params.id;
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const sprint = db.prepare('SELECT workspace_id, start_date, end_date FROM sprints WHERE id = ?').get(sprintId) as any;
   if (!sprint) return new Response('Not found', { status: 404 });

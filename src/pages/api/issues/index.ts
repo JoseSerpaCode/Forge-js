@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { IssueService, ApiError } from '../../../services/IssueService';
+import { IssueService, ApiError } from '../../../lib/IssueService';
 
 const handleApiError = (err: any) => {
   if (err instanceof ApiError) {
@@ -10,8 +10,7 @@ const handleApiError = (err: any) => {
 };
 
 export const POST: APIRoute = async ({ request, locals }) => {
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   try {
     const data = await request.json();

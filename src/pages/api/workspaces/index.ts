@@ -3,8 +3,7 @@ import db from '../../../lib/db';
 import crypto from 'crypto';
 
 export const POST: APIRoute = async ({ request, locals }) => {
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   const { name, sys_tag } = await request.json();
 

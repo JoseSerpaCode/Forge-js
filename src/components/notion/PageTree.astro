@@ -10,7 +10,7 @@ interface Props {
 }
 
 const { workspaceId, sysTag, currentPageId } = Astro.props;
-const user = Astro.locals.user;
+const user = Astro.locals.user!;
 if (!user) return new Response('Unauthorized', { status: 401 });
 
 // Check access (viewer minimum)

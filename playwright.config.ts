@@ -74,10 +74,10 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'NODE_ENV=test PORT=4322 npm run build && NODE_ENV=test PORT=4322 node server.mjs',
-    url: 'http://localhost:4322',
-    reuseExistingServer: false,
-    timeout: 120 * 1000,
-  },
+  // webServer: {
+  //   command: 'NODE_ENV=test PORT=4322 npm run build && NODE_ENV=test PORT=4322 node server.mjs',
+  //   url: 'http://localhost:4322',
+  //   reuseExistingServer: false,
+  //   timeout: 120 * 1000,
+  // },
 });

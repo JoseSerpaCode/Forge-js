@@ -2,8 +2,7 @@ import type { APIRoute } from 'astro';
 import db from '../../../lib/db';
 
 export const POST: APIRoute = async ({ request, locals }) => {
-  const user = locals.user;
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  const user = locals.user!;
 
   try {
     const { bio, pronouns, public_email } = await request.json();

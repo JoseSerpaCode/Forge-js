@@ -4,6 +4,15 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/), y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [0.4.1] - 2026-07-11
+
+### Fixed
+- **TypeScript Strictness:** Resueltos todos los errores de tipos remanentes en el proyecto (100% Type Safe).
+- **EditorJS:** Corregido un bug en la inicialización donde faltaba la estructura `blocks` requerida.
+- **Base de Datos:** Migración para inyectar automáticamente la columna `type` faltante en bases de datos locales legacy en la tabla `notifications`.
+- **UI:** Añadidas las traducciones faltantes para notificaciones y eliminadas las llaves duplicadas.
+- **Refactor:** `IssueService` tipado seguro para el ciclo de updates parciales, previniendo index signatures implícitos.
+
 ## [0.4.0] - 2026-07-10
 
 ### Added
