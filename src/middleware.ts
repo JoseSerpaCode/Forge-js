@@ -10,7 +10,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   if (!sessionId) {
     if (isPublicRoute) {
       context.locals.user = null;
-      return next();
+      return applySecurityHeaders(await next());
     }
     
     // Si es un API call sin sesión, devolvemos 401
@@ -23,14 +23,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
     const newSessionId = crypto.randomUUID();
     
     // Insert Guest User
+    const guestUsername = `Guest_${guestId.split('-')[0]}_${Math.floor(Math.random() * 1000)}`;
     db.prepare(`
       INSERT INTO users (id, username, password_hash, is_guest) 
       VALUES (?, ?, ?, 1)
-    `).run(guestId, `Guest_${guestId.substring(0, 8)}`, 'guest');
+    `).run(guestId, guestUsername, 'guest');
     
     // Create Default Workspace for Guest
     const wsId = crypto.randomUUID();
-    const sysTag = `guest-${guestId.substring(0, 8)}`;
+    const sysTag = `guest-${guestId.split('-')[0]}-${Math.floor(Math.random() * 1000)}`;
     db.prepare(`
       INSERT INTO workspaces (id, name, sys_tag, created_by) 
       VALUES (?, ?, ?, ?)
@@ -38,7 +39,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     
     db.prepare(`
       INSERT INTO workspace_members (workspace_id, user_id, ws_role) 
-      VALUES (?, ?, 'admin')
+      VALUES (?, ?, 'owner')
     `).run(wsId, guestId);
     
     // Create Session
@@ -120,5 +121,32 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return context.redirect('/');
   }
 
-  return next();
+  return applySecurityHeaders(await next());
 });
+
+// Helper function to apply security headers
+function applySecurityHeaders(response: Response): Response {
+  // Prevent MIME-sniffing
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  // Prevent Clickjacking
+  response.headers.set('X-Frame-Options', 'DENY');
+  // Prevent XSS
+  response.headers.set('X-XSS-Protection', '1; mode=block');
+  // HSTS
+  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  
+  // CSP: Allow inline scripts/styles (Astro needs them), allow external avatars, allow WS for real-time
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: blob: https://api.dicebear.com",
+    "connect-src 'self' ws: wss: http: https:",
+    "frame-ancestors 'none'"
+  ].join('; ');
+  
+  response.headers.set('Content-Security-Policy', csp);
+  
+  return response;
+}
