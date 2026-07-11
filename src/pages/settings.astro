@@ -216,20 +216,20 @@ const t = useTranslations(lang);
                   <p class="text-xs text-forge-muted">{t('user.settings.mute_all_desc')}</p>
                 </div>
                 <div class="relative inline-flex items-center">
-                  <input type="checkbox" id="notif-mute-all" class="sr-only peer" ${userProfile.notif_mute_all ? 'checked' : ''} />
+                  <input type="checkbox" id="notif-mute-all" class="sr-only peer" checked={!!userProfile.notif_mute_all} />
                   <div class="w-11 h-6 bg-forge-bg peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-forge-muted after:border-forge-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500 peer-checked:after:bg-white border border-forge-border/60 group-hover:border-forge-border transition-colors"></div>
                 </div>
               </label>
             </div>
             
-            <div class="p-6 space-y-6 opacity-100 transition-opacity bg-forge-bg/30" id="notif-categories" style="${userProfile.notif_mute_all ? 'opacity: 0.4; pointer-events: none;' : ''}">
+            <div class="p-6 space-y-6 opacity-100 transition-opacity bg-forge-bg/30" id="notif-categories" style={userProfile.notif_mute_all ? "opacity: 0.4; pointer-events: none;" : undefined}>
               <label class="flex items-center justify-between cursor-pointer group">
                 <div>
                   <span class="text-sm font-medium text-forge-text block mb-0.5">{t('user.settings.mute_assign')}</span>
                   <p class="text-xs text-forge-muted">{t('user.settings.mute_assign_desc')}</p>
                 </div>
                 <div class="relative inline-flex items-center">
-                  <input type="checkbox" id="notif-mute-assign" class="sr-only peer" ${userProfile.notif_mute_assign ? 'checked' : ''} />
+                  <input type="checkbox" id="notif-mute-assign" class="sr-only peer" checked={!!userProfile.notif_mute_assign} />
                   <div class="w-9 h-5 bg-forge-bg peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-forge-muted after:border-forge-border after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-forge-primary peer-checked:after:bg-white border border-forge-border/60 group-hover:border-forge-border transition-colors"></div>
                 </div>
               </label>
@@ -240,7 +240,7 @@ const t = useTranslations(lang);
                   <p class="text-xs text-forge-muted">{t('user.settings.mute_mention_desc')}</p>
                 </div>
                 <div class="relative inline-flex items-center">
-                  <input type="checkbox" id="notif-mute-mention" class="sr-only peer" ${userProfile.notif_mute_mention ? 'checked' : ''} />
+                  <input type="checkbox" id="notif-mute-mention" class="sr-only peer" checked={!!userProfile.notif_mute_mention} />
                   <div class="w-9 h-5 bg-forge-bg peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-forge-muted after:border-forge-border after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-forge-primary peer-checked:after:bg-white border border-forge-border/60 group-hover:border-forge-border transition-colors"></div>
                 </div>
               </label>
@@ -251,7 +251,7 @@ const t = useTranslations(lang);
                   <p class="text-xs text-forge-muted">{t('user.settings.mute_sprint_desc')}</p>
                 </div>
                 <div class="relative inline-flex items-center">
-                  <input type="checkbox" id="notif-mute-sprint" class="sr-only peer" ${userProfile.notif_mute_sprint ? 'checked' : ''} />
+                  <input type="checkbox" id="notif-mute-sprint" class="sr-only peer" checked={!!userProfile.notif_mute_sprint} />
                   <div class="w-9 h-5 bg-forge-bg peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-forge-muted after:border-forge-border after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-forge-primary peer-checked:after:bg-white border border-forge-border/60 group-hover:border-forge-border transition-colors"></div>
                 </div>
               </label>
@@ -262,7 +262,7 @@ const t = useTranslations(lang);
                   <p class="text-xs text-forge-muted">{t('user.settings.mute_system_desc')}</p>
                 </div>
                 <div class="relative inline-flex items-center">
-                  <input type="checkbox" id="notif-mute-system" class="sr-only peer" ${userProfile.notif_mute_system ? 'checked' : ''} />
+                  <input type="checkbox" id="notif-mute-system" class="sr-only peer" checked={!!userProfile.notif_mute_system} />
                   <div class="w-9 h-5 bg-forge-bg peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-forge-muted after:border-forge-border after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-forge-primary peer-checked:after:bg-white border border-forge-border/60 group-hover:border-forge-border transition-colors"></div>
                 </div>
               </label>
