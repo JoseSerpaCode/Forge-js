@@ -3,6 +3,7 @@ import db from '../../../../lib/db';
 import { checkWorkspaceAccess } from '../../../../lib/guard';
 import { ForgeEvents } from '../../../../lib/automations';
 import crypto from 'crypto';
+import { finalizeIssueSessions } from './timer';
 
 export const PATCH: APIRoute = async ({ params, request, locals }) => {
   const issueId = params.id;
@@ -94,6 +95,11 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
     updateParams.push(issueId);
     
     db.prepare(sql).run(...updateParams);
+    
+    // 5. Auto-stop time tracker si pasa a review o done
+    if (status === 'review' || status === 'done') {
+      finalizeIssueSessions(issueId);
+    }
     
     db.prepare('INSERT INTO audit_logs (id, workspace_id, user_id, action, entity_type, entity_id, details_json) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
       crypto.randomUUID(), oldIssue.workspace_id, user.id, 'ISSUE_MOVED', 'issue', issueId, JSON.stringify({ oldStatus: oldIssue.status, newStatus: status, oldPosition: oldIssue.position, newPosition: finalPosition })
