@@ -285,14 +285,14 @@ if (activeSprintId) {
       if (!title) return alert('Title is required');
 
       saveIssueBtn.textContent = 'Creating...';
-      const res = await fetch('/api/issues', {
+      const sysTag = window.location.pathname.split('/')[2];
+      const res = await fetch(`/api/w/${sysTag}/issues`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           title, 
           type, 
           sprint_id: sprintId || null, 
-          workspace_id: workspaceId,
           assignee_id: assigneeId || null,
           due_date: dueDate || null,
           description: description || null
