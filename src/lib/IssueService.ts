@@ -105,6 +105,11 @@ export class IssueService {
       if (!sprint) throw new ApiError(400, 'Sprint not found or belongs to another workspace');
     }
 
+    if (data.assignee_id) {
+      const isMember = db.prepare('SELECT 1 FROM workspace_members WHERE workspace_id = ? AND user_id = ?').get(data.workspace_id, data.assignee_id);
+      if (!isMember) throw new ApiError(400, 'Assignee is not a member of this workspace');
+    }
+
     const issueId = crypto.randomUUID();
     const status = 'todo';
     
