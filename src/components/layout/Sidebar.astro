@@ -21,6 +21,7 @@ const currentPath = Astro.url.pathname;
 
 // Determine active sections
 const isDash     = sys_tag && (currentPath === `/w/${sys_tag}` || currentPath === `/w/${sys_tag}/`);
+const isMetrics  = sys_tag && currentPath.includes('/metrics');
 const isBoard    = sys_tag && (currentPath.includes('/board') || currentPath.includes('/backlog'));
 const isKB       = sys_tag && (currentPath.endsWith('/p') || currentPath.includes('/p/'));
 const isDB       = sys_tag && currentPath.includes('/db');
@@ -68,6 +69,16 @@ const isOwner = userRole === 'owner' || userRole === 'sysadmin';
         >
           <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
           {t('sidebar.dashboard')}
+        </a>
+
+        {/* Metrics */}
+        <a 
+          href={`/w/${sys_tag}/metrics`} 
+          class={`sidebar-link ${isMetrics ? 'active' : ''}`}
+          aria-current={isMetrics ? 'page' : undefined}
+        >
+          <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+          Metrics
         </a>
 
         {/* Kanban Board */}
