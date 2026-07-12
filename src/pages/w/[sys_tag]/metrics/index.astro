@@ -55,6 +55,23 @@ const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace
         </div>
       </div>
 
+      <!-- WIDGET: BURNDOWN (SNAPSHOT) -->
+      <div class="bg-forge-panel border border-forge-border rounded-lg p-5 flex flex-col min-h-[350px]">
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-forge-text">Sprint Burndown (Snapshot)</h2>
+            <p class="text-xs text-forge-muted mt-1" id="burn-scope-label">Scope: Requires Sprint</p>
+          </div>
+        </div>
+        <div id="burn-empty-state" class="flex-1 flex flex-col items-center justify-center text-forge-muted">
+          <svg class="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          <p class="text-sm">Select a specific sprint above to view</p>
+        </div>
+        <div class="relative flex-1 w-full hidden" id="burn-chart-container">
+          <canvas id="burndownChart"></canvas>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -142,10 +159,76 @@ const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace
     sprintSelector.addEventListener('change', (e) => {
       const sprintId = (e.target as HTMLSelectElement).value;
       loadDistribution(sprintId);
+      loadBurndown(sprintId);
     });
 
     // Initial load
     loadDistribution('all');
+    loadBurndown('all');
+
+    let burnChart: any = null;
+
+    async function loadBurndown(sprintId: string) {
+      const emptyState = document.getElementById('burn-empty-state');
+      const chartContainer = document.getElementById('burn-chart-container');
+      const label = document.getElementById('burn-scope-label');
+
+      if (sprintId === 'all') {
+        if (label) label.textContent = 'Scope: Requires Sprint';
+        if (emptyState) emptyState.querySelector('p')!.textContent = 'Select a specific sprint above to view';
+        emptyState?.classList.remove('hidden');
+        chartContainer?.classList.add('hidden');
+        return;
+      }
+
+      if (label) label.textContent = 'Scope: Current Sprint';
+      
+      const res = await fetch(`/api/w/${sysTag}/metrics/burndown?sprint_id=${sprintId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+
+      if (!data || data.total_issues === 0) {
+        if (emptyState) emptyState.querySelector('p')!.textContent = 'No issues in this sprint';
+        emptyState?.classList.remove('hidden');
+        chartContainer?.classList.add('hidden');
+        return;
+      }
+
+      emptyState?.classList.add('hidden');
+      chartContainer?.classList.remove('hidden');
+
+      const remaining = data.total_issues - data.completed_issues;
+
+      const ctx = document.getElementById('burndownChart') as HTMLCanvasElement;
+      if (burnChart) burnChart.destroy();
+      
+      // @ts-ignore
+      burnChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Completed', 'Remaining'],
+          datasets: [{
+            data: [data.completed_issues, remaining],
+            backgroundColor: ['#10b981', '#374151'],
+            borderWidth: 0,
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '75%',
+          plugins: {
+            title: {
+              display: true,
+              text: `${data.completed_issues} of ${data.total_issues} Done`,
+              color: '#c9d1d9',
+              font: { size: 16 }
+            }
+          }
+        }
+      });
+    }
 
   </script>
 </MainLayout>
