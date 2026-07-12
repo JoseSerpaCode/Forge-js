@@ -331,4 +331,31 @@ function getInitials(username: string) {
       }
     });
   });
+
+  // Stop Timer Logic
+  document.querySelectorAll('.btn-stop-timer').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const issueId = btn.getAttribute('data-issue-id');
+      if (!issueId) return;
+      
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '<span>Stopping...</span>';
+      
+      try {
+        const response = await fetch(`/api/issues/${issueId}/timer`, { method: 'DELETE' });
+        const data = await response.json();
+        
+        if (data.success) {
+          window.location.reload();
+        } else {
+          alert('Error: ' + data.message);
+          btn.innerHTML = originalHtml;
+        }
+      } catch (err) {
+        console.error(err);
+        btn.innerHTML = originalHtml;
+      }
+    });
+  });
 </script>
