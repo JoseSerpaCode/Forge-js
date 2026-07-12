@@ -109,8 +109,9 @@ const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
+    import Chart from 'chart.js/auto';
+    
     // @ts-ignore
     const sysTag = window.location.pathname.split('/')[2];
     let distChart: any = null;
@@ -130,12 +131,18 @@ const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace
         : `/api/w/${sysTag}/metrics/distribution?sprint_id=${sprintId}`;
       
       const res = await fetch(url);
-      if (!res.ok) return;
-      const data = await res.json();
-      
       const emptyState = document.getElementById('dist-empty-state');
       const chartContainer = document.getElementById('dist-chart-container');
       const label = document.getElementById('dist-scope-label');
+      
+      if (!res.ok) {
+        if (emptyState) emptyState.querySelector('p')!.textContent = 'Failed to load data';
+        emptyState?.classList.remove('hidden');
+        chartContainer?.classList.add('hidden');
+        return;
+      }
+      
+      const data = await res.json();
       
       if (label) {
         label.textContent = sprintId === 'all' ? 'Scope: Historical Total' : `Scope: Sprint Specific`;
@@ -197,11 +204,12 @@ const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace
       loadPrecision(sprintId);
     });
 
-    // Initial load
-    loadDistribution('all');
-    loadBurndown('all');
+    // Initial load - read selected value instead of hardcoding 'all'
+    const initialSprintId = sprintSelector.value || 'all';
+    loadDistribution(initialSprintId);
+    loadBurndown(initialSprintId);
     loadVelocity(); // Velocity is always historical
-    loadPrecision('all');
+    loadPrecision(initialSprintId);
 
     let burnChart: any = null;
 
@@ -221,7 +229,12 @@ const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace
       if (label) label.textContent = 'Scope: Current Sprint';
       
       const res = await fetch(`/api/w/${sysTag}/metrics/burndown?sprint_id=${sprintId}`);
-      if (!res.ok) return;
+      if (!res.ok) {
+        if (emptyState) emptyState.querySelector('p')!.textContent = 'Failed to load burndown data';
+        emptyState?.classList.remove('hidden');
+        chartContainer?.classList.add('hidden');
+        return;
+      }
       const data = await res.json();
 
       if (!data || data.total_issues === 0) {
@@ -271,11 +284,16 @@ const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace
 
     async function loadVelocity() {
       const res = await fetch(`/api/w/${sysTag}/metrics/velocity`);
-      if (!res.ok) return;
-      const data = await res.json();
-
       const emptyState = document.getElementById('vel-empty-state');
       const chartContainer = document.getElementById('vel-chart-container');
+      
+      if (!res.ok) {
+        if (emptyState) emptyState.querySelector('p')!.textContent = 'Failed to load velocity';
+        emptyState?.classList.remove('hidden');
+        chartContainer?.classList.add('hidden');
+        return;
+      }
+      const data = await res.json();
 
       if (!data || data.length === 0) {
         emptyState?.classList.remove('hidden');
@@ -322,12 +340,17 @@ const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace
         : `/api/w/${sysTag}/metrics/precision?sprint_id=${sprintId}`;
       
       const res = await fetch(url);
-      if (!res.ok) return;
-      const data = await res.json();
-
       const emptyState = document.getElementById('prec-empty-state');
       const chartContainer = document.getElementById('prec-chart-container');
       const label = document.getElementById('prec-scope-label');
+      
+      if (!res.ok) {
+        if (emptyState) emptyState.querySelector('p')!.textContent = 'Failed to load precision data';
+        emptyState?.classList.remove('hidden');
+        chartContainer?.classList.add('hidden');
+        return;
+      }
+      const data = await res.json();
       
       if (label) {
         label.textContent = sprintId === 'all' ? 'Scope: Historical Total' : `Scope: Sprint Specific`;

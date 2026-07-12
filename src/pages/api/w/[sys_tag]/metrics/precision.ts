@@ -27,8 +27,8 @@ export const GET: APIRoute = async ({ request, params, locals }) => {
       precisionDist = db.prepare(`
         SELECT 
           COALESCE(u.username, 'Sin asignar') as assignee, 
-          SUM(i.estimated_hours) as estimated_hours, 
-          SUM(i.logged_hours) as logged_hours
+          COALESCE(SUM(i.estimated_hours), 0) as estimated_hours, 
+          COALESCE(SUM(i.logged_hours), 0) as logged_hours
         FROM issues i
         LEFT JOIN users u ON i.assignee_id = u.id
         WHERE i.workspace_id = ? AND i.sprint_id = ?
@@ -38,8 +38,8 @@ export const GET: APIRoute = async ({ request, params, locals }) => {
       precisionDist = db.prepare(`
         SELECT 
           COALESCE(u.username, 'Sin asignar') as assignee, 
-          SUM(i.estimated_hours) as estimated_hours, 
-          SUM(i.logged_hours) as logged_hours
+          COALESCE(SUM(i.estimated_hours), 0) as estimated_hours, 
+          COALESCE(SUM(i.logged_hours), 0) as logged_hours
         FROM issues i
         LEFT JOIN users u ON i.assignee_id = u.id
         WHERE i.workspace_id = ?
