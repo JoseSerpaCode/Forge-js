@@ -4,7 +4,7 @@ import path from 'path';
 
 test('Task Table sorting functionality', async ({ page }) => {
   // 1. Setup session in DB
-  const dbPath = path.resolve('forge.db');
+  const dbPath = path.resolve('forge_test.db');
   const db = new Database(dbPath);
   
   const user = db.prepare('SELECT id FROM users LIMIT 1').get() as any;
