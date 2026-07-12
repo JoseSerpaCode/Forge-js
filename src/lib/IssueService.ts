@@ -115,9 +115,9 @@ export class IssueService {
     }
 
     db.prepare(`
-      INSERT INTO issues (id, workspace_id, sprint_id, title, type, status, reporter_id, position)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(issueId, data.workspace_id, data.sprint_id || null, data.title, data.type || 'task', status, userId, position);
+      INSERT INTO issues (id, workspace_id, sprint_id, title, type, status, reporter_id, position, assignee_id, due_date, description)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(issueId, data.workspace_id, data.sprint_id || null, data.title, data.type || 'task', status, userId, position, data.assignee_id || null, data.due_date || null, data.description || null);
 
     const generalChannel = db.prepare("SELECT id FROM channels WHERE workspace_id = ? AND name = 'general'").get(data.workspace_id) as any;
     if (generalChannel) {

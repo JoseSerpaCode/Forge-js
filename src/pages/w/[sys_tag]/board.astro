@@ -180,6 +180,23 @@ if (activeSprintId) {
           ))}
         </select>
       </div>
+      <div>
+        <label class="block text-xs uppercase tracking-wider text-forge-muted mb-1">{t('modal.assignee') || 'Assignee'}</label>
+        <select id="new-issue-assignee" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:border-forge-secondary outline-none">
+          <option value="">Unassigned</option>
+          {workspaceMembers.map(m => (
+            <option value={m.id}>{m.username}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-wider text-forge-muted mb-1">{t('modal.due_date') || 'Due Date'}</label>
+        <input type="date" id="new-issue-due-date" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:border-forge-secondary outline-none font-mono" />
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-wider text-forge-muted mb-1">{t('modal.description') || 'Description'}</label>
+        <textarea id="new-issue-desc" rows="3" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-sm text-forge-text focus:border-forge-secondary outline-none placeholder:text-forge-muted/50" placeholder={t('modal.desc_placeholder') as string}></textarea>
+      </div>
     </div>
     <div class="flex justify-end gap-3 mt-6">
       <button type="button" class="px-4 py-2 text-forge-muted hover:text-forge-text" onclick="document.getElementById('new-issue-modal').close()">{t('modal.cancel')}</button>
@@ -261,13 +278,25 @@ if (activeSprintId) {
       const title = (document.getElementById('new-issue-title') as HTMLInputElement).value;
       const type = (document.getElementById('new-issue-type') as HTMLSelectElement).value;
       const sprintId = (document.getElementById('new-issue-sprint') as HTMLSelectElement).value;
+      const assigneeId = (document.getElementById('new-issue-assignee') as HTMLSelectElement).value;
+      const dueDate = (document.getElementById('new-issue-due-date') as HTMLInputElement).value;
+      const description = (document.getElementById('new-issue-desc') as HTMLTextAreaElement).value;
 
       if (!title) return alert('Title is required');
 
+      saveIssueBtn.textContent = 'Creating...';
       const res = await fetch('/api/issues', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, type, sprint_id: sprintId || null, workspace_id: workspaceId })
+        body: JSON.stringify({ 
+          title, 
+          type, 
+          sprint_id: sprintId || null, 
+          workspace_id: workspaceId,
+          assignee_id: assigneeId || null,
+          due_date: dueDate || null,
+          description: description || null
+        })
       });
 
       if (res.ok) {
