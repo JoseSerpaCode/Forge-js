@@ -63,7 +63,6 @@ const currentUrl = Astro.url.pathname;
       <input type="hidden" name="current_path" value={currentUrl} />
       <button type="submit" name="lang" value={lang === 'en' ? 'es' : 'en'} class="text-forge-muted hover:text-forge-secondary transition-colors p-1.5 rounded hover:bg-forge-bg text-sm font-medium flex items-center gap-1" title="Change Language">
         {lang === 'en' ? '🇬🇧 EN' : '🇪🇸 ES'}
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="opacity-50"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
     </form>
 
