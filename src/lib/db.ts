@@ -112,6 +112,9 @@ CREATE TABLE IF NOT EXISTS issues (
  FOREIGN KEY (assignee_id) REFERENCES users(id)
 );
 CREATE INDEX IF NOT EXISTS idx_issues_workspace ON issues(workspace_id);
+CREATE INDEX IF NOT EXISTS idx_issues_metrics ON issues(workspace_id, sprint_id, status);
+CREATE INDEX IF NOT EXISTS idx_issues_workspace_status ON issues(workspace_id, status);
+
 
 CREATE TABLE IF NOT EXISTS work_logs (
  id TEXT PRIMARY KEY,
