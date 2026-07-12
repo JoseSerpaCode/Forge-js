@@ -5,7 +5,7 @@ test.describe('Kanban UI Flow', () => {
     page.on('console', msg => console.log('BROWSER:', msg.text()));
     await page.goto('/login');
     await page.fill('input[name="username"]', 'jose');
-    await page.fill('input[name="password"]', '#juniorManda1924');
+    await page.fill('input[name="password"]', (process.env.TEST_PASSWORD || 'LocalDevPass123!'));
     await page.click('button[type="submit"]');
     
     // Redirects to / and then we go to the board

@@ -10,7 +10,7 @@ test.describe('Due Date Visual Indicator', () => {
 
   test.beforeAll(async () => {
     // 1. Iniciar sesión para obtener las cookies de sesión (CREAR USUARIO Y SESIÓN DIRECTAMENTE)
-    db.prepare("INSERT OR IGNORE INTO users (id, username, password_hash, is_sysadmin) VALUES ('user-due', 'due_user', ?, 1)").run(bcrypt.hashSync('#juniorManda1924', 10));
+    db.prepare("INSERT OR IGNORE INTO users (id, username, password_hash, is_sysadmin) VALUES ('user-due', 'due_user', ?, 1)").run(bcrypt.hashSync((process.env.TEST_PASSWORD || 'LocalDevPass123!'), 10));
 
     workspaceId = 'ws-due-date';
     db.prepare("INSERT OR IGNORE INTO workspaces (id, name, sys_tag, created_by) VALUES (?, 'Due Date WS', 'due-date-ws', 'user-due')").run(workspaceId);

@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test('Settings regression: Sidebar handles missing workspace and navigates successfully', async ({ page }) => {
   await page.goto('/login');
   await page.fill('input[name="username"]', 'TestUserSettings');
-  await page.fill('input[name="password"]', '#juniorManda1924');
+  await page.fill('input[name="password"]', (process.env.TEST_PASSWORD || 'LocalDevPass123!'));
   await page.click('button[type="submit"]');
   await page.waitForURL(/\/$/); 
   

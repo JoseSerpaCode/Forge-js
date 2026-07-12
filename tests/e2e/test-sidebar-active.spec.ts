@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test('Sidebar active states toggle correctly', async ({ page }) => {
   await page.goto('/login');
   await page.fill('input[name="username"]', 'TestUserSidebar');
-  await page.fill('input[name="password"]', '#juniorManda1924');
+  await page.fill('input[name="password"]', (process.env.TEST_PASSWORD || 'LocalDevPass123!'));
   await page.click('button[type="submit"]');
   await page.waitForURL(/\/$/);
   

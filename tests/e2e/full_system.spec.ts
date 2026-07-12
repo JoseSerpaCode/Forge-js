@@ -14,7 +14,7 @@ test.describe('Forge OS - Full System Omnibus Validation', () => {
     // Ejecutar Login exitoso
     await page.goto('/login');
     await page.fill('input[name="username"]', 'jose');
-    await page.fill('input[name="password"]', '#juniorManda1924');
+    await page.fill('input[name="password"]', (process.env.TEST_PASSWORD || 'LocalDevPass123!'));
     await page.click('button[type="submit"]');
 
     // Esperar redirección al index y luego navegar manualmente al board (ya que el index en Forge está vacío o redirige)

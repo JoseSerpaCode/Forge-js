@@ -14,7 +14,7 @@ test('Issues: Cross-workspace IDOR isolation', async ({ request, page }) => {
   // 2. Login as User D (Owner of Workspace D, has NO access to Workspace C)
   await page.goto('/login');
   await page.fill('input[name="username"]', 'TestUserNotionD');
-  await page.fill('input[name="password"]', '#juniorManda1924');
+  await page.fill('input[name="password"]', (process.env.TEST_PASSWORD || 'LocalDevPass123!'));
   await page.click('button[type="submit"]');
   await page.waitForURL(/\/$/);
   
@@ -64,7 +64,7 @@ test('Issues: Cross-workspace IDOR isolation', async ({ request, page }) => {
   // Login as User E
   await page.goto('/login');
   await page.fill('input[name="username"]', 'TestUserNotionE');
-  await page.fill('input[name="password"]', '#juniorManda1924');
+  await page.fill('input[name="password"]', (process.env.TEST_PASSWORD || 'LocalDevPass123!'));
   await page.click('button[type="submit"]');
   await page.waitForURL(/\/$/);
   

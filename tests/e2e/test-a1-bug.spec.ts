@@ -4,7 +4,7 @@ test('A1 bug: clicking New Rule button', async ({ page }) => {
   // Login
   await page.goto('/login');
   await page.fill('input[name="username"]', 'jose');
-  await page.fill('input[name="password"]', '#juniorManda1924');
+  await page.fill('input[name="password"]', (process.env.TEST_PASSWORD || 'LocalDevPass123!'));
   await page.click('button[type="submit"]');
   await page.waitForURL('**/');
 

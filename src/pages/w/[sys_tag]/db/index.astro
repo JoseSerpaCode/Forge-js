@@ -178,123 +178,149 @@ const canEdit = access.role !== 'viewer';
   )}
 
   <script define:vars={{ sysTag: sys_tag }}>
-    const newDbBtn = document.getElementById('btn-new-db');
-    const modal = document.getElementById('new-db-modal');
-    const addColBtn = document.getElementById('btn-add-col');
-    const colsContainer = document.getElementById('columns-container');
-    const saveBtn = document.getElementById('btn-save-db');
-
-    newDbBtn?.addEventListener('click', () => modal?.showModal());
-
-    const bindTypeSelect = (row) => {
-      const typeSelect = row.querySelector('.col-type');
-      const optContainer = row.querySelector('.col-options-container');
-      typeSelect.addEventListener('change', () => {
-        if (typeSelect.value === 'select') {
-          optContainer.classList.remove('hidden');
-        } else {
-          optContainer.classList.add('hidden');
-        }
-      });
-    };
-
-    // Bind initial row
-    document.querySelectorAll('.col-def').forEach(bindTypeSelect);
-
-    addColBtn?.addEventListener('click', () => {
-      const div = document.createElement('div');
-      div.className = 'col-def flex flex-wrap gap-4 items-start bg-forge-panel border border-forge-border p-4 rounded-2xl shadow-sm relative overflow-hidden group hover:border-forge-border/80 transition-colors mt-4';
-      div.innerHTML = `
-        <div class="absolute left-0 top-0 bottom-0 w-1 bg-forge-border/40 group-hover:bg-forge-secondary/50 transition-colors"></div>
-        <div class="flex-1 min-w-[200px]">
-          <label class="block text-[9px] font-bold uppercase tracking-widest text-forge-muted mb-1.5 ml-1">Column Name</label>
-          <input type="text" class="col-name w-full bg-forge-bg border border-forge-border rounded-lg px-3 py-2.5 text-sm text-forge-text focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 outline-none transition-all" placeholder="e.g. Status">
-        </div>
-        <div class="w-36 shrink-0">
-          <label class="block text-[9px] font-bold uppercase tracking-widest text-forge-muted mb-1.5 ml-1">Data Type</label>
-          <select class="col-type w-full bg-forge-bg border border-forge-border rounded-lg px-3 py-2.5 text-sm text-forge-text focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 outline-none transition-all cursor-pointer">
-            <option value="text">Aa Text</option>
-            <option value="number"># Number</option>
-            <option value="select">▼ Select Options</option>
-          </select>
-        </div>
-        <div class="shrink-0 pt-6">
-          <button type="button" class="btn-rm-col text-forge-muted hover:text-red-500 hover:bg-red-500/10 p-2 rounded-xl transition-all border border-transparent hover:border-red-500/20"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-        </div>
-        <div class="col-options-container hidden w-full mt-2 basis-full p-3 bg-forge-bg/50 rounded-xl border border-forge-border/40">
-          <label class="block text-[9px] font-bold uppercase tracking-widest text-forge-secondary mb-1.5 ml-1">Select Options (Comma separated)</label>
-          <input type="text" class="col-options w-full bg-forge-panel border border-forge-border border-dashed rounded-lg px-3 py-2.5 text-sm text-forge-text focus:border-forge-secondary focus:border-solid outline-none transition-all placeholder:text-forge-muted/40" placeholder="e.g. Active, Pending, Closed">
-        </div>
-      `;
-      colsContainer?.appendChild(div);
-      bindTypeSelect(div);
-      
-      div.querySelector('.btn-rm-col')?.addEventListener('click', () => div.remove());
-    });
-
-    btnSaveDb?.addEventListener('click', async () => {
-      const name = document.getElementById('db-name')?.value.trim();
-      const icon = document.getElementById('db-icon')?.value.trim();
-      const desc = document.getElementById('db-desc')?.value.trim();
-
-      if (!name) return window.showToast?.('Table Name is required', true);
-
-      const columns = [];
-      const colDefs = document.querySelectorAll('.col-def');
-      
-      if (colDefs.length === 0) {
-        return window.showToast?.('You must add at least one column', true);
+    class DatabaseManager {
+      constructor() {
+        this.elements = {
+          newDbBtn: document.getElementById('btn-new-db'),
+          modal: document.getElementById('new-db-modal'),
+          addColBtn: document.getElementById('btn-add-col'),
+          colsContainer: document.getElementById('columns-container'),
+          saveBtn: document.getElementById('btn-save-db'),
+          nameInput: document.getElementById('db-name'),
+          iconInput: document.getElementById('db-icon'),
+          descInput: document.getElementById('db-desc')
+        };
+        
+        this.init();
       }
 
-      let validationError = null;
-
-      colDefs.forEach((def, index) => {
-        const colName = def.querySelector('.col-name').value.trim();
-        const type = def.querySelector('.col-type').value;
-        const options = def.querySelector('.col-options').value.trim();
+      init() {
+        if (!this.elements.modal) return;
         
-        if (!colName) {
-          validationError = `Column #${index + 1} is missing a name`;
-        }
-
-        if (type === 'select' && !options) {
-          validationError = `Column "${colName || 'Unknown'}" needs at least one option`;
-        }
+        this.elements.newDbBtn?.addEventListener('click', () => this.elements.modal.showModal());
+        this.elements.addColBtn?.addEventListener('click', () => this.addColumnRow());
+        this.elements.saveBtn?.addEventListener('click', () => this.handleSave());
         
-        const col = { name: colName, type: type };
-        if (type === 'select' && options) {
-          col.options = options.split(',').map(o => o.trim()).filter(o => o);
-        }
-        columns.push(col);
-      });
-
-      if (validationError) {
-        return window.showToast?.(validationError, true);
+        // Bind initial default row
+        document.querySelectorAll('.col-def').forEach(row => this.bindTypeSelect(row));
       }
 
-      try {
-        btnSaveDb.disabled = true;
-        btnSaveDb.innerHTML = 'Saving...';
-        const res = await fetch(`/api/w/${sysTag}/db`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, description: desc, icon, columns })
+      bindTypeSelect(row) {
+        const typeSelect = row.querySelector('.col-type');
+        const optContainer = row.querySelector('.col-options-container');
+        
+        if (!typeSelect || !optContainer) return;
+        
+        typeSelect.addEventListener('change', () => {
+          optContainer.classList.toggle('hidden', typeSelect.value !== 'select');
         });
+      }
+
+      addColumnRow() {
+        const div = document.createElement('div');
+        div.className = 'col-def flex flex-wrap gap-4 items-start bg-forge-panel border border-forge-border p-4 rounded-2xl shadow-sm relative overflow-hidden group hover:border-forge-border/80 transition-colors mt-4';
         
-        if (res.ok) {
+        div.innerHTML = `
+          <div class="absolute left-0 top-0 bottom-0 w-1 bg-forge-border/40 group-hover:bg-forge-secondary/50 transition-colors"></div>
+          <div class="flex-1 min-w-[200px]">
+            <label class="block text-[9px] font-bold uppercase tracking-widest text-forge-muted mb-1.5 ml-1">Column Name</label>
+            <input type="text" class="col-name w-full bg-forge-bg border border-forge-border rounded-lg px-3 py-2.5 text-sm text-forge-text focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 outline-none transition-all" placeholder="e.g. Status">
+          </div>
+          <div class="w-36 shrink-0">
+            <label class="block text-[9px] font-bold uppercase tracking-widest text-forge-muted mb-1.5 ml-1">Data Type</label>
+            <select class="col-type w-full bg-forge-bg border border-forge-border rounded-lg px-3 py-2.5 text-sm text-forge-text focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 outline-none transition-all cursor-pointer">
+              <option value="text">Aa Text</option>
+              <option value="number"># Number</option>
+              <option value="select">▼ Select Options</option>
+            </select>
+          </div>
+          <div class="shrink-0 pt-6">
+            <button type="button" class="btn-rm-col text-forge-muted hover:text-red-500 hover:bg-red-500/10 p-2 rounded-xl transition-all border border-transparent hover:border-red-500/20">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="col-options-container hidden w-full mt-2 basis-full p-3 bg-forge-bg/50 rounded-xl border border-forge-border/40">
+            <label class="block text-[9px] font-bold uppercase tracking-widest text-forge-secondary mb-1.5 ml-1">Select Options (Comma separated)</label>
+            <input type="text" class="col-options w-full bg-forge-panel border border-forge-border border-dashed rounded-lg px-3 py-2.5 text-sm text-forge-text focus:border-forge-secondary focus:border-solid outline-none transition-all placeholder:text-forge-muted/40" placeholder="e.g. Active, Pending, Closed">
+          </div>
+        `;
+        
+        this.elements.colsContainer?.appendChild(div);
+        this.bindTypeSelect(div);
+        
+        div.querySelector('.btn-rm-col')?.addEventListener('click', () => div.remove());
+      }
+
+      extractColumns() {
+        const columns = [];
+        const colDefs = document.querySelectorAll('.col-def');
+        let validationError = null;
+        
+        if (colDefs.length === 0) {
+          return { error: 'You must add at least one column' };
+        }
+
+        for (let i = 0; i < colDefs.length; i++) {
+          const def = colDefs[i];
+          const name = def.querySelector('.col-name').value.trim();
+          const type = def.querySelector('.col-type').value;
+          const optionsText = def.querySelector('.col-options').value.trim();
+          
+          if (!name) return { error: `Column #${i + 1} is missing a name` };
+          if (type === 'select' && !optionsText) return { error: `Column "${name}" needs at least one option` };
+          
+          const col = { name, type };
+          if (type === 'select' && optionsText) {
+            col.options = optionsText.split(',').map(o => o.trim()).filter(Boolean);
+          }
+          
+          columns.push(col);
+        }
+        
+        return { columns };
+      }
+
+      async handleSave() {
+        const name = this.elements.nameInput?.value.trim();
+        const icon = this.elements.iconInput?.value.trim();
+        const description = this.elements.descInput?.value.trim();
+
+        if (!name) return window.showToast?.('Table Name is required', true);
+
+        const { error, columns } = this.extractColumns();
+        if (error) return window.showToast?.(error, true);
+
+        this.setLoading(true);
+
+        try {
+          const res = await fetch(`/api/w/${sysTag}/db`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, description, icon, columns })
+          });
+          
+          if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(errText || 'Error creating table');
+          }
+          
           const data = await res.json();
           window.location.href = `/w/${sysTag}/db/${data.id}`;
-        } else {
-          const errText = await res.text();
-          window.showToast?.(errText || 'Error creating table', true);
-          btnSaveDb.disabled = false;
-          btnSaveDb.innerHTML = 'Create Table';
+          
+        } catch (err) {
+          window.showToast?.(err.message, true);
+          this.setLoading(false);
         }
-      } catch (e) {
-        console.error(e);
-        btnSaveDb.disabled = false;
-        btnSaveDb.innerHTML = 'Create Table';
       }
-    });
+      
+      setLoading(isLoading) {
+        if (!this.elements.saveBtn) return;
+        this.elements.saveBtn.disabled = isLoading;
+        this.elements.saveBtn.innerHTML = isLoading ? 'Saving...' : 'Create Table';
+      }
+    }
+
+    // Initialize module
+    document.addEventListener('DOMContentLoaded', () => new DatabaseManager());
   </script>
 </MainLayout>

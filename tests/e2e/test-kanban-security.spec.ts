@@ -7,7 +7,7 @@ test.describe('Kanban Security & Move Endpoint', () => {
     // 1. Iniciar sesión como test-user-notion-a (no es miembro de ws-jose-test)
     await page.goto('/login');
     await page.fill('input[name="username"]', 'TestUserNotionA');
-    await page.fill('input[name="password"]', '#juniorManda1924');
+    await page.fill('input[name="password"]', (process.env.TEST_PASSWORD || 'LocalDevPass123!'));
     await page.click('button[type="submit"]');
     await page.waitForURL('**/');
 
@@ -30,7 +30,7 @@ test.describe('Kanban Security & Move Endpoint', () => {
     // 2. Iniciar sesión como test-user-notion-b
     await page.goto('/login');
     await page.fill('input[name="username"]', 'TestUserNotionB');
-    await page.fill('input[name="password"]', '#juniorManda1924');
+    await page.fill('input[name="password"]', (process.env.TEST_PASSWORD || 'LocalDevPass123!'));
     await page.click('button[type="submit"]');
     await page.waitForURL('**/');
 
@@ -53,7 +53,7 @@ test.describe('Kanban Security & Move Endpoint', () => {
     // 2. Iniciar sesión como jose (owner de ws-jose-test)
     await page.goto('/login');
     await page.fill('input[name="username"]', 'jose');
-    await page.fill('input[name="password"]', '#juniorManda1924');
+    await page.fill('input[name="password"]', (process.env.TEST_PASSWORD || 'LocalDevPass123!'));
     await page.click('button[type="submit"]');
     await page.waitForURL('**/');
 
@@ -72,7 +72,7 @@ test.describe('Kanban Security & Move Endpoint', () => {
   test('Caso D: Asignar sprint_id que NO existe en absoluto retorna 400', async ({ page }) => {
     await page.goto('/login');
     await page.fill('input[name="username"]', 'jose');
-    await page.fill('input[name="password"]', '#juniorManda1924');
+    await page.fill('input[name="password"]', (process.env.TEST_PASSWORD || 'LocalDevPass123!'));
     await page.click('button[type="submit"]');
     await page.waitForURL('**/');
 

@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 
 test('Kanban: Positional rebalancing resolves collisions in Backlog (sprint_id IS NULL)', async ({ request, page }) => {
   // 1. Iniciar sesión para obtener las cookies de sesión (CREAR USUARIO Y SESIÓN DIRECTAMENTE)
-  db.prepare("INSERT OR IGNORE INTO users (id, username, password_hash, is_sysadmin) VALUES ('user-rebalance', 'rebalance_user', ?, 1)").run(bcrypt.hashSync('#juniorManda1924', 10));
+  db.prepare("INSERT OR IGNORE INTO users (id, username, password_hash, is_sysadmin) VALUES ('user-rebalance', 'rebalance_user', ?, 1)").run(bcrypt.hashSync((process.env.TEST_PASSWORD || 'LocalDevPass123!'), 10));
 
   const sessionId = crypto.randomBytes(16).toString('hex');
   const expiresAt = Date.now() + 1000 * 60 * 60 * 24;

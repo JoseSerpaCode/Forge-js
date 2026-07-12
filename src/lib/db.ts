@@ -172,23 +172,7 @@ CREATE TABLE IF NOT EXISTS document_chunks (
  FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS dynamic_databases (
- id TEXT PRIMARY KEY,
- workspace_id TEXT NOT NULL,
- name TEXT NOT NULL,
- schema_json TEXT NOT NULL,
- FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
-);
 
-CREATE TABLE IF NOT EXISTS dynamic_entries (
- id TEXT PRIMARY KEY,
- database_id TEXT NOT NULL,
- payload_json TEXT NOT NULL,
- created_by TEXT NOT NULL,
- created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
- FOREIGN KEY (database_id) REFERENCES dynamic_databases(id) ON DELETE CASCADE,
- FOREIGN KEY (created_by) REFERENCES users(id)
-);
 
 CREATE TABLE IF NOT EXISTS entry_relations (
  source_entry_id TEXT NOT NULL,
@@ -232,7 +216,7 @@ CREATE TABLE IF NOT EXISTS messages (
 db.exec(`
 CREATE TABLE IF NOT EXISTS attachments (
  id TEXT PRIMARY KEY,
- entity_type TEXT NOT NULL CHECK(entity_type IN ('issue', 'page', 'dynamic_entry', 'message')),
+ entity_type TEXT NOT NULL CHECK(entity_type IN ('issue', 'page', 'dynamic_entry', 'message', 'user', 'workspace')),
  entity_id TEXT NOT NULL,
  file_name TEXT NOT NULL,
  file_path TEXT NOT NULL,
@@ -387,34 +371,68 @@ CREATE TABLE IF NOT EXISTS time_tracking_sessions (
 );
 `);
 
-// Add sprint goal column if not already present (safe migration)
+const migrations = [
+  "ALTER TABLE sprints ADD COLUMN goal TEXT",
+  "ALTER TABLE users ADD COLUMN bio TEXT",
+  "ALTER TABLE users ADD COLUMN pronouns TEXT",
+  "ALTER TABLE users ADD COLUMN public_email TEXT",
+  "ALTER TABLE users ADD COLUMN github_id TEXT",
+  "ALTER TABLE users ADD COLUMN google_id TEXT",
+  "ALTER TABLE users ADD COLUMN last_page_id TEXT",
+  "ALTER TABLE users ADD COLUMN notif_mute_all BOOLEAN DEFAULT 0",
+  "ALTER TABLE users ADD COLUMN notif_mute_assign BOOLEAN DEFAULT 0",
+  "ALTER TABLE users ADD COLUMN notif_mute_mention BOOLEAN DEFAULT 0",
+  "ALTER TABLE users ADD COLUMN notif_mute_sprint BOOLEAN DEFAULT 0",
+  "ALTER TABLE users ADD COLUMN notif_mute_system BOOLEAN DEFAULT 0",
+  "ALTER TABLE notifications ADD COLUMN type TEXT DEFAULT 'info'",
+  "ALTER TABLE issues ADD COLUMN due_date DATETIME",
+  "ALTER TABLE audit_logs ADD COLUMN workspace_id TEXT",
+  "ALTER TABLE work_logs ADD COLUMN work_date DATETIME DEFAULT CURRENT_TIMESTAMP",
+  "ALTER TABLE dynamic_databases ADD COLUMN sys_tag TEXT DEFAULT ''",
+  "ALTER TABLE dynamic_databases ADD COLUMN description TEXT",
+  "ALTER TABLE dynamic_databases ADD COLUMN icon TEXT",
+  "ALTER TABLE dynamic_databases ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP",
+  "ALTER TABLE dynamic_entries ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP"
+];
+
+for (const query of migrations) {
+  try {
+    db.exec(query);
+  } catch (e: any) {
+    if (!e.message.includes("duplicate column name")) {
+      console.warn(`Migration ignored non-duplicate error for query "${query}":`, e.message);
+    }
+  }
+}
+
+// Fix attachments CHECK constraint if not already fixed
 try {
-  db.exec(`ALTER TABLE sprints ADD COLUMN goal TEXT`);
-} catch {}
-try { db.exec(`ALTER TABLE users ADD COLUMN bio TEXT`); } catch {}
-try { db.exec(`ALTER TABLE users ADD COLUMN pronouns TEXT`); } catch {}
-try { db.exec(`ALTER TABLE users ADD COLUMN public_email TEXT`); } catch {}
-try { db.exec(`ALTER TABLE users ADD COLUMN github_id TEXT`); } catch {}
-try { db.exec(`ALTER TABLE users ADD COLUMN google_id TEXT`); } catch {}
-try { db.exec(`ALTER TABLE users ADD COLUMN last_page_id TEXT`); } catch {}
-// Notification preferences
-try { db.exec(`ALTER TABLE users ADD COLUMN notif_mute_all BOOLEAN DEFAULT 0`); } catch {}
-try { db.exec(`ALTER TABLE users ADD COLUMN notif_mute_assign BOOLEAN DEFAULT 0`); } catch {}
-try { db.exec(`ALTER TABLE users ADD COLUMN notif_mute_mention BOOLEAN DEFAULT 0`); } catch {}
-try { db.exec(`ALTER TABLE users ADD COLUMN notif_mute_sprint BOOLEAN DEFAULT 0`); } catch {}
-try { db.exec(`ALTER TABLE users ADD COLUMN notif_mute_system BOOLEAN DEFAULT 0`); } catch {}
-try { db.exec(`ALTER TABLE notifications ADD COLUMN type TEXT DEFAULT 'info'`); } catch {}
-// Add priority column to issues if not present
-try {
-  db.exec(`ALTER TABLE issues ADD COLUMN due_date DATETIME`);
-} catch {}
-// Add workspace_id to audit_logs if not present (migration)
-try {
-  db.exec(`ALTER TABLE audit_logs ADD COLUMN workspace_id TEXT`);
-} catch {}
-// Add work_date to work_logs if not present (migration)
-try {
-  db.exec(`ALTER TABLE work_logs ADD COLUMN work_date DATETIME DEFAULT CURRENT_TIMESTAMP`);
-} catch {}
+  const schema = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='attachments'").get() as any;
+  if (schema && !schema.sql.includes("'user'")) {
+    db.transaction(() => {
+      db.exec('PRAGMA foreign_keys=OFF;');
+      db.exec('ALTER TABLE attachments RENAME TO attachments_old;');
+      db.exec(`
+        CREATE TABLE attachments (
+         id TEXT PRIMARY KEY,
+         entity_type TEXT NOT NULL CHECK(entity_type IN ('issue', 'page', 'dynamic_entry', 'message', 'user', 'workspace')),
+         entity_id TEXT NOT NULL,
+         file_name TEXT NOT NULL,
+         file_path TEXT NOT NULL,
+         mime_type TEXT NOT NULL,
+         size_bytes INTEGER NOT NULL,
+         uploaded_by TEXT NOT NULL,
+         uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+         FOREIGN KEY (uploaded_by) REFERENCES users(id)
+        );
+      `);
+      db.exec('INSERT INTO attachments SELECT * FROM attachments_old;');
+      db.exec('DROP TABLE attachments_old;');
+      db.exec('PRAGMA foreign_keys=ON;');
+    })();
+  }
+} catch (e) {
+  console.error("Migration error (attachments):", e);
+}
 
 export default db;

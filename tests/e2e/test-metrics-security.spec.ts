@@ -10,8 +10,9 @@ test.describe('Metrics API Security', () => {
     outsiderPage = await outsiderContext.newPage();
     
     // Register the outsider
-    await outsiderPage.goto('/login');
-    await outsiderPage.fill('input[name="username"]', 'outsider_metrics');
+    const username = 'outsider_metrics_' + Date.now();
+    await outsiderPage.goto('/register');
+    await outsiderPage.fill('input[name="username"]', username);
     await outsiderPage.fill('input[name="password"]', 'outsider123');
     await outsiderPage.click('button[type="submit"]');
     await outsiderPage.waitForURL('**/');
