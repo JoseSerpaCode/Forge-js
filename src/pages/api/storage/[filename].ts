@@ -18,19 +18,22 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
     return new Response('File not found', { status: 404 });
   }
 
-  // 2. Resolve workspace ID based on entity type
-  const table = attachment.entity_type === 'issue' ? 'issues' : 'pages';
-  const entity = db.prepare(`SELECT workspace_id FROM ${table} WHERE id = ?`).get(attachment.entity_id) as any;
-  
-  if (!entity) {
-    return new Response('Entity not found', { status: 404 });
-  }
+  // 2. Enforce Access based on entity type
+  if (attachment.entity_type === 'issue' || attachment.entity_type === 'page') {
+    const table = attachment.entity_type === 'issue' ? 'issues' : 'pages';
+    const entity = db.prepare(`SELECT workspace_id FROM ${table} WHERE id = ?`).get(attachment.entity_id) as any;
+    
+    if (!entity) return new Response('Entity not found', { status: 404 });
 
-  // 3. Enforce Workspace Access (viewer role is sufficient to view files)
-  const access = checkWorkspaceAccess(user.id, user.is_sysadmin, entity.workspace_id, 'viewer');
-  if (!access.granted) {
-    if (access.reason === 'not_member') return new Response('Not Found', { status: 404 });
-    return new Response(access.error || 'Forbidden', { status: 403 });
+    const access = checkWorkspaceAccess(user.id, user.is_sysadmin, entity.workspace_id, 'viewer');
+    if (!access.granted) {
+      if (access.reason === 'not_member') return new Response('Not Found', { status: 404 });
+      return new Response(access.error || 'Forbidden', { status: 403 });
+    }
+  } else if (attachment.entity_type === 'user') {
+    // User avatars are public for authenticated users
+  } else if (attachment.entity_type === 'workspace') {
+    // Workspace icons are public for authenticated users
   }
 
   // 4. Serve the file securely
@@ -44,16 +47,16 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
   const stat = fs.statSync(filePath);
   const fileStream = fs.createReadStream(filePath);
 
+  const isSafeImage = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(attachment.mime_type);
+
   return new Response(fileStream as any, {
     status: 200,
     headers: {
-      // [A-5 FIX] Never serve user-uploaded files with their original MIME type.
-      // Forcing octet-stream + Content-Disposition: attachment prevents SVG/HTML XSS.
-      'Content-Type': 'application/octet-stream',
-      'Content-Disposition': `attachment; filename="${encodeURIComponent(safeFilename)}"`,
+      'Content-Type': isSafeImage ? attachment.mime_type : 'application/octet-stream',
+      'Content-Disposition': isSafeImage ? 'inline' : `attachment; filename="${encodeURIComponent(safeFilename)}"`,
       'X-Content-Type-Options': 'nosniff',
       'Content-Length': stat.size.toString(),
-      'Cache-Control': 'private, max-age=86400',
+      'Cache-Control': 'public, max-age=86400',
     }
   });
 };

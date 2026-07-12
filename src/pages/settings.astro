@@ -436,7 +436,7 @@ const t = useTranslations(lang);
         const res = await fetch('/api/users/profile', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bio, pronouns, public_email })
+          body: JSON.stringify({ bio, pronouns, public_email, avatar_url: newAvatarUrl })
         });
         if (res.ok) window.showToast?.('Profile updated successfully!');
         else window.showToast?.('Failed to update profile', true);

@@ -76,12 +76,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
   // Serve through a secure API endpoint
   const fileUrl = `/api/storage/${fileName}`;
 
-  // Only track attachments for issues/pages in the attachments table (to show in UI)
-  if (entityType === 'issue' || entityType === 'page') {
-    db.prepare('INSERT INTO attachments (id, entity_type, entity_id, file_name, file_path, mime_type, size_bytes, uploaded_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
-      crypto.randomUUID(), entityType, entityId, file.name, fileUrl, file.type, file.size, user.id
-    );
-  }
+  // Track all uploads in the attachments table for reference and storage lookup
+  db.prepare('INSERT INTO attachments (id, entity_type, entity_id, file_name, file_path, mime_type, size_bytes, uploaded_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
+    crypto.randomUUID(), entityType, entityId, file.name, fileUrl, file.type, file.size, user.id
+  );
 
   return new Response(JSON.stringify({ url: fileUrl }), { status: 200 });
 };

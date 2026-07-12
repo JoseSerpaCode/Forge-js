@@ -5,7 +5,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const user = locals.user!;
 
   try {
-    const { bio, pronouns, public_email } = await request.json();
+    const { bio, pronouns, public_email, avatar_url } = await request.json();
     
     // Strict validation
     if (bio && typeof bio !== 'string') return new Response('Invalid bio', { status: 400 });
@@ -22,12 +22,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     db.prepare(`
       UPDATE users 
-      SET bio = ?, pronouns = ?, public_email = ? 
+      SET bio = ?, pronouns = ?, public_email = ?, avatar_url = COALESCE(?, avatar_url)
       WHERE id = ?
     `).run(
       bio ? bio.trim() : null, 
       pronouns ? pronouns.trim() : null, 
       public_email ? public_email.trim() : null, 
+      avatar_url ? avatar_url.trim() : null,
       user.id
     );
     
