@@ -36,14 +36,14 @@ function processSession(active: any, customMessage?: string) {
     hours = 12;
   }
   
-  // If it's too short (e.g. less than 1 minute), don't log it, just delete
-  if (hours < 0.016) {
+  // If it's too short (e.g. less than 10 seconds), don't log it, just delete
+  if (hours < 0.002) {
     db.prepare('DELETE FROM time_tracking_sessions WHERE id = ?').run(active.id);
     return null;
   }
   
-  // Round to 2 decimals
-  hours = Math.round(hours * 100) / 100;
+  // Round to 4 decimals (sub-second precision)
+  hours = Math.round(hours * 10000) / 10000;
   
   const logId = crypto.randomUUID();
   db.transaction(() => {
