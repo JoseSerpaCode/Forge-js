@@ -29,11 +29,18 @@ export const POST: APIRoute = async ({ request, params, locals }) => {
 
     // [M-3 FIX] More robust duplicate check using a dedicated column approach
     // Check if user already has a pending invite to THIS workspace
-    const existingInvites = db.prepare("SELECT id, link_url FROM notifications WHERE user_id = ? AND type = 'invite'").all(targetUser.id) as any[];
-    const hasPendingInvite = existingInvites.some(notif => {
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const existingInvites = db.prepare("SELECT id, link_url, created_at FROM notifications WHERE user_id = ? AND type = 'invite'").all(targetUser.id) as any[];
+    const hasPendingInvite = existingInvites.find(notif => {
       try {
         const payload = JSON.parse(notif.link_url);
-        return payload.ws_id === workspaceId;
+        if (payload.ws_id === workspaceId) {
+          const age = Date.now() - new Date(notif.created_at + 'Z').getTime();
+          if (age < SEVEN_DAYS_MS) return true;
+          // Clean up expired ones to allow resending
+          db.prepare('DELETE FROM notifications WHERE id = ?').run(notif.id);
+        }
+        return false;
       } catch { return false; }
     });
     if (hasPendingInvite) return new Response('An invitation is already pending for this user', { status: 400 });

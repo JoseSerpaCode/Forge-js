@@ -12,6 +12,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (!notif || notif.type !== 'invite') return new Response('Invite not found', { status: 404 });
 
     if (action === 'accept') {
+      const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+      const age = Date.now() - new Date(notif.created_at + 'Z').getTime();
+      if (age > SEVEN_DAYS_MS) {
+        return new Response('Esta invitación expiró, pide una nueva', { status: 400 });
+      }
+
       let payload: any;
       try {
         payload = JSON.parse(notif.link_url);
