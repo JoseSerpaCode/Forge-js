@@ -39,7 +39,7 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/cookie": "^0.6.0",
     "@types/express": "^5.0.6",
-    "@types/node": "^26.1.0",
+    "@types/node": "^26.1.1",
     "socket.io-client": "^4.8.3",
     "vitest": "^4.1.10"
   }
