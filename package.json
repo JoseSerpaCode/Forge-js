@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
-    "@types/bcryptjs": "^2.4.6",
+    "@types/bcryptjs": "^3.0.0",
     "@types/better-sqlite3": "^7.6.13",
     "@types/cookie": "^0.6.0",
     "@types/express": "^5.0.6",
