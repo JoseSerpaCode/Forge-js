@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('A1 bug: clicking New Rule button', async ({ page }) => {
   // Login
-  await page.goto('http://localhost:4321/login');
+  await page.goto('/login');
   await page.fill('input[type="text"]', 'sysadmin');
   await page.fill('input[type="password"]', 'admin123');
   await page.click('button[type="submit"]');

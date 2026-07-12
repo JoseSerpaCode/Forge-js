@@ -25,7 +25,7 @@ test('Task Table sorting functionality', async ({ page }) => {
   ]);
   
   console.log('Navigating to hub...');
-  await page.goto('http://localhost:4321/');
+  await page.goto('/');
   
   // Wait for the task table to be visible
   await expect(page.locator('.task-table-container')).toBeVisible();

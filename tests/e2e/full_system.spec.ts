@@ -8,9 +8,9 @@ test.describe('Forge OS - Full System Omnibus Validation', () => {
     // === TOMO II: Seguridad y Login ===
     await page.goto('/login');
     
-    // Test protección de rutas (Si no está logueado, redirige a login)
+    // Test protección de rutas (Auto-login as GUEST redirect)
     await page.goto('/settings');
-    await expect(page).toHaveURL(/.*login.*/);
+    await expect(page).toHaveURL(/.*\/w\/guest-.*/);
 
     // Ejecutar Login exitoso
     await page.goto('/login');
