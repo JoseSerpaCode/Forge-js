@@ -236,3 +236,11 @@ CREATE TABLE milestones (
   FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
 );
 CREATE INDEX idx_milestones_workspace ON milestones(workspace_id);
+CREATE TABLE time_tracking_sessions (
+ id TEXT PRIMARY KEY,
+ issue_id TEXT NOT NULL,
+ user_id TEXT NOT NULL,
+ started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE,
+ FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
