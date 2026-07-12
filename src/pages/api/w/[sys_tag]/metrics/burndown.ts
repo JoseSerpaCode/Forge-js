@@ -15,7 +15,10 @@ export const GET: APIRoute = async ({ request, params, locals }) => {
 
     // 2. Authorization check
     const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspace.id, 'viewer');
-    if (!access.granted) return new Response('Forbidden', { status: 403 });
+    if (!access.granted) {
+      if (access.reason === 'not_member') return new Response('Not Found', { status: 404 });
+      return new Response('Forbidden', { status: 403 });
+    }
 
     if (!sprintId) {
       return new Response(JSON.stringify({ error: 'Missing sprint_id parameter' }), { 
@@ -40,7 +43,7 @@ export const GET: APIRoute = async ({ request, params, locals }) => {
     // A real burndown requires historical data. For now, we return the total issues and completed issues.
     
     const totalIssues = db.prepare('SELECT COUNT(id) as count FROM issues WHERE sprint_id = ?').get(sprintId) as any;
-    const doneIssues = db.prepare('SELECT COUNT(id) as count FROM issues WHERE sprint_id = ? AND status = "done"').get(sprintId) as any;
+    const doneIssues = db.prepare("SELECT COUNT(id) as count FROM issues WHERE sprint_id = ? AND status = 'done'").get(sprintId) as any;
 
     const burndownData = {
       total_issues: totalIssues.count,

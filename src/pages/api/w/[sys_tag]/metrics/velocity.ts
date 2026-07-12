@@ -13,7 +13,10 @@ export const GET: APIRoute = async ({ params, locals }) => {
 
     // 2. Authorization check
     const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspace.id, 'viewer');
-    if (!access.granted) return new Response('Forbidden', { status: 403 });
+    if (!access.granted) {
+      if (access.reason === 'not_member') return new Response('Not Found', { status: 404 });
+      return new Response('Forbidden', { status: 403 });
+    }
 
     // 3. Query execution (bound securely to resolved workspace_id)
     const velocityData = db.prepare(`
