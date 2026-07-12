@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import db from '../src/lib/db';
 import crypto from 'crypto';
-import { finalizeActiveSession, finalizeIssueSessions } from '../src/pages/api/issues/[id]/timer';
+import { finalizeActiveSession, finalizeIssueSessions, POST } from '../src/pages/api/issues/[id]/timer';
+import type { APIContext } from 'astro';
 
 describe('Time Tracker Backend Logic', () => {
   let wsId: string;
@@ -79,5 +80,30 @@ describe('Time Tracker Backend Logic', () => {
     const issueResults = finalizeIssueSessions(issueId);
     expect(issueResults.length).toBe(1); // Only User 2 was still running
     expect(issueResults[0]?.hours).toBe(2); // 2 hours elapsed
+  });
+
+  it('Ensures true idempotency: double click by same user preserves original started_at', async () => {
+    const originalStartedAt = '2026-07-01 12:00:00';
+    db.prepare(`
+      INSERT INTO time_tracking_sessions (id, issue_id, user_id, started_at) 
+      VALUES (?, ?, ?, ?)
+    `).run(crypto.randomUUID(), issueId, userId1, originalStartedAt);
+
+    // Simulate POST /start again
+    const mockContext = {
+      params: { id: issueId },
+      locals: { user: { id: userId1, is_sysadmin: 1 } },
+      request: new Request('http://localhost')
+    } as unknown as APIContext;
+
+    const res = await POST(mockContext);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.success).toBe(true);
+    expect(body.message).toBe('Timer already running');
+
+    // Verify DB still has the exact same original started_at
+    const session = db.prepare('SELECT started_at FROM time_tracking_sessions WHERE issue_id = ? AND user_id = ?').get(issueId, userId1) as any;
+    expect(session.started_at).toBe(originalStartedAt);
   });
 });

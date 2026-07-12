@@ -23,8 +23,11 @@ export function finalizeIssueSessions(issueId: string) {
 
 function processSession(active: any) {
   
-  // Calculate hours passed
-  const started = new Date(active.started_at + 'Z').getTime();
+  // Calculate hours passed robustly
+  let dateStr = active.started_at;
+  if (!dateStr.endsWith('Z')) dateStr += 'Z';
+  
+  const started = new Date(dateStr).getTime();
   const now = Date.now();
   let hours = (now - started) / (1000 * 60 * 60);
   
