@@ -442,6 +442,7 @@ const t = useTranslations(lang);
         if (window.showToast) window.showToast('Work logged successfully!');
         // @ts-ignore
         window.loadWorkLogs(issueId);
+        window.dispatchEvent(new CustomEvent('worklog-changed', { detail: { hoursDelta: parseFloat(hours) } }));
       } else {
         // @ts-ignore
         if (window.showToast) window.showToast(await res.text(), true);
@@ -520,6 +521,11 @@ const t = useTranslations(lang);
             const issueId = document.getElementById('modal-issue-id')?.getAttribute('data-full-id');
             // @ts-ignore
             window.loadWorkLogs(issueId);
+            const hoursSpan = (e.currentTarget as HTMLElement).closest('.group')?.querySelector('span.text-forge-secondary');
+            if (hoursSpan) {
+              const h = parseFloat(hoursSpan.textContent?.replace('h', '') || '0');
+              window.dispatchEvent(new CustomEvent('worklog-changed', { detail: { hoursDelta: -h } }));
+            }
           }
         });
       });
