@@ -11,17 +11,17 @@ export function finalizeActiveSession(userId: string) {
 }
 
 // Shared utility for closing all active sessions for a specific issue (e.g. when moved to Done)
-export function finalizeIssueSessions(issueId: string) {
+export function finalizeIssueSessions(issueId: string, message?: string) {
   const sessions = db.prepare('SELECT id, issue_id, started_at, user_id FROM time_tracking_sessions WHERE issue_id = ?').all(issueId) as any[];
   const results = [];
   for (const session of sessions) {
-    const res = processSession(session);
+    const res = processSession(session, message);
     if (res) results.push(res);
   }
   return results;
 }
 
-function processSession(active: any) {
+function processSession(active: any, customMessage?: string) {
   
   // Calculate hours passed robustly
   let dateStr = active.started_at;
@@ -50,7 +50,7 @@ function processSession(active: any) {
     db.prepare(`
       INSERT INTO work_logs (id, issue_id, user_id, hours_spent, description, logged_at)
       VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-    `).run(logId, active.issue_id, active.user_id, hours, 'Session auto-logged');
+    `).run(logId, active.issue_id, active.user_id, hours, customMessage || 'Session auto-logged');
     
     db.prepare(`
       UPDATE issues SET 
