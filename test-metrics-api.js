@@ -65,8 +65,21 @@ async function run() {
   const velRes403 = await fetch('http://localhost:5432/api/w/metrics-ws/metrics/velocity', { headers: { 'Cookie': outsiderCookie } });
   console.log('Velocity as outsider:', velRes403.status);
   
-  const precRes403 = await fetch('http://localhost:5432/api/w/metrics-ws/metrics/precision', { headers: { 'Cookie': outsiderCookie } });
+  const precRes403 = await fetch(`http://localhost:5432/api/w/metrics-ws/metrics/precision?sprint_id=${sprint.id}`, { headers: { 'Cookie': outsiderCookie } });
   console.log('Precision as outsider:', precRes403.status);
+
+  console.log('\n--- CROSS-WORKSPACE SPRINT IDOR TEST ---');
+  // Create Workspace B and Sprint B
+  const wsBId = crypto.randomUUID();
+  db.prepare("INSERT INTO workspaces (id, name, sys_tag, created_by) VALUES (?, 'WS B', 'ws-b', 'sysadmin') ON CONFLICT DO NOTHING").run(wsBId);
+  const sprintBId = crypto.randomUUID();
+  db.prepare("INSERT INTO sprints (id, workspace_id, name, status, start_date, end_date) VALUES (?, ?, 'Sprint B', 'active', ?, ?)").run(sprintBId, wsBId, new Date().toISOString(), new Date().toISOString());
+  
+  // Try to access Sprint B from metrics-ws
+  const idorRes = await fetch(`http://localhost:5432/api/w/metrics-ws/metrics/burndown?sprint_id=${sprintBId}`, { headers: { 'Cookie': cookieHeader } });
+  const idorJson = await idorRes.json();
+  console.log('Burndown Cross-Workspace Sprint Status:', idorRes.status);
+  console.log('Burndown Cross-Workspace Sprint Error:', idorJson.error);
 }
 
 run();

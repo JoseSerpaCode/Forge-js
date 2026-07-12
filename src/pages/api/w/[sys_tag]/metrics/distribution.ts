@@ -18,27 +18,16 @@ export const GET: APIRoute = async ({ params, locals }) => {
       return new Response('Forbidden', { status: 403 });
     }
 
-    // 3. Status Distribution
-    const statusDist = db.prepare(`
-      SELECT status, COUNT(id) as count
-      FROM issues
-      WHERE workspace_id = ?
-      GROUP BY status
-    `).all(workspace.id);
-
-    // 4. Assignee Distribution (Unificado con LEFT JOIN)
-    const assigneeDist = db.prepare(`
-      SELECT COALESCE(u.username, 'Unassigned') as assignee, COUNT(i.id) as count
+    // 3. 2D Distribution (Assignee x Status)
+    const distributionData = db.prepare(`
+      SELECT COALESCE(u.username, 'Unassigned') as assignee, i.status, COUNT(i.id) as count
       FROM issues i
       LEFT JOIN users u ON i.assignee_id = u.id
       WHERE i.workspace_id = ?
-      GROUP BY i.assignee_id
+      GROUP BY i.assignee_id, i.status
     `).all(workspace.id);
 
-    return new Response(JSON.stringify({
-      status: statusDist,
-      assignee: assigneeDist
-    }), { 
+    return new Response(JSON.stringify(distributionData), { 
       status: 200, 
       headers: { 'Content-Type': 'application/json' } 
     });

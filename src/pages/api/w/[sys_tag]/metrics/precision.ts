@@ -2,9 +2,12 @@ import type { APIRoute } from 'astro';
 import db from '../../../../../lib/db';
 import { checkWorkspaceAccess } from '../../../../../lib/guard';
 
-export const GET: APIRoute = async ({ params, locals }) => {
+export const GET: APIRoute = async ({ request, params, locals }) => {
   const user = locals.user!;
   const { sys_tag } = params;
+
+  const url = new URL(request.url);
+  const sprintId = url.searchParams.get('sprint_id');
 
   try {
     // 1. Server-side workspace resolution
@@ -19,16 +22,30 @@ export const GET: APIRoute = async ({ params, locals }) => {
     }
 
     // 3. Precision query (estimated vs logged by assignee)
-    const precisionDist = db.prepare(`
-      SELECT 
-        COALESCE(u.username, 'Sin asignar') as assignee, 
-        SUM(i.estimated_hours) as estimated_hours, 
-        SUM(i.logged_hours) as logged_hours
-      FROM issues i
-      LEFT JOIN users u ON i.assignee_id = u.id
-      WHERE i.workspace_id = ?
-      GROUP BY i.assignee_id
-    `).all(workspace.id);
+    let precisionDist;
+    if (sprintId) {
+      precisionDist = db.prepare(`
+        SELECT 
+          COALESCE(u.username, 'Sin asignar') as assignee, 
+          SUM(i.estimated_hours) as estimated_hours, 
+          SUM(i.logged_hours) as logged_hours
+        FROM issues i
+        LEFT JOIN users u ON i.assignee_id = u.id
+        WHERE i.workspace_id = ? AND i.sprint_id = ?
+        GROUP BY i.assignee_id
+      `).all(workspace.id, sprintId);
+    } else {
+      precisionDist = db.prepare(`
+        SELECT 
+          COALESCE(u.username, 'Sin asignar') as assignee, 
+          SUM(i.estimated_hours) as estimated_hours, 
+          SUM(i.logged_hours) as logged_hours
+        FROM issues i
+        LEFT JOIN users u ON i.assignee_id = u.id
+        WHERE i.workspace_id = ?
+        GROUP BY i.assignee_id
+      `).all(workspace.id);
+    }
 
     return new Response(JSON.stringify(precisionDist), { 
       status: 200, 

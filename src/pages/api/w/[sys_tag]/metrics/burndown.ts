@@ -42,8 +42,8 @@ export const GET: APIRoute = async ({ request, params, locals }) => {
     // or we fetch the total count and how many are done.
     // A real burndown requires historical data. For now, we return the total issues and completed issues.
     
-    const totalIssues = db.prepare('SELECT COUNT(id) as count FROM issues WHERE sprint_id = ?').get(sprintId) as any;
-    const doneIssues = db.prepare("SELECT COUNT(id) as count FROM issues WHERE sprint_id = ? AND status = 'done'").get(sprintId) as any;
+    const totalIssues = db.prepare("SELECT COUNT(id) as count FROM issues WHERE sprint_id = ? AND workspace_id = ?").get(sprintId, workspace.id) as any;
+    const doneIssues = db.prepare("SELECT COUNT(id) as count FROM issues WHERE sprint_id = ? AND workspace_id = ? AND status = 'done'").get(sprintId, workspace.id) as any;
 
     const burndownData = {
       total_issues: totalIssues.count,
