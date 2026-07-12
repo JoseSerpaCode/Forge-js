@@ -82,6 +82,10 @@ function formatDate(dateStr: string | undefined) {
           </>
         ) : null}
       </div>
+      <button id="btn-share-page" class="ml-auto text-forge-muted hover:text-forge-secondary hover:bg-forge-secondary/10 px-3 py-1.5 rounded-md text-xs font-bold transition-all border border-transparent hover:border-forge-secondary/30 flex items-center gap-1" title="Copy Link to Page">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+        Share
+      </button>
     </div>
 
     <!-- Editor.js Container -->
@@ -274,6 +278,13 @@ function formatDate(dateStr: string | undefined) {
       } else {
         alert('Error deleting page: ' + await res.text());
       }
+    });
+
+    document.getElementById('btn-share-page')?.addEventListener('click', () => {
+      const url = new URL(window.location.href);
+      navigator.clipboard.writeText(url.toString()).then(() => {
+        if (window.showToast) window.showToast('Link copied to clipboard!');
+      });
     });
   }
 </script>
