@@ -89,7 +89,7 @@ if (activeSprintId) {
       <div class="flex items-center gap-4">
         <h1 class="text-2xl font-bold text-forge-text">{workspace.name} Board</h1>
         {activeSprintId && (
-          <div class="hidden md:flex flex-col w-48" id="sprint-time-container" data-logged={totalLogged} data-estimated={totalEstimated}>
+          <div class="hidden md:flex flex-col min-w-[12rem] max-w-[20rem]" id="sprint-time-container" data-logged={totalLogged} data-estimated={totalEstimated}>
             <div class="flex justify-between text-[10px] font-mono mb-1">
               <span class="text-forge-muted">Time</span>
               <span class="font-bold text-forge-secondary" id="sprint-time-text">
