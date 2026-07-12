@@ -13,6 +13,9 @@ interface Props {
     reporter_id?: string;
     position: number;
     sprint_id?: string;
+    active_session_start?: string;
+    due_date?: string;
+    status?: string;
   };
   canEdit?: boolean;
 }
@@ -24,7 +27,7 @@ const lang = Astro.locals.lang || 'en';
 const t = useTranslations(lang);
 ---
 <!-- Componente IssueCard.astro -->
-<div id={issue.id} draggable={canEdit ? "true" : "false"} data-points={issue.story_points} data-position={issue.position} data-sprint-id={issue.sprint_id || 'backlog'} data-assignee-id={issue.assignee_id || ''} data-reporter-id={issue.reporter_id || ''} data-assignee={issue.assignee_username || 'Unassigned'} data-reporter={issue.reporter_username || 'System'} data-description={issue.description || ''} 
+<div id={issue.id} draggable={canEdit ? "true" : "false"} data-points={issue.story_points} data-position={issue.position} data-sprint-id={issue.sprint_id || 'backlog'} data-assignee-id={issue.assignee_id || ''} data-reporter-id={issue.reporter_id || ''} data-assignee={issue.assignee_username || 'Unassigned'} data-reporter={issue.reporter_username || 'System'} data-description={issue.description || ''} data-due-date={issue.due_date || ''} data-active-session={issue.active_session_start || ''}
   class={`issue-card group bg-forge-panel border-l-4 p-4 rounded-md shadow-lg hover:-translate-y-0.5 hover:shadow-xl transition-all ${canEdit ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} mb-3 
     ${issue.type === 'bug' ? 'border-l-red-500 border-t-forge-border border-r-forge-border border-b-forge-border' : 
       issue.type === 'story' ? 'border-l-green-500 border-t-forge-border border-r-forge-border border-b-forge-border' : 
@@ -41,6 +44,13 @@ const t = useTranslations(lang);
     </div>
   </div>
   <h4 class="text-forge-text font-bold text-sm mb-1 group-hover:text-forge-secondary transition-colors">{issue.title}</h4>
+  
+  {issue.due_date && (
+    <div class={`text-[10px] font-mono mb-2 ${issue.status !== 'done' && new Date(issue.due_date) < new Date() ? 'text-forge-error font-bold' : 'text-forge-muted'}`}>
+      Due: {new Date(issue.due_date).toLocaleDateString()}
+    </div>
+  )}
+
   <p class="text-forge-muted text-xs line-clamp-2 mb-3">{issue.description || t('modal.no_description')}</p>
   <div class="flex items-center gap-2">
     <span class="issue-type-badge px-2 py-0.5 rounded text-[10px] font-mono bg-forge-bg text-forge-muted border border-forge-border uppercase">
@@ -48,4 +58,20 @@ const t = useTranslations(lang);
     </span>
     <span class="text-[10px] text-forge-muted font-mono">{issue.story_points} SP</span>
   </div>
+  
+  {canEdit && (
+    <div class="mt-3 flex justify-end">
+      {issue.active_session_start ? (
+        <div class="active-timer-display flex items-center gap-1.5 text-forge-primary bg-forge-primary/10 px-2 py-1 rounded text-xs font-mono font-bold" data-start-time={issue.active_session_start}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-pulse"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span class="timer-text">00:00:00</span>
+        </div>
+      ) : (
+        <button class="btn-start-timer flex items-center gap-1 text-forge-muted hover:text-forge-primary transition-colors text-xs font-bold" data-issue-id={issue.id}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          Start
+        </button>
+      )}
+    </div>
+  )}
 </div>

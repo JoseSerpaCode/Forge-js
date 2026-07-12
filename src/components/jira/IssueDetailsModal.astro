@@ -126,6 +126,11 @@ const t = useTranslations(lang);
       </div>
     </div>
     
+    <div class="space-y-2 relative">
+      <label class="text-[10px] font-bold text-forge-muted/70 uppercase tracking-widest">{t('modal.due_date') || 'Due Date'}</label>
+      <input type="date" id="modal-issue-due-date" class="w-full bg-forge-panel/40 border border-forge-border/50 rounded-lg p-2.5 text-sm text-forge-text focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 transition-all shadow-sm font-mono" />
+    </div>
+    
     <!-- Time Tracking Section -->
     <div class="bg-forge-panel/20 border border-forge-border/40 rounded-xl p-5 space-y-4">
       <div class="flex items-center justify-between">
@@ -133,10 +138,16 @@ const t = useTranslations(lang);
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-forge-secondary"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
           {t('modal.time_tracking')}
         </h3>
-        <button id="btn-log-work" class="bg-forge-secondary/10 hover:bg-forge-secondary/20 text-forge-secondary text-xs font-bold px-3 py-1.5 rounded-lg border border-forge-secondary/30 transition-all flex items-center gap-1.5">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          {t('modal.log_work')}
-        </button>
+        <div class="flex items-center gap-2">
+          <button id="btn-stop-timer" class="hidden bg-red-500/10 hover:bg-red-500/20 text-red-500 text-xs font-bold px-3 py-1.5 rounded-lg border border-red-500/30 transition-all flex items-center gap-1.5 animate-pulse">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"></rect></svg>
+            Stop Timer
+          </button>
+          <button id="btn-log-work" class="bg-forge-secondary/10 hover:bg-forge-secondary/20 text-forge-secondary text-xs font-bold px-3 py-1.5 rounded-lg border border-forge-secondary/30 transition-all flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            {t('modal.log_work')}
+          </button>
+        </div>
       </div>
       
       <div class="grid grid-cols-2 gap-6">
@@ -402,16 +413,77 @@ const t = useTranslations(lang);
     }
   });
 
+  // Due Date change
+  const dueDateEl = document.getElementById('modal-issue-due-date') as HTMLInputElement;
+  dueDateEl?.addEventListener('change', async () => {
+    const idEl = document.getElementById('modal-issue-id');
+    const issueId = idEl?.getAttribute('data-full-id');
+    if (!issueId) return;
+
+    try {
+      await fetch(`/api/issues/${issueId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ due_date: dueDateEl.value || null })
+      });
+      const card = document.getElementById(issueId);
+      if (card) {
+        card.setAttribute('data-due-date', dueDateEl.value || '');
+      }
+      if (window.showToast) window.showToast('Due date saved');
+    } catch (e) {
+      console.error('Failed to update due date', e);
+    }
+  });
+
   // Time Tracking Logic
   logWorkBtn?.addEventListener('click', () => {
     // Generate local date string YYYY-MM-DD to avoid UTC offset issues
     const now = new Date();
     const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
     
+    document.getElementById('log-work-modal')?.removeAttribute('data-log-id');
     (document.getElementById('log-work-date') as HTMLInputElement).value = localDate;
     (document.getElementById('log-work-hours') as HTMLInputElement).value = '';
     (document.getElementById('log-work-desc') as HTMLTextAreaElement).value = '';
     (document.getElementById('log-work-modal') as HTMLDialogElement).showModal();
+  });
+
+  const stopTimerBtn = document.getElementById('btn-stop-timer');
+  stopTimerBtn?.addEventListener('click', async () => {
+    const idEl = document.getElementById('modal-issue-id');
+    const issueId = idEl?.getAttribute('data-full-id');
+    if (!issueId) return;
+
+    stopTimerBtn.textContent = 'Stopping...';
+    try {
+      const res = await fetch(`/api/issues/${issueId}/timer`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success && data.logged) {
+        // Open log-work modal in edit mode
+        const logId = data.logged.logId;
+        const hours = data.logged.hours;
+        
+        const now = new Date();
+        const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+        
+        const modal = document.getElementById('log-work-modal') as HTMLDialogElement;
+        modal.setAttribute('data-log-id', logId);
+        (document.getElementById('log-work-date') as HTMLInputElement).value = localDate;
+        (document.getElementById('log-work-hours') as HTMLInputElement).value = hours;
+        (document.getElementById('log-work-desc') as HTMLTextAreaElement).value = 'Session auto-logged';
+        
+        modal.showModal();
+        
+        // Refresh timer UI
+        // @ts-ignore
+        window.refreshTimeTrackingUI(issueId);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      stopTimerBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"></rect></svg> Stop Timer';
+    }
   });
 
   document.getElementById('btn-save-log-work')?.addEventListener('click', async () => {
@@ -430,8 +502,14 @@ const t = useTranslations(lang);
     }
 
     try {
-      const res = await fetch(`/api/issues/${issueId}/worklogs`, {
-        method: 'POST',
+      const logId = document.getElementById('log-work-modal')?.getAttribute('data-log-id');
+      const isEdit = !!logId;
+      
+      const endpoint = isEdit ? `/api/worklogs/${logId}` : `/api/issues/${issueId}/worklogs`;
+      const method = isEdit ? 'PATCH' : 'POST';
+
+      const res = await fetch(endpoint, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ hours_spent: hours, work_date: new Date(date).toISOString(), description: desc })
       });
@@ -504,7 +582,14 @@ const t = useTranslations(lang);
         </div>
         <div class="flex flex-col items-end gap-2 shrink-0">
           <span class="text-xs font-mono font-bold text-forge-secondary bg-forge-secondary/10 px-2 py-0.5 rounded border border-forge-secondary/20">${log.hours_spent}h</span>
-          ${role !== 'viewer' ? `<button class="delete-worklog-btn hidden group-hover:block text-red-400 hover:text-red-300 transition-colors" data-id="${log.id}" title="Delete Log"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>` : ''}
+          ${role !== 'viewer' ? `
+          <div class="hidden group-hover:flex items-center gap-2">
+            <button class="edit-worklog-btn text-forge-muted hover:text-forge-secondary transition-colors" data-id="${log.id}" data-hours="${log.hours_spent}" data-desc="${esc(log.description)}" data-date="${log.work_date}" title="Edit Log">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </button>
+            <button class="delete-worklog-btn text-red-400 hover:text-red-300 transition-colors" data-id="${log.id}" title="Delete Log"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+          </div>
+          ` : ''}
         </div>
       `;
       container.appendChild(div);
@@ -528,6 +613,28 @@ const t = useTranslations(lang);
             }
           }
         });
+      });
+    });
+
+    document.querySelectorAll('.edit-worklog-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const el = e.currentTarget as HTMLElement;
+        const id = el.getAttribute('data-id');
+        const hours = el.getAttribute('data-hours');
+        const desc = el.getAttribute('data-desc');
+        let date = el.getAttribute('data-date');
+        
+        if (date) {
+          date = new Date(date).toISOString().split('T')[0];
+        }
+
+        const modal = document.getElementById('log-work-modal') as HTMLDialogElement;
+        modal.setAttribute('data-log-id', id || '');
+        (document.getElementById('log-work-date') as HTMLInputElement).value = date || '';
+        (document.getElementById('log-work-hours') as HTMLInputElement).value = hours || '';
+        (document.getElementById('log-work-desc') as HTMLTextAreaElement).value = desc === 'null' ? '' : (desc || '');
+        
+        modal.showModal();
       });
     });
   };
@@ -575,6 +682,26 @@ const t = useTranslations(lang);
             bar.style.width = '0%';
             bar.className = 'h-full bg-forge-secondary transition-all';
           }
+        }
+
+        // Due date update
+        const dueDateInput = document.getElementById('modal-issue-due-date') as HTMLInputElement;
+        if (dueDateInput && issue.due_date) {
+          dueDateInput.value = new Date(issue.due_date).toISOString().split('T')[0];
+        } else if (dueDateInput) {
+          dueDateInput.value = '';
+        }
+      }
+
+      // Check active timer
+      const timerRes = await fetch(`/api/issues/${issueId}/timer`);
+      if (timerRes.ok) {
+        const timerData = await timerRes.json();
+        const stopBtn = document.getElementById('btn-stop-timer');
+        if (timerData.active) {
+          stopBtn?.classList.remove('hidden');
+        } else {
+          stopBtn?.classList.add('hidden');
         }
       }
     } catch(e) {}

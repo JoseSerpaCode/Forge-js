@@ -113,12 +113,12 @@ export const POST: APIRoute = async ({ params, locals }) => {
   }
 
   // Finalize any other running timer
-  finalizeActiveSession(user.id);
+  const stopped = finalizeActiveSession(user.id);
 
   // Start new
   db.prepare('INSERT INTO time_tracking_sessions (id, issue_id, user_id, started_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)').run(crypto.randomUUID(), issueId, user.id);
   
-  return new Response(JSON.stringify({ success: true }), { status: 200 });
+  return new Response(JSON.stringify({ success: true, stopped_previous: !!stopped, stopped_details: stopped }), { status: 200 });
 };
 
 export const DELETE: APIRoute = async ({ params, locals }) => {

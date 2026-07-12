@@ -13,6 +13,13 @@ export class ApiError extends Error {
 
 export class IssueService {
   /**
+   * Retrieves an issue by ID.
+   */
+  static async getById(issueId: string) {
+    return db.prepare('SELECT * FROM issues WHERE id = ?').get(issueId);
+  }
+
+  /**
    * Updates an issue dynamically. Solves the N+1 problem.
    */
   static async update(

@@ -45,7 +45,10 @@ function getInitials(username: string) {
             assignee_id: issue.assignee_id,
             reporter_id: issue.reporter_id,
             position: issue.position || 0,
-            sprint_id: issue.sprint_id || 'backlog'
+            sprint_id: issue.sprint_id || 'backlog',
+            active_session_start: issue.active_session_start,
+            due_date: issue.due_date,
+            status: issue.status
           }} canEdit={canEdit} />
         ))}
       </BoardColumn>
@@ -259,5 +262,73 @@ function getInitials(username: string) {
         window.history.replaceState({}, '', newUrl.toString());
       }
     }
+  });
+
+  // Live Timer Update
+  const updateTimers = () => {
+    document.querySelectorAll('.active-timer-display').forEach(display => {
+      const startStr = display.getAttribute('data-start-time');
+      if (!startStr) return;
+      
+      let dateStr = startStr;
+      if (!dateStr.endsWith('Z')) dateStr += 'Z';
+      
+      const started = new Date(dateStr).getTime();
+      const now = Date.now();
+      const elapsed = Math.floor((now - started) / 1000);
+      
+      if (elapsed < 0) return;
+      
+      const h = Math.floor(elapsed / 3600);
+      const m = Math.floor((elapsed % 3600) / 60);
+      const s = elapsed % 60;
+      
+      const textEl = display.querySelector('.timer-text');
+      if (textEl) {
+        textEl.textContent = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+      }
+    });
+  };
+  setInterval(updateTimers, 1000);
+  updateTimers();
+
+  // Start Timer Logic
+  document.querySelectorAll('.btn-start-timer').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const issueId = btn.getAttribute('data-issue-id');
+      if (!issueId) return;
+      
+      btn.innerHTML = '<span class="animate-pulse">Starting...</span>';
+      
+      try {
+        const response = await fetch(`/api/issues/${issueId}/timer`, { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.success) {
+          if (data.stopped_previous) {
+            alert(`El timer anterior del issue ${data.stopped_details.issueId.substring(0,8).toUpperCase()} se detuvo automáticamente y se registraron ${data.stopped_details.hours}h.`);
+          }
+          
+          const card = document.getElementById(issueId);
+          const currentStatus = card?.closest('.board-column')?.getAttribute('data-status');
+          
+          if (currentStatus !== 'in_progress') {
+             await fetch(`/api/issues/${issueId}/move`, {
+               method: 'PATCH',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ status: 'in_progress', position: 0, workspaceId })
+             });
+          }
+          window.location.reload();
+        } else {
+          alert('Error: ' + data.message);
+          btn.innerHTML = 'Start';
+        }
+      } catch (err) {
+        console.error(err);
+        btn.innerHTML = 'Start';
+      }
+    });
   });
 </script>

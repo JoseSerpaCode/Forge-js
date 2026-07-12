@@ -1,0 +1,411 @@
+diff --git i/src/components/jira/IssueCard.astro w/src/components/jira/IssueCard.astro
+index 2d934c1..33a54a2 100644
+--- i/src/components/jira/IssueCard.astro
++++ w/src/components/jira/IssueCard.astro
+@@ -13,6 +13,9 @@ interface Props {
+     reporter_id?: string;
+     position: number;
+     sprint_id?: string;
++    active_session_start?: string;
++    due_date?: string;
++    status?: string;
+   };
+   canEdit?: boolean;
+ }
+@@ -24,7 +27,7 @@ const lang = Astro.locals.lang || 'en';
+ const t = useTranslations(lang);
+ ---
+ <!-- Componente IssueCard.astro -->
+-<div id={issue.id} draggable={canEdit ? "true" : "false"} data-points={issue.story_points} data-position={issue.position} data-sprint-id={issue.sprint_id || 'backlog'} data-assignee-id={issue.assignee_id || ''} data-reporter-id={issue.reporter_id || ''} data-assignee={issue.assignee_username || 'Unassigned'} data-reporter={issue.reporter_username || 'System'} data-description={issue.description || ''} 
++<div id={issue.id} draggable={canEdit ? "true" : "false"} data-points={issue.story_points} data-position={issue.position} data-sprint-id={issue.sprint_id || 'backlog'} data-assignee-id={issue.assignee_id || ''} data-reporter-id={issue.reporter_id || ''} data-assignee={issue.assignee_username || 'Unassigned'} data-reporter={issue.reporter_username || 'System'} data-description={issue.description || ''} data-due-date={issue.due_date || ''} data-active-session={issue.active_session_start || ''}
+   class={`issue-card group bg-forge-panel border-l-4 p-4 rounded-md shadow-lg hover:-translate-y-0.5 hover:shadow-xl transition-all ${canEdit ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} mb-3 
+     ${issue.type === 'bug' ? 'border-l-red-500 border-t-forge-border border-r-forge-border border-b-forge-border' : 
+       issue.type === 'story' ? 'border-l-green-500 border-t-forge-border border-r-forge-border border-b-forge-border' : 
+@@ -41,6 +44,13 @@ const t = useTranslations(lang);
+     </div>
+   </div>
+   <h4 class="text-forge-text font-bold text-sm mb-1 group-hover:text-forge-secondary transition-colors">{issue.title}</h4>
++  
++  {issue.due_date && (
++    <div class={`text-[10px] font-mono mb-2 ${issue.status !== 'done' && new Date(issue.due_date) < new Date() ? 'text-forge-error font-bold' : 'text-forge-muted'}`}>
++      Due: {new Date(issue.due_date).toLocaleDateString()}
++    </div>
++  )}
++
+   <p class="text-forge-muted text-xs line-clamp-2 mb-3">{issue.description || t('modal.no_description')}</p>
+   <div class="flex items-center gap-2">
+     <span class="issue-type-badge px-2 py-0.5 rounded text-[10px] font-mono bg-forge-bg text-forge-muted border border-forge-border uppercase">
+@@ -48,4 +58,20 @@ const t = useTranslations(lang);
+     </span>
+     <span class="text-[10px] text-forge-muted font-mono">{issue.story_points} SP</span>
+   </div>
++  
++  {canEdit && (
++    <div class="mt-3 flex justify-end">
++      {issue.active_session_start ? (
++        <div class="active-timer-display flex items-center gap-1.5 text-forge-primary bg-forge-primary/10 px-2 py-1 rounded text-xs font-mono font-bold" data-start-time={issue.active_session_start}>
++          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-pulse"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
++          <span class="timer-text">00:00:00</span>
++        </div>
++      ) : (
++        <button class="btn-start-timer flex items-center gap-1 text-forge-muted hover:text-forge-primary transition-colors text-xs font-bold" data-issue-id={issue.id}>
++          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
++          Start
++        </button>
++      )}
++    </div>
++  )}
+ </div>
+diff --git i/src/components/jira/IssueDetailsModal.astro w/src/components/jira/IssueDetailsModal.astro
+index 32d60e7..9173e31 100644
+--- i/src/components/jira/IssueDetailsModal.astro
++++ w/src/components/jira/IssueDetailsModal.astro
+@@ -126,6 +126,11 @@ const t = useTranslations(lang);
+       </div>
+     </div>
+     
++    <div class="space-y-2 relative">
++      <label class="text-[10px] font-bold text-forge-muted/70 uppercase tracking-widest">{t('modal.due_date') || 'Due Date'}</label>
++      <input type="date" id="modal-issue-due-date" class="w-full bg-forge-panel/40 border border-forge-border/50 rounded-lg p-2.5 text-sm text-forge-text focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary/30 transition-all shadow-sm font-mono" />
++    </div>
++    
+     <!-- Time Tracking Section -->
+     <div class="bg-forge-panel/20 border border-forge-border/40 rounded-xl p-5 space-y-4">
+       <div class="flex items-center justify-between">
+@@ -133,10 +138,16 @@ const t = useTranslations(lang);
+           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-forge-secondary"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+           {t('modal.time_tracking')}
+         </h3>
+-        <button id="btn-log-work" class="bg-forge-secondary/10 hover:bg-forge-secondary/20 text-forge-secondary text-xs font-bold px-3 py-1.5 rounded-lg border border-forge-secondary/30 transition-all flex items-center gap-1.5">
+-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+-          {t('modal.log_work')}
+-        </button>
++        <div class="flex items-center gap-2">
++          <button id="btn-stop-timer" class="hidden bg-red-500/10 hover:bg-red-500/20 text-red-500 text-xs font-bold px-3 py-1.5 rounded-lg border border-red-500/30 transition-all flex items-center gap-1.5 animate-pulse">
++            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"></rect></svg>
++            Stop Timer
++          </button>
++          <button id="btn-log-work" class="bg-forge-secondary/10 hover:bg-forge-secondary/20 text-forge-secondary text-xs font-bold px-3 py-1.5 rounded-lg border border-forge-secondary/30 transition-all flex items-center gap-1.5">
++            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
++            {t('modal.log_work')}
++          </button>
++        </div>
+       </div>
+       
+       <div class="grid grid-cols-2 gap-6">
+@@ -402,18 +413,79 @@ const t = useTranslations(lang);
+     }
+   });
+ 
++  // Due Date change
++  const dueDateEl = document.getElementById('modal-issue-due-date') as HTMLInputElement;
++  dueDateEl?.addEventListener('change', async () => {
++    const idEl = document.getElementById('modal-issue-id');
++    const issueId = idEl?.getAttribute('data-full-id');
++    if (!issueId) return;
++
++    try {
++      await fetch(`/api/issues/${issueId}`, {
++        method: 'PATCH',
++        headers: { 'Content-Type': 'application/json' },
++        body: JSON.stringify({ due_date: dueDateEl.value || null })
++      });
++      const card = document.getElementById(issueId);
++      if (card) {
++        card.setAttribute('data-due-date', dueDateEl.value || '');
++      }
++      if (window.showToast) window.showToast('Due date saved');
++    } catch (e) {
++      console.error('Failed to update due date', e);
++    }
++  });
++
+   // Time Tracking Logic
+   logWorkBtn?.addEventListener('click', () => {
+     // Generate local date string YYYY-MM-DD to avoid UTC offset issues
+     const now = new Date();
+     const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+     
++    document.getElementById('log-work-modal')?.removeAttribute('data-log-id');
+     (document.getElementById('log-work-date') as HTMLInputElement).value = localDate;
+     (document.getElementById('log-work-hours') as HTMLInputElement).value = '';
+     (document.getElementById('log-work-desc') as HTMLTextAreaElement).value = '';
+     (document.getElementById('log-work-modal') as HTMLDialogElement).showModal();
+   });
+ 
++  const stopTimerBtn = document.getElementById('btn-stop-timer');
++  stopTimerBtn?.addEventListener('click', async () => {
++    const idEl = document.getElementById('modal-issue-id');
++    const issueId = idEl?.getAttribute('data-full-id');
++    if (!issueId) return;
++
++    stopTimerBtn.textContent = 'Stopping...';
++    try {
++      const res = await fetch(`/api/issues/${issueId}/timer`, { method: 'DELETE' });
++      const data = await res.json();
++      if (data.success && data.logged) {
++        // Open log-work modal in edit mode
++        const logId = data.logged.logId;
++        const hours = data.logged.hours;
++        
++        const now = new Date();
++        const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
++        
++        const modal = document.getElementById('log-work-modal') as HTMLDialogElement;
++        modal.setAttribute('data-log-id', logId);
++        (document.getElementById('log-work-date') as HTMLInputElement).value = localDate;
++        (document.getElementById('log-work-hours') as HTMLInputElement).value = hours;
++        (document.getElementById('log-work-desc') as HTMLTextAreaElement).value = 'Session auto-logged';
++        
++        modal.showModal();
++        
++        // Refresh timer UI
++        // @ts-ignore
++        window.refreshTimeTrackingUI(issueId);
++      }
++    } catch (e) {
++      console.error(e);
++    } finally {
++      stopTimerBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"></rect></svg> Stop Timer';
++    }
++  });
++
+   document.getElementById('btn-save-log-work')?.addEventListener('click', async () => {
+     const idEl = document.getElementById('modal-issue-id');
+     const issueId = idEl?.getAttribute('data-full-id');
+@@ -430,8 +502,14 @@ const t = useTranslations(lang);
+     }
+ 
+     try {
+-      const res = await fetch(`/api/issues/${issueId}/worklogs`, {
+-        method: 'POST',
++      const logId = document.getElementById('log-work-modal')?.getAttribute('data-log-id');
++      const isEdit = !!logId;
++      
++      const endpoint = isEdit ? `/api/worklogs/${logId}` : `/api/issues/${issueId}/worklogs`;
++      const method = isEdit ? 'PATCH' : 'POST';
++
++      const res = await fetch(endpoint, {
++        method,
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ hours_spent: hours, work_date: new Date(date).toISOString(), description: desc })
+       });
+@@ -504,7 +582,14 @@ const t = useTranslations(lang);
+         </div>
+         <div class="flex flex-col items-end gap-2 shrink-0">
+           <span class="text-xs font-mono font-bold text-forge-secondary bg-forge-secondary/10 px-2 py-0.5 rounded border border-forge-secondary/20">${log.hours_spent}h</span>
+-          ${role !== 'viewer' ? `<button class="delete-worklog-btn hidden group-hover:block text-red-400 hover:text-red-300 transition-colors" data-id="${log.id}" title="Delete Log"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>` : ''}
++          ${role !== 'viewer' ? `
++          <div class="hidden group-hover:flex items-center gap-2">
++            <button class="edit-worklog-btn text-forge-muted hover:text-forge-secondary transition-colors" data-id="${log.id}" data-hours="${log.hours_spent}" data-desc="${esc(log.description)}" data-date="${log.work_date}" title="Edit Log">
++              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
++            </button>
++            <button class="delete-worklog-btn text-red-400 hover:text-red-300 transition-colors" data-id="${log.id}" title="Delete Log"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
++          </div>
++          ` : ''}
+         </div>
+       `;
+       container.appendChild(div);
+@@ -530,6 +615,28 @@ const t = useTranslations(lang);
+         });
+       });
+     });
++
++    document.querySelectorAll('.edit-worklog-btn').forEach(btn => {
++      btn.addEventListener('click', (e) => {
++        const el = e.currentTarget as HTMLElement;
++        const id = el.getAttribute('data-id');
++        const hours = el.getAttribute('data-hours');
++        const desc = el.getAttribute('data-desc');
++        let date = el.getAttribute('data-date');
++        
++        if (date) {
++          date = new Date(date).toISOString().split('T')[0];
++        }
++
++        const modal = document.getElementById('log-work-modal') as HTMLDialogElement;
++        modal.setAttribute('data-log-id', id || '');
++        (document.getElementById('log-work-date') as HTMLInputElement).value = date || '';
++        (document.getElementById('log-work-hours') as HTMLInputElement).value = hours || '';
++        (document.getElementById('log-work-desc') as HTMLTextAreaElement).value = desc === 'null' ? '' : (desc || '');
++        
++        modal.showModal();
++      });
++    });
+   };
+ 
+   // @ts-ignore
+@@ -576,6 +683,26 @@ const t = useTranslations(lang);
+             bar.className = 'h-full bg-forge-secondary transition-all';
+           }
+         }
++
++        // Due date update
++        const dueDateInput = document.getElementById('modal-issue-due-date') as HTMLInputElement;
++        if (dueDateInput && issue.due_date) {
++          dueDateInput.value = new Date(issue.due_date).toISOString().split('T')[0];
++        } else if (dueDateInput) {
++          dueDateInput.value = '';
++        }
++      }
++
++      // Check active timer
++      const timerRes = await fetch(`/api/issues/${issueId}/timer`);
++      if (timerRes.ok) {
++        const timerData = await timerRes.json();
++        const stopBtn = document.getElementById('btn-stop-timer');
++        if (timerData.active) {
++          stopBtn?.classList.remove('hidden');
++        } else {
++          stopBtn?.classList.add('hidden');
++        }
+       }
+     } catch(e) {}
+   };
+diff --git i/src/components/jira/KanbanBoard.astro w/src/components/jira/KanbanBoard.astro
+index fdd0931..bad0ed8 100644
+--- i/src/components/jira/KanbanBoard.astro
++++ w/src/components/jira/KanbanBoard.astro
+@@ -45,7 +45,10 @@ function getInitials(username: string) {
+             assignee_id: issue.assignee_id,
+             reporter_id: issue.reporter_id,
+             position: issue.position || 0,
+-            sprint_id: issue.sprint_id || 'backlog'
++            sprint_id: issue.sprint_id || 'backlog',
++            active_session_start: issue.active_session_start,
++            due_date: issue.due_date,
++            status: issue.status
+           }} canEdit={canEdit} />
+         ))}
+       </BoardColumn>
+@@ -260,4 +263,72 @@ function getInitials(username: string) {
+       }
+     }
+   });
++
++  // Live Timer Update
++  const updateTimers = () => {
++    document.querySelectorAll('.active-timer-display').forEach(display => {
++      const startStr = display.getAttribute('data-start-time');
++      if (!startStr) return;
++      
++      let dateStr = startStr;
++      if (!dateStr.endsWith('Z')) dateStr += 'Z';
++      
++      const started = new Date(dateStr).getTime();
++      const now = Date.now();
++      const elapsed = Math.floor((now - started) / 1000);
++      
++      if (elapsed < 0) return;
++      
++      const h = Math.floor(elapsed / 3600);
++      const m = Math.floor((elapsed % 3600) / 60);
++      const s = elapsed % 60;
++      
++      const textEl = display.querySelector('.timer-text');
++      if (textEl) {
++        textEl.textContent = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
++      }
++    });
++  };
++  setInterval(updateTimers, 1000);
++  updateTimers();
++
++  // Start Timer Logic
++  document.querySelectorAll('.btn-start-timer').forEach(btn => {
++    btn.addEventListener('click', async (e) => {
++      e.stopPropagation();
++      const issueId = btn.getAttribute('data-issue-id');
++      if (!issueId) return;
++      
++      btn.innerHTML = '<span class="animate-pulse">Starting...</span>';
++      
++      try {
++        const response = await fetch(`/api/issues/${issueId}/timer`, { method: 'POST' });
++        const data = await response.json();
++        
++        if (data.success) {
++          if (data.stopped_previous) {
++            alert(`El timer anterior del issue ${data.stopped_details.issueId.substring(0,8).toUpperCase()} se detuvo automáticamente y se registraron ${data.stopped_details.hours}h.`);
++          }
++          
++          const card = document.getElementById(issueId);
++          const currentStatus = card?.closest('.board-column')?.getAttribute('data-status');
++          
++          if (currentStatus !== 'in_progress') {
++             await fetch(`/api/issues/${issueId}/move`, {
++               method: 'PATCH',
++               headers: { 'Content-Type': 'application/json' },
++               body: JSON.stringify({ status: 'in_progress', position: 0, workspaceId })
++             });
++          }
++          window.location.reload();
++        } else {
++          alert('Error: ' + data.message);
++          btn.innerHTML = 'Start';
++        }
++      } catch (err) {
++        console.error(err);
++        btn.innerHTML = 'Start';
++      }
++    });
++  });
+ </script>
+diff --git i/src/lib/IssueService.ts w/src/lib/IssueService.ts
+index 3bb5523..1a5f411 100644
+--- i/src/lib/IssueService.ts
++++ w/src/lib/IssueService.ts
+@@ -12,6 +12,13 @@ export class ApiError extends Error {
+ }
+ 
+ export class IssueService {
++  /**
++   * Retrieves an issue by ID.
++   */
++  static async getById(issueId: string) {
++    return db.prepare('SELECT * FROM issues WHERE id = ?').get(issueId);
++  }
++
+   /**
+    * Updates an issue dynamically. Solves the N+1 problem.
+    */
+diff --git i/src/pages/api/issues/[id]/timer.ts w/src/pages/api/issues/[id]/timer.ts
+index fdba4fa..e1a6c08 100644
+--- i/src/pages/api/issues/[id]/timer.ts
++++ w/src/pages/api/issues/[id]/timer.ts
+@@ -113,12 +113,12 @@ export const POST: APIRoute = async ({ params, locals }) => {
+   }
+ 
+   // Finalize any other running timer
+-  finalizeActiveSession(user.id);
++  const stopped = finalizeActiveSession(user.id);
+ 
+   // Start new
+   db.prepare('INSERT INTO time_tracking_sessions (id, issue_id, user_id, started_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)').run(crypto.randomUUID(), issueId, user.id);
+   
+-  return new Response(JSON.stringify({ success: true }), { status: 200 });
++  return new Response(JSON.stringify({ success: true, stopped_previous: !!stopped, stopped_details: stopped }), { status: 200 });
+ };
+ 
+ export const DELETE: APIRoute = async ({ params, locals }) => {
+diff --git i/src/pages/w/[sys_tag]/board.astro w/src/pages/w/[sys_tag]/board.astro
+index 72066ff..dea5cc9 100644
+--- i/src/pages/w/[sys_tag]/board.astro
++++ w/src/pages/w/[sys_tag]/board.astro
+@@ -41,13 +41,14 @@ let issuesQuery = `
+          u1.username as reporter_username, 
+          u1.avatar_url as reporter_avatar,
+          u2.username as assignee_username,
+-         u2.avatar_url as assignee_avatar
++         u2.avatar_url as assignee_avatar,
++         (SELECT started_at FROM time_tracking_sessions WHERE issue_id = i.id AND user_id = ?) as active_session_start
+   FROM issues i
+   LEFT JOIN users u1 ON i.reporter_id = u1.id
+   LEFT JOIN users u2 ON i.assignee_id = u2.id
+   WHERE i.workspace_id = ?
+ `;
+-const queryParams: any[] = [workspace.id];
++const queryParams: any[] = [user.id, workspace.id];
+ 
+ if (activeSprintId) {
+   issuesQuery += ' AND i.sprint_id = ?';
