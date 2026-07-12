@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { IssueService, ApiError } from '../../../lib/IssueService';
+import { IssueService, ApiError } from '../../../../lib/IssueService';
 
 const handleApiError = (err: any) => {
   if (err instanceof ApiError) {

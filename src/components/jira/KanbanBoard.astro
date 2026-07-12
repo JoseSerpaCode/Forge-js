@@ -310,7 +310,7 @@ function getInitials(username: string) {
             alert(`El timer anterior del issue ${data.stopped_details.issueId.substring(0,8).toUpperCase()} se detuvo automáticamente y se registraron ${data.stopped_details.hours}h.`);
           }
           
-          const card = document.getElementById(issueId);
+          const card = btn.closest('.issue-card');
           const currentStatus = card?.closest('.board-column')?.getAttribute('data-status');
           
           if (currentStatus !== 'in_progress') {
