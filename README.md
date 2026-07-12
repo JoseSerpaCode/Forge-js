@@ -4,6 +4,7 @@
 
 ![Version](https://img.shields.io/github/package-json/v/JoseSerpaCode/Forge-js?color=blue&label=version)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
+[![CI](https://github.com/JoseSerpaCode/Forge-js/actions/workflows/ci.yml/badge.svg)](https://github.com/JoseSerpaCode/Forge-js/actions/workflows/ci.yml)
 
 ![Orion's Forge Screenshot](./public/screenshot.png)
 
@@ -16,6 +17,12 @@
 - **Sistema de Notificaciones:** Centro de notificaciones en tiempo real en la UI.
 - **Soporte Multi-Idioma (i18n):** Traducción automática y completa de la UI (Inglés/Español) basada en las preferencias del navegador.
 - **Seguridad Empresarial:** Prevención estricta contra SQLi, XSS, SSRF y Path Traversal en subida de archivos (10MB max, whitelist MIME).
+
+## 🗺 Roadmap / Project Status
+
+Forge JS is currently in the **Orion's Forge** stage of development. We are actively adding core functionality and refining the user experience.
+
+For a detailed list of changes and upcoming features, please refer to our [CHANGELOG.md](./CHANGELOG.md).
 
 ## 🛠 Stack Técnico
 
