@@ -7,7 +7,6 @@
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![License][license-shield]][license-url]
-[![CI][ci-shield]][ci-url]
 
 <a href="https://github.com/JoseSerpaCode/Forge-js" target="_blank" rel="noopener noreferrer">
   <img width="350px" src="./public/screenshot.png" alt="Forge OS Screenshot" style="border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);" />
