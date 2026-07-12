@@ -1,0 +1,133 @@
+---
+// src/components/dashboard/TaskTable.astro
+const { tasks, sys_tag } = Astro.props;
+
+const statusColor: Record<string, string> = {
+  todo: 'bg-forge-muted/20 text-forge-muted',
+  'in-progress': 'bg-blue-500/20 text-blue-400',
+  'in_progress': 'bg-blue-500/20 text-blue-400',
+  review: 'bg-yellow-500/20 text-yellow-400',
+  done: 'bg-green-500/20 text-green-400',
+  blocked: 'bg-red-500/20 text-red-400',
+};
+---
+
+<div class="task-table-container overflow-x-auto w-full">
+  <table class="w-full text-left text-sm whitespace-nowrap table-auto border-collapse">
+    <thead>
+      <tr class="border-b border-forge-border text-forge-muted text-xs uppercase bg-forge-panel">
+        <th class="p-3 font-bold cursor-pointer hover:text-forge-text transition-colors sort-header select-none" data-sort="type">Type <span class="sort-indicator inline-block w-3 text-forge-secondary"></span></th>
+        <th class="p-3 font-bold cursor-pointer hover:text-forge-text transition-colors sort-header select-none" data-sort="name">Name <span class="sort-indicator inline-block w-3 text-forge-secondary"></span></th>
+        <th class="p-3 font-bold cursor-pointer hover:text-forge-text transition-colors sort-header select-none" data-sort="date">Due Date <span class="sort-indicator inline-block w-3 text-forge-secondary"></span></th>
+        <th class="p-3 font-bold cursor-pointer hover:text-forge-text transition-colors sort-header select-none" data-sort="status">Status <span class="sort-indicator inline-block w-3 text-forge-secondary"></span></th>
+      </tr>
+    </thead>
+    <tbody class="task-table-body divide-y divide-forge-border">
+      {(!tasks || tasks.length === 0) ? (
+        <tr>
+          <td colspan="4" class="p-8 text-center text-forge-muted">
+            <p>No tasks found.</p>
+          </td>
+        </tr>
+      ) : (
+        tasks.map((task: any) => {
+          const href = task.sys_tag 
+            ? `/w/${task.sys_tag}/board?sprint=${task.sprint_id || 'backlog'}&issue=${task.id}` 
+            : `/w/${sys_tag}/board?sprint=${task.sprint_id || 'backlog'}&issue=${task.id}`;
+          
+          return (
+            <tr class="hover:bg-forge-bg transition-colors group cursor-pointer task-row" data-href={href} data-type={task.type || 'task'} data-name={task.title} data-date={task.due_date || ''} data-status={task.status}>
+              <td class="p-3 w-20">
+                <span class="text-[10px] uppercase font-bold px-2 py-1 rounded border border-forge-border bg-forge-bg text-forge-muted shadow-sm">{task.type || 'task'}</span>
+              </td>
+              <td class="p-3 max-w-[250px] truncate">
+                <a href={href} class="text-forge-text font-medium group-hover:text-forge-secondary transition-colors block truncate" onclick="event.stopPropagation();">
+                  {task.title}
+                </a>
+                <div class="text-[10px] text-forge-muted font-mono truncate mt-0.5">
+                  {(task.sys_tag || sys_tag) ? `${task.sys_tag || sys_tag}-${task.id.substring(0,8)}` : task.id.substring(0,8)}
+                </div>
+              </td>
+              <td class="p-3 text-xs text-forge-muted whitespace-nowrap">
+                {task.due_date ? new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-'}
+              </td>
+              <td class="p-3 w-28">
+                <span class={`text-[10px] font-bold px-2 py-1 rounded-full whitespace-nowrap ${statusColor[task.status] || 'bg-forge-muted/20 text-forge-muted'}`}>
+                  {task.status?.replace(/_/g, ' ') || 'todo'}
+                </span>
+              </td>
+            </tr>
+          );
+        })
+      )}
+    </tbody>
+  </table>
+</div>
+
+<script>
+  document.querySelectorAll('.task-table-container').forEach(container => {
+    const headers = container.querySelectorAll('.sort-header');
+    const tbody = container.querySelector('.task-table-body');
+    if (!tbody) return;
+
+    let currentSort = { column: '', asc: true };
+
+    headers.forEach(header => {
+      header.addEventListener('click', () => {
+        const column = header.getAttribute('data-sort');
+        if (!column) return;
+
+        if (currentSort.column === column) {
+          currentSort.asc = !currentSort.asc;
+        } else {
+          currentSort.column = column;
+          currentSort.asc = true;
+        }
+
+        // Update indicators
+        headers.forEach(h => {
+          const indicator = h.querySelector('.sort-indicator');
+          if (indicator) indicator.textContent = '';
+        });
+        const currentIndicator = header.querySelector('.sort-indicator');
+        if (currentIndicator) {
+          currentIndicator.textContent = currentSort.asc ? '▲' : '▼';
+        }
+
+        const rows = Array.from(tbody.querySelectorAll('.task-row'));
+        
+        rows.sort((a, b) => {
+          let valA = a.getAttribute(`data-${column}`) || '';
+          let valB = b.getAttribute(`data-${column}`) || '';
+
+          if (column === 'date') {
+            const timeA = valA ? new Date(valA).getTime() : 0;
+            const timeB = valB ? new Date(valB).getTime() : 0;
+            return currentSort.asc ? timeA - timeB : timeB - timeA;
+          }
+
+          valA = valA.toLowerCase();
+          valB = valB.toLowerCase();
+
+          if (valA < valB) return currentSort.asc ? -1 : 1;
+          if (valA > valB) return currentSort.asc ? 1 : -1;
+          return 0;
+        });
+
+        rows.forEach(row => tbody.appendChild(row));
+      });
+    });
+
+    // Row click navigation
+    const rows = container.querySelectorAll('.task-row');
+    rows.forEach(row => {
+      row.addEventListener('click', (e) => {
+        // @ts-ignore
+        if (e.target.tagName.toLowerCase() !== 'a') {
+          const href = row.getAttribute('data-href');
+          if (href) window.location.href = href;
+        }
+      });
+    });
+  });
+</script>

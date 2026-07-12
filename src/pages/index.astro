@@ -3,6 +3,7 @@
 import MainLayout from '../layouts/MainLayout.astro';
 import db from '../lib/db';
 import { useTranslations } from '../i18n/ui';
+import TaskTable from '../components/dashboard/TaskTable.astro';
 
 const user = Astro.locals.user!;
 const lang = Astro.locals.lang || 'en';
@@ -31,7 +32,7 @@ for (const ws of workspaces) {
 
 // 2. Obtener Tareas Asignadas a mí (My Tasks)
 const myTasks = db.prepare(`
-  SELECT i.id, i.title, i.status, i.sprint_id, w.sys_tag, w.icon as workspace_icon, w.name as workspace_name
+  SELECT i.id, i.title, i.status, i.sprint_id, i.type, i.due_date, w.sys_tag, w.icon as workspace_icon, w.name as workspace_name
   FROM issues i 
   JOIN workspaces w ON i.workspace_id = w.id 
   WHERE i.assignee_id = ? AND i.status != 'done'
@@ -120,38 +121,7 @@ const myTasks = db.prepare(`
     <section>
       <h2 class="text-xl font-bold text-forge-text mb-4 border-b border-forge-border pb-2">{t('hub.pending_tasks')}</h2>
       <div class="bg-forge-panel border border-forge-border rounded-lg overflow-hidden">
-        <ul class="divide-y divide-forge-border">
-          {myTasks.map(task => (
-            <li>
-              <a href={`/w/${task.sys_tag}/board?sprint=${task.sprint_id || 'backlog'}&issue=${task.id}`} class="p-4 hover:bg-forge-bg transition-colors flex items-center justify-between group block">
-                <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 rounded shrink-0 flex items-center justify-center bg-forge-bg border border-forge-border font-bold text-forge-secondary overflow-hidden" title={task.workspace_name}>
-                    {task.workspace_icon && task.workspace_icon.startsWith('data:image') ? (
-                      <img src={task.workspace_icon} alt={task.sys_tag} class="w-full h-full object-cover" />
-                    ) : (
-                      <span class="text-[10px] uppercase">{task.sys_tag.substring(0, 2)}</span>
-                    )}
-                  </div>
-                  <div>
-                    <p class="text-forge-text font-medium group-hover:text-forge-secondary transition-colors">{task.title}</p>
-                    <p class="text-xs text-forge-muted font-mono mt-1">{task.sys_tag}-{task.id.substring(0,8)}</p>
-                  </div>
-                </div>
-                <span class="text-[10px] font-mono px-2 py-1 rounded bg-forge-bg border border-forge-border text-forge-muted uppercase">{task.status}</span>
-              </a>
-            </li>
-          ))}
-          {myTasks.length === 0 && (
-            <li class="p-16 flex flex-col items-center justify-center text-center relative overflow-hidden">
-               <!-- Constellation nodes -->
-              <div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(circle at 10% 50%, var(--forge-muted) 2px, transparent 2px), radial-gradient(circle at 50% 20%, var(--forge-muted) 2px, transparent 2px), radial-gradient(circle at 90% 60%, var(--forge-muted) 2px, transparent 2px); background-size: 100% 100%;">
-                <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M 10 50 L 50 20 L 90 60" fill="none" stroke="currentColor" class="text-forge-muted" stroke-dasharray="2,2" stroke-width="0.5" /></svg>
-              </div>
-              <p class="text-forge-muted font-mono mb-2 relative z-10">CLEAR_SKIES</p>
-              <p class="text-forge-text relative z-10">{t('hub.no_tasks')}</p>
-            </li>
-          )}
-        </ul>
+        <TaskTable tasks={myTasks} />
       </div>
     </section>
   </div>

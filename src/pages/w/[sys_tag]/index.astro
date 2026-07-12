@@ -10,6 +10,7 @@ const user = Astro.locals.user!;
 if (!user) return Astro.redirect('/login');
 
 import { useTranslations } from '../../../i18n/ui';
+import TaskTable from '../../../components/dashboard/TaskTable.astro';
 const lang = Astro.locals.lang || 'en';
 const t = useTranslations(lang);
 
@@ -127,7 +128,7 @@ const maxWorkload = Math.max(...members.map((m: any) => m.openCount), 1);
 
 // ──── My tasks in this workspace ────
 const myTasks = db.prepare(`
-  SELECT i.id, i.title, i.status, i.priority, i.sprint_id 
+  SELECT i.id, i.title, i.status, i.priority, i.sprint_id, i.type, i.due_date 
   FROM issues i
   WHERE i.workspace_id = ? ${activeSprint ? "AND i.sprint_id = '" + activeSprint.id + "'" : ''} AND i.status != 'done' AND i.assignee_id = ?
   ORDER BY 
@@ -348,74 +349,6 @@ const priorityColor: Record<string, string> = {
         )}
       </div>
 
-      <!-- My Tasks -->
-      <div class="bg-forge-panel border border-forge-border rounded-xl p-5">
-        <h2 class="font-bold text-forge-text flex items-center gap-2 mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          {t('dashboard.my_tasks')}
-        </h2>
-        {myTasks.length === 0 ? (
-          <div class="text-sm text-forge-muted text-center py-6">
-            <p>{t('dashboard.no_tasks')}</p>
-            <p class="text-xs mt-1">{t('dashboard.all_caught_up')}</p>
-          </div>
-        ) : (
-          <div class="space-y-2">
-            {myTasks.map(task => (
-              <a 
-                href={`/w/${sys_tag}/board?sprint=${task.sprint_id || 'backlog'}&issue=${task.id}`}
-                class="flex items-center gap-2 p-2 rounded hover:bg-forge-bg transition-colors group"
-              >
-                <span class={`text-[10px] font-bold shrink-0 ${priorityColor[task.priority] || 'text-forge-muted'}`} title={task.priority}>
-                  {task.priority === 'highest' ? '▲▲' : task.priority === 'high' ? '▲' : task.priority === 'low' ? '▼' : task.priority === 'lowest' ? '▼▼' : '●'}
-                </span>
-                <span class="text-xs text-forge-text group-hover:text-forge-secondary transition-colors flex-1 truncate">{task.title}</span>
-                <span class={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${statusColor[task.status] || 'bg-forge-muted/20 text-forge-muted'}`}>
-                  {task.status.replace('_', ' ').replace('-', ' ')}
-                </span>
-              </a>
-            ))}
-            <a href={`/w/${sys_tag}/board`} class="block text-center text-xs text-forge-muted hover:text-forge-secondary transition-colors pt-2 border-t border-forge-border mt-2">
-              {t('dashboard.view_all_board')}
-            </a>
-          </div>
-        )}
-      </div>
-    </div>
-
-    <!-- Bottom Row: Activity + Workload -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      
-      <!-- Recent Activity -->
-      <div class="bg-forge-panel border border-forge-border rounded-xl p-5">
-        <h2 class="font-bold text-forge-text flex items-center gap-2 mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          {t('dashboard.recent_activity')}
-        </h2>
-        {recentActivity.length === 0 ? (
-          <div class="text-sm text-forge-muted text-center py-6">{t('dashboard.no_activity')}</div>
-        ) : (
-          <div class="space-y-3">
-            {recentActivity.map(act => (
-              <div class="flex items-start gap-2.5">
-                <img 
-                  src={act.avatar_url || '/default-avatar.svg'} 
-                  class="w-6 h-6 rounded-full border border-forge-border bg-forge-bg shrink-0 mt-0.5" 
-                  alt={act.username}
-                />
-                <div class="flex-1 min-w-0">
-                  <p class="text-xs text-forge-text">
-                    <span class="font-bold">{act.username || 'System'}</span>
-                    {' '}<span class="text-forge-muted">{actionLabel(act.action)}</span>
-                  </p>
-                  <p class="text-[10px] text-forge-muted mt-0.5">{formatRelative(act.timestamp)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
       <!-- Workload -->
       <div class="bg-forge-panel border border-forge-border rounded-xl p-5">
         <h2 class="font-bold text-forge-text flex items-center gap-2 mb-4">
@@ -445,6 +378,56 @@ const priorityColor: Record<string, string> = {
                     }`}
                     style={`width: ${maxWorkload > 0 ? (member.openCount / maxWorkload) * 100 : 0}%`}
                   ></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+
+    <!-- Bottom Row: My Tasks + Activity -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- My Tasks -->
+      <div class="lg:col-span-2 bg-forge-panel border border-forge-border rounded-xl p-5 overflow-hidden flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-bold text-forge-text flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            {t('dashboard.my_tasks')}
+          </h2>
+          <a href={`/w/${sys_tag}/board`} class="text-xs text-forge-muted hover:text-forge-secondary transition-colors">
+            {t('dashboard.view_all_board')}
+          </a>
+        </div>
+        <div class="flex-1 overflow-x-auto -mx-5 px-5">
+          <TaskTable tasks={myTasks} sys_tag={sys_tag} />
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="bg-forge-panel border border-forge-border rounded-xl p-5">
+        <h2 class="font-bold text-forge-text flex items-center gap-2 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          {t('dashboard.recent_activity')}
+        </h2>
+        {recentActivity.length === 0 ? (
+          <div class="text-sm text-forge-muted text-center py-6">{t('dashboard.no_activity')}</div>
+        ) : (
+          <div class="space-y-3">
+            {recentActivity.map(act => (
+              <div class="flex items-start gap-2.5">
+                <img 
+                  src={act.avatar_url || '/default-avatar.svg'} 
+                  class="w-6 h-6 rounded-full border border-forge-border bg-forge-bg shrink-0 mt-0.5" 
+                  alt={act.username}
+                />
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs text-forge-text">
+                    <span class="font-bold">{act.username || 'System'}</span>
+                    {' '}<span class="text-forge-muted">{actionLabel(act.action)}</span>
+                  </p>
+                  <p class="text-[10px] text-forge-muted mt-0.5">{formatRelative(act.timestamp)}</p>
                 </div>
               </div>
             ))}
