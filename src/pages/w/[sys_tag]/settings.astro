@@ -38,6 +38,27 @@ const automations = db.prepare(`
   FROM automations
   WHERE workspace_id = ?
 `).all(ws.id) as any[];
+
+const pendingInvites = db.prepare(`
+  SELECT n.id, n.link_url, n.created_at, u.username, u.avatar_url
+  FROM notifications n
+  JOIN users u ON n.user_id = u.id
+  WHERE n.type = 'invite'
+`).all() as any[];
+
+const wsPendingInvites = pendingInvites.filter(n => {
+  try {
+    const payload = JSON.parse(n.link_url);
+    return payload.ws_id === ws.id;
+  } catch { return false; }
+}).map(n => {
+  let role = 'viewer';
+  try {
+    const payload = JSON.parse(n.link_url);
+    role = payload.role || 'viewer';
+  } catch {}
+  return { ...n, role };
+});
 ---
 
 <MainLayout title={`Settings - ${ws.name}`} workspaceId={ws.id}>
@@ -114,13 +135,32 @@ const automations = db.prepare(`
               <select class="role-select bg-forge-panel border border-forge-border text-forge-muted text-sm rounded p-1 focus:outline-none focus:border-forge-secondary" data-user-id={m.id} data-ws-id={ws.id}>
                 <option value="owner" selected={m.ws_role === 'owner'}>{t('ws.settings.role_owner')}</option>
                 <option value="editor" selected={m.ws_role === 'editor'}>{t('ws.settings.role_editor')}</option>
-                <option value="commenter" selected={m.ws_role === 'commenter'}>{t('ws.settings.role_commenter') || 'Commenter'}</option>
+
                 <option value="viewer" selected={m.ws_role === 'viewer'}>{t('ws.settings.role_viewer')}</option>
               </select>
               
               <button class="btn-remove-member text-forge-muted hover:text-red-400 p-1 rounded hover:bg-red-500/10 transition-colors" data-user-id={m.id} data-ws-id={ws.id} title="Remove User">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
               </button>
+            </div>
+          </div>
+        ))}
+        {wsPendingInvites.map((m: any) => (
+          <div class="flex items-center justify-between bg-forge-bg/50 border border-forge-border border-dashed p-3 rounded opacity-75">
+            <div class="flex items-center gap-3">
+              {m.avatar_url ? (
+                <img src={m.avatar_url} class="w-8 h-8 rounded-full border border-forge-border object-cover" alt={`${m.username} avatar`} loading="lazy" />
+              ) : (
+                <div class="w-8 h-8 rounded-full border border-forge-border flex items-center justify-center text-forge-secondary shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+              )}
+              <span class="font-bold text-forge-text">{m.username}</span>
+              <span class="text-[10px] font-bold text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded uppercase tracking-wider">Pending</span>
+            </div>
+            
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-forge-muted capitalize">{m.role}</span>
             </div>
           </div>
         ))}
@@ -178,19 +218,38 @@ const automations = db.prepare(`
         <span class="text-xs text-forge-muted font-mono bg-forge-bg px-2 py-1 rounded">{t('ws.settings.last_events')}</span>
       </div>
       
-      <div class="overflow-y-auto pr-2 -mr-2 space-y-2 flex-1">
+      <div class="mb-4 flex flex-wrap gap-3 p-3 bg-forge-bg rounded-lg border border-forge-border">
+        <input type="text" id="audit-filter-user" placeholder="Filter by user..." class="bg-forge-panel border border-forge-border rounded p-1.5 text-sm text-forge-text focus:outline-none focus:border-forge-secondary" />
+        <select id="audit-filter-action" class="bg-forge-panel border border-forge-border rounded p-1.5 text-sm text-forge-text focus:outline-none focus:border-forge-secondary">
+          <option value="">All Actions</option>
+          {[...new Set(auditLogs.map((l: any) => l.action))].map(action => (
+            <option value={action}>{action}</option>
+          ))}
+        </select>
+        <input type="date" id="audit-filter-date" class="bg-forge-panel border border-forge-border rounded p-1.5 text-sm text-forge-text focus:outline-none focus:border-forge-secondary" />
+      </div>
+
+      <div class="overflow-y-auto pr-2 -mr-2 space-y-2 flex-1" id="audit-logs-container">
         {auditLogs.map((log: any) => {
           const date = new Date(log.timestamp.replace(' ', 'T') + 'Z').toLocaleString();
           let detailsText = '';
           try {
             const details = JSON.parse(log.details_json);
             if (details) {
-              detailsText = Object.entries(details).map(([k, v]) => `${k}: ${v}`).join(', ');
+              if (details.oldStatus && details.newStatus) {
+                detailsText = `Moved ${log.entity_type} from ${details.oldStatus} to ${details.newStatus}`;
+              } else if (log.action === 'issue.created') {
+                detailsText = `Created a new ${log.entity_type}`;
+              } else if (log.action === 'issue.deleted') {
+                detailsText = `Deleted ${log.entity_type}`;
+              } else {
+                detailsText = Object.entries(details).map(([k, v]) => `${k}: ${v}`).join(', ');
+              }
             }
           } catch (e) {}
           
           return (
-            <div class="flex flex-col p-3 rounded-lg bg-forge-bg/50 border border-forge-border/40 hover:border-forge-secondary/30 transition-colors">
+            <div class="audit-log-item flex flex-col p-3 rounded-lg bg-forge-bg/50 border border-forge-border/40 hover:border-forge-secondary/30 transition-colors" data-user={log.username?.toLowerCase() || 'system'} data-action={log.action} data-date={date.split(',')[0]}>
               <div class="flex justify-between items-start mb-2">
                 <div class="flex items-center gap-2">
                   <div class="w-6 h-6 rounded-full overflow-hidden bg-forge-panel shrink-0 border border-forge-border">
@@ -203,7 +262,7 @@ const automations = db.prepare(`
               </div>
               <div class="text-xs text-forge-text/80 pl-8">
                 <span class="font-bold text-forge-secondary">{log.entity_type}</span>: <span class="font-mono text-forge-muted">{log.entity_id.substring(0,8)}</span>
-                {detailsText && <p class="mt-1 font-mono text-[10px] text-forge-muted/70 truncate" title={detailsText}>{detailsText}</p>}
+                {detailsText && <p class="mt-1 font-mono text-sm text-forge-text" title={log.details_json}>{detailsText}</p>}
               </div>
             </div>
           );
@@ -220,12 +279,24 @@ const automations = db.prepare(`
     <div class="bg-red-500/5 border border-red-500/20 rounded-lg shadow-lg p-6">
       <h2 class="text-xl font-bold text-red-500 mb-2">{t('ws.settings.danger')}</h2>
       <p class="text-forge-muted text-sm mb-4">{t('ws.settings.danger_desc')}</p>
-      <button id="btn-delete-workspace" class="bg-red-500/10 text-red-500 border border-red-500/30 px-4 py-2 rounded font-bold hover:bg-red-500 hover:text-white transition-colors" data-ws-id={ws.id}>
+      <button id="btn-delete-workspace-prompt" class="bg-red-500/10 text-red-500 border border-red-500/30 px-4 py-2 rounded font-bold hover:bg-red-500 hover:text-white transition-colors" data-ws-id={ws.id}>
         {t('ws.settings.delete')}
       </button>
     </div>
 
   </div>
+
+  <dialog id="delete-workspace-modal" class="bg-forge-panel border border-forge-border rounded-lg p-6 w-full max-w-[400px] text-forge-text shadow-xl backdrop:bg-black/50">
+    <h2 class="text-xl font-bold mb-4 text-red-500">Delete Workspace</h2>
+    <p class="mb-4 text-sm text-forge-muted">This action cannot be undone. Please type <span class="font-bold text-forge-text">{ws.name}</span> to confirm.</p>
+    <div class="mb-4">
+      <input type="text" id="delete-workspace-confirm-input" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:border-red-500 focus:outline-none" placeholder={ws.name}>
+    </div>
+    <div class="flex justify-end gap-3 mt-6">
+      <button type="button" class="px-4 py-2 text-forge-muted hover:text-forge-text" onclick="document.getElementById('delete-workspace-modal').close()">Cancel</button>
+      <button type="button" id="btn-delete-workspace" class="bg-red-500/50 text-white px-4 py-2 rounded font-bold cursor-not-allowed transition-colors" data-ws-id={ws.id} data-ws-name={ws.name} disabled>Delete Workspace</button>
+    </div>
+  </dialog>
 
   <dialog id="add-member-modal" class="bg-forge-panel border border-forge-border rounded-lg p-6 w-full max-w-[400px] text-forge-text shadow-xl backdrop:bg-black/50">
     <h2 class="text-xl font-bold mb-4">{t('ws.settings.modal_add_member')}</h2>
@@ -237,7 +308,7 @@ const automations = db.prepare(`
       <label class="block text-xs uppercase tracking-wider text-forge-muted mb-1">{t('ws.settings.modal_role')}</label>
       <select id="add-member-role" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:border-forge-secondary focus:outline-none">
         <option value="viewer">{t('ws.settings.role_viewer')}</option>
-        <option value="commenter">{t('ws.settings.role_commenter') || 'Commenter'}</option>
+
         <option value="editor">{t('ws.settings.role_editor')}</option>
         <option value="owner">{t('ws.settings.role_owner')}</option>
       </select>
@@ -384,6 +455,7 @@ const automations = db.prepare(`
   document.getElementById('btn-save-general')?.addEventListener('click', async (e) => {
     const wsIdAttr = e.currentTarget.getAttribute('data-ws-id');
     const name = document.getElementById('ws-name-input').value;
+    const sys_tag = document.getElementById('ws-tag-input').value;
     const description = ""; // Description field removed from UI
     
     let finalIcon = newIconUrl;
@@ -398,10 +470,10 @@ const automations = db.prepare(`
        }
     }
 
-    const res = await fetch(`/api/workspaces/${wsId}`, {
+    const res = await fetch(`/api/workspaces/${wsIdAttr}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, description, icon: finalIcon })
+      body: JSON.stringify({ name, sys_tag, description, icon: finalIcon })
     });
     
     if (res.ok) {
@@ -479,17 +551,61 @@ const automations = db.prepare(`
   });
 
   // Danger
-  document.getElementById('btn-delete-workspace')?.addEventListener('click', async (e) => {
-    const wsId = e.currentTarget.getAttribute('data-ws-id');
-    window.forgeConfirm('DANGER: Delete this workspace entirely?', async () => {
-      const res = await fetch(`/api/workspaces/${wsId}`, { method: 'DELETE' });
-      if (res.ok) {
-        window.location.href = '/';
-      } else {
-        window.showToast(await res.text(), true);
-      }
-    });
+  const deleteInput = document.getElementById('delete-workspace-confirm-input');
+  const deleteBtn = document.getElementById('btn-delete-workspace');
+  document.getElementById('btn-delete-workspace-prompt')?.addEventListener('click', () => {
+    document.getElementById('delete-workspace-modal').showModal();
   });
+  deleteInput?.addEventListener('input', (e) => {
+    if (e.target.value === deleteBtn.getAttribute('data-ws-name')) {
+      deleteBtn.disabled = false;
+      deleteBtn.classList.remove('bg-red-500/50', 'cursor-not-allowed');
+      deleteBtn.classList.add('bg-red-500', 'hover:bg-red-600');
+    } else {
+      deleteBtn.disabled = true;
+      deleteBtn.classList.add('bg-red-500/50', 'cursor-not-allowed');
+      deleteBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
+    }
+  });
+
+  deleteBtn?.addEventListener('click', async (e) => {
+    if (deleteBtn.disabled) return;
+    const wsId = e.currentTarget.getAttribute('data-ws-id');
+    const res = await fetch(`/api/workspaces/${wsId}`, { method: 'DELETE' });
+    if (res.ok) {
+      window.location.href = '/';
+    } else {
+      window.showToast(await res.text(), true);
+    }
+  });
+
+  // Audit Logs Filtering
+  function filterAuditLogs() {
+    const userFilter = document.getElementById('audit-filter-user').value.toLowerCase();
+    const actionFilter = document.getElementById('audit-filter-action').value;
+    const dateFilter = document.getElementById('audit-filter-date').value; // YYYY-MM-DD
+    
+    document.querySelectorAll('.audit-log-item').forEach(item => {
+      const user = item.getAttribute('data-user') || '';
+      const action = item.getAttribute('data-action') || '';
+      const dateStr = item.getAttribute('data-date') || ''; // "M/D/YYYY" or similar depending on toLocaleString()
+      
+      let show = true;
+      if (userFilter && !user.includes(userFilter)) show = false;
+      if (actionFilter && action !== actionFilter) show = false;
+      if (dateFilter) {
+        const d = new Date(dateFilter);
+        const logD = new Date(dateStr);
+        if (d.toDateString() !== logD.toDateString()) show = false;
+      }
+      
+      item.style.display = show ? 'flex' : 'none';
+    });
+  }
+  
+  document.getElementById('audit-filter-user')?.addEventListener('input', filterAuditLogs);
+  document.getElementById('audit-filter-action')?.addEventListener('change', filterAuditLogs);
+  document.getElementById('audit-filter-date')?.addEventListener('change', filterAuditLogs);
     // Automations
   document.getElementById('btn-add-automation')?.addEventListener('click', () => {
     document.getElementById('add-automation-modal').showModal();
