@@ -2,9 +2,12 @@ import type { APIRoute } from 'astro';
 import db from '../../../../../lib/db';
 import { checkWorkspaceAccess } from '../../../../../lib/guard';
 
-export const GET: APIRoute = async ({ params, locals }) => {
+export const GET: APIRoute = async ({ request, params, locals }) => {
   const user = locals.user!;
   const { sys_tag } = params;
+
+  const url = new URL(request.url);
+  const sprintId = url.searchParams.get('sprint_id');
 
   try {
     // 1. Server-side workspace resolution
@@ -19,13 +22,24 @@ export const GET: APIRoute = async ({ params, locals }) => {
     }
 
     // 3. 2D Distribution (Assignee x Status)
-    const distributionData = db.prepare(`
-      SELECT COALESCE(u.username, 'Unassigned') as assignee, i.status, COUNT(i.id) as count
-      FROM issues i
-      LEFT JOIN users u ON i.assignee_id = u.id
-      WHERE i.workspace_id = ?
-      GROUP BY i.assignee_id, i.status
-    `).all(workspace.id);
+    let distributionData;
+    if (sprintId) {
+      distributionData = db.prepare(`
+        SELECT COALESCE(u.username, 'Unassigned') as assignee, i.status, COUNT(i.id) as count
+        FROM issues i
+        LEFT JOIN users u ON i.assignee_id = u.id
+        WHERE i.workspace_id = ? AND i.sprint_id = ?
+        GROUP BY i.assignee_id, i.status
+      `).all(workspace.id, sprintId);
+    } else {
+      distributionData = db.prepare(`
+        SELECT COALESCE(u.username, 'Unassigned') as assignee, i.status, COUNT(i.id) as count
+        FROM issues i
+        LEFT JOIN users u ON i.assignee_id = u.id
+        WHERE i.workspace_id = ?
+        GROUP BY i.assignee_id, i.status
+      `).all(workspace.id);
+    }
 
     return new Response(JSON.stringify(distributionData), { 
       status: 200, 
