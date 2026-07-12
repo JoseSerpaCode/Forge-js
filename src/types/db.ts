@@ -25,7 +25,7 @@ export interface Workspace {
   created_at: string;
 }
 
-export type WorkspaceRole = 'owner' | 'editor' | 'commenter' | 'viewer';
+export type WorkspaceRole = 'owner' | 'editor' | 'viewer';
 
 export interface WorkspaceMember {
   workspace_id: string;

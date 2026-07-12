@@ -96,7 +96,7 @@ export const ui = {
     'ws.settings.invite': '+ Invite Member',
     'ws.settings.role_owner': 'Owner',
     'ws.settings.role_editor': 'Editor',
-    'ws.settings.role_commenter': 'Commenter',
+
     'ws.settings.role_viewer': 'Viewer',
     'ws.settings.automations': 'Automations Engine',
     'ws.settings.new_rule': '+ New Rule',
@@ -331,7 +331,7 @@ export const ui = {
     'ws.settings.invite': '+ Invitar Miembro',
     'ws.settings.role_owner': 'Dueño',
     'ws.settings.role_editor': 'Editor',
-    'ws.settings.role_commenter': 'Comentarista',
+
     'ws.settings.role_viewer': 'Lector',
     'ws.settings.automations': 'Motor de Automatizaciones',
     'ws.settings.new_rule': '+ Nueva Regla',
