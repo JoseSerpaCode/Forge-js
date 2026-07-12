@@ -40,7 +40,26 @@ test('Issues: Cross-workspace IDOR isolation', async ({ request, page }) => {
 
 
 
-  // --- SECOND CASE: USER E (VIEWER IN WORKSPACE C) ---
+  // --- SECOND CASE: USER D ATTEMPTS TO CREATE AN ISSUE IN WORKSPACE C ---
+  // Try to create an issue via POST using a valid sys_tag of a workspace they don't belong to
+  const resPost = await request.post(`/api/w/notion-ws-c/issues`, {
+    data: { 
+      type: 'task',
+      title: 'Malicious Issue by D',
+      description: 'Hacked creation',
+      status: 'todo',
+      story_points: 3,
+      assignee_id: null
+    },
+    headers: { 
+      'Cookie': `forge_session=${sessionCookie?.value}`,
+      'Origin': 'http://localhost:4322'
+    }
+  });
+  console.log('User D POST /api/w/notion-ws-c/issues status:', resPost.status());
+  expect(resPost.status()).toBe(404);
+
+  // --- THIRD CASE: USER E (VIEWER IN WORKSPACE C) ---
   await page.context().clearCookies();
   // Login as User E
   await page.goto('/login');

@@ -3,13 +3,13 @@ import { test, expect } from '@playwright/test';
 test('A1 bug: clicking New Rule button', async ({ page }) => {
   // Login
   await page.goto('/login');
-  await page.fill('input[type="text"]', 'sysadmin');
-  await page.fill('input[type="password"]', 'admin123');
+  await page.fill('input[name="username"]', 'jose');
+  await page.fill('input[name="password"]', '#juniorManda1924');
   await page.click('button[type="submit"]');
-  await page.waitForURL('http://localhost:4321/');
+  await page.waitForURL('**/');
 
   // Create a workspace first or go to an existing one
-  await page.goto('http://localhost:4321/w/SYS/settings');
+  await page.goto('/w/test-workspace/settings');
 
   // Listen to console errors
   const errors: string[] = [];
