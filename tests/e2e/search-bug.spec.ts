@@ -25,7 +25,7 @@ test('Search dropdown does not hide when clicking hint', async ({ page }) => {
   ]);
   
   console.log('Navigating to dashboard...');
-  await page.goto('/w/test-workspace');
+  await page.goto('/');
   
   // 3. Test the search bar
   await page.click('#global-search');

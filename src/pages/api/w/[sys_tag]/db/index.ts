@@ -1,11 +1,15 @@
 import type { APIRoute } from 'astro';
-import db from '../../../../../lib/db';
+import { orm } from '../../../../../lib/db/drizzle';
+import { dynamicDatabases, dynamicViews } from '../../../../../lib/db/schema';
+import { eq, desc } from 'drizzle-orm';
 import { checkWorkspaceAccess } from '../../../../../lib/guard';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
-export const GET: APIRoute = async ({ params, locals }) => {
-  const { sys_tag } = params;
-  const user = locals.user!;
+import db from '../../../../../lib/db';
+
+export const GET: APIRoute = async (context) => {
+  const { sys_tag } = context.params;
+  const user = context.locals.user!;
 
   const workspace = db.prepare('SELECT id FROM workspaces WHERE sys_tag = ?').get(sys_tag) as any;
   if (!workspace) return new Response('Workspace not found', { status: 404 });
@@ -16,19 +20,17 @@ export const GET: APIRoute = async ({ params, locals }) => {
     return new Response(access.error || 'Forbidden', { status: 403 });
   }
 
-  const databases = db.prepare(`
-    SELECT id, name, description, icon, created_at 
-    FROM dynamic_databases 
-    WHERE workspace_id = ?
-    ORDER BY created_at DESC
-  `).all(workspace.id);
+  const databases = orm.select().from(dynamicDatabases)
+    .where(eq(dynamicDatabases.workspaceId, workspace.id))
+    .orderBy(desc(dynamicDatabases.createdAt))
+    .all();
 
   return new Response(JSON.stringify(databases), { status: 200, headers: { 'Content-Type': 'application/json' } });
 };
 
-export const POST: APIRoute = async ({ params, request, locals }) => {
-  const { sys_tag } = params;
-  const user = locals.user!;
+export const POST: APIRoute = async (context) => {
+  const { sys_tag } = context.params;
+  const user = context.locals.user!;
 
   const workspace = db.prepare('SELECT id FROM workspaces WHERE sys_tag = ?').get(sys_tag) as any;
   if (!workspace) return new Response('Workspace not found', { status: 404 });
@@ -40,7 +42,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
   }
 
   try {
-    const body = await request.json();
+    const body = await context.request.json();
     let { name, description, icon, columns } = body;
     
     if (!name) return new Response('Name is required', { status: 400 });
@@ -48,7 +50,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
     // Validate and generate safe IDs for columns
     const safeColumns = (columns || []).map((col: any) => {
       // The server ALWAYS generates the col_id. The client cannot force it.
-      const colId = `col_${crypto.randomBytes(4).toString('hex')}`;
+      const colId = `col_${crypto.randomUUID().split('-')[0]}`;
       return {
         id: colId,
         name: col.name.trim(),
@@ -60,20 +62,23 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
     const schemaJson = JSON.stringify({ columns: safeColumns });
     const dbId = crypto.randomUUID();
 
-    db.prepare(`
-      INSERT INTO dynamic_databases (id, workspace_id, name, sys_tag, description, icon, schema_json)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(dbId, workspace.id, name, sys_tag, description || null, icon || null, schemaJson);
+    orm.insert(dynamicDatabases).values({
+      id: dbId,
+      workspaceId: workspace.id,
+      name,
+      sysTag: sys_tag as string,
+      description: description || null,
+      icon: icon || null,
+      schemaJson
+    }).run();
 
-    // Create a default Table view
-    db.prepare(`
-      INSERT INTO dynamic_views (id, database_id, name, type, visible_columns_json)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(crypto.randomUUID(), dbId, 'Default Table', 'table', JSON.stringify(safeColumns.map((c: any) => c.id)));
-
-    db.prepare('INSERT INTO audit_logs (id, workspace_id, user_id, action, entity_type, entity_id) VALUES (?, ?, ?, ?, ?, ?)').run(
-      crypto.randomUUID(), workspace.id, user.id, 'DATABASE_CREATED', 'dynamic_database', dbId
-    );
+    orm.insert(dynamicViews).values({
+      id: crypto.randomUUID(),
+      databaseId: dbId,
+      name: 'Default Table',
+      type: 'table',
+      visibleColumnsJson: JSON.stringify(safeColumns.map((c: any) => c.id))
+    }).run();
 
     return new Response(JSON.stringify({ id: dbId }), { status: 201, headers: { 'Content-Type': 'application/json' } });
   } catch (err: any) {

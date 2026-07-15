@@ -2,8 +2,8 @@ import Database from 'better-sqlite3';
 import path from 'path';
 
 // Asegurar que la base de datos se guarda en la raíz del proyecto
-const dbPath = process.env.NODE_ENV === 'test' ? path.join(process.cwd(), 'forge_test.db') : 
-path.join(process.cwd(), 'forge.db');
+const dbPath = process.env.DATABASE_URL ? process.env.DATABASE_URL : (process.env.NODE_ENV === 'test' ? path.join(process.cwd(), 'forge_test.db') : 
+path.join(process.cwd(), 'forge.db'));
 const db = new Database(dbPath, { verbose: process.env.NODE_ENV === 'development' ? console.log : undefined });
 
 // Optimizaciones Críticas Obligatorias
