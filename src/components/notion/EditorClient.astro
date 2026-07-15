@@ -320,4 +320,10 @@ function formatDate(dateStr: string | undefined) {
   .ce-block--selected .ce-block__content {
     background-color: color-mix(in srgb, var(--forge-primary) 15%, transparent) !important;
   }
+
+  /* Force override Editor.js dynamically injected selection styles */
+  .editor-js-container *::selection {
+    background-color: var(--forge-primary) !important;
+    color: #ffffff !important;
+  }
 </style>
