@@ -45,12 +45,13 @@
 
 Forge OS no es solo un gestor de tareas, es un ecosistema de colaboración completo:
 
-* **Aislamiento Multi-Tenant Total**: Espacios de trabajo (Workspaces) separados lógicamente, garantizando que un usuario no pueda acceder ni modificar datos de otros inquilinos (protección IDOR exhaustiva).
-* **Tablero Kanban Avanzado**: Gestión de Sprints, Issues y Épicas. Incluye rediseño de flujos, drag & drop persistente, y control de tiempo (Time Tracking) server-side con auto-pausa.
-* **Base de Conocimientos (Knowledge Base)**: Sistema de documentación estilo Notion, con enlaces bidireccionales, organización jerárquica y versionado automático.
-* **Bases de Datos Dinámicas (Fase 1)**: Crea tablas dinámicas tipo Airtable directamente desde la interfaz, adaptando el software a tus necesidades de negocio.
-* **Sistema de Notificaciones Global**: TTL de invitaciones y alertas en tiempo real a nivel de UI para interacciones importantes.
-* **Localización Intuitiva (i18n)**: Soporte nativo para Inglés y Español (detectado automáticamente).
+- **Aislamiento Multi-Tenant Total**: Espacios de trabajo (Workspaces) separados lógicamente, garantizando que un usuario no pueda acceder ni modificar datos de otros inquilinos (protección IDOR exhaustiva).
+- **Tablero Kanban Avanzado**: Gestión de Sprints, Issues y Épicas. Incluye rediseño de flujos, drag & drop persistente, y control de tiempo (Time Tracking) server-side con auto-pausa.
+- **Base de Conocimientos (Knowledge Base)**: Sistema de documentación estilo Notion, con enlaces bidireccionales, organización jerárquica y versionado automático.
+- **Bases de Datos Dinámicas (Fase 1)**: Crea tablas dinámicas tipo Airtable directamente desde la interfaz, adaptando el software a tus necesidades de negocio.
+- **Command Palette & Atajos Globales**: Navegación veloz mediante atajos de teclado (como `/` para buscar globalmente o `C` para crear tareas) sin depender del mouse.
+- **Sistema de Notificaciones Global**: TTL de invitaciones y alertas en tiempo real a nivel de UI para interacciones importantes.
+- **Localización Intuitiva (i18n)**: Soporte nativo para Inglés y Español (detectado automáticamente).
 
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>
 

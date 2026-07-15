@@ -186,7 +186,7 @@ function formatDate(dateStr: string | undefined) {
         if (statusSpan) statusSpan.textContent = 'Saved';
       } catch (e: any) {
         if (statusSpan) statusSpan.textContent = 'Error saving';
-        alert('Error: ' + e.message);
+        window.showToast?.('Error: ' + e.message, true);
       }
     }
 
@@ -276,7 +276,7 @@ function formatDate(dateStr: string | undefined) {
           window.location.href = `/w/${sysTagMatch[1]}/p`;
         }
       } else {
-        alert('Error deleting page: ' + await res.text());
+        window.showToast?.('Error deleting page: ' + await res.text(), true);
       }
     });
 
