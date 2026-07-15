@@ -194,15 +194,6 @@ Astro.response.headers.set('Pragma', 'no-cache');
           }
         }
 
-        // '/' to quickly open command palette
-        if (e.key === '/') {
-          e.preventDefault();
-          const palette = document.getElementById('cmd-k-palette');
-          if (palette && !palette.hasAttribute('open')) {
-            palette.showModal();
-            document.getElementById('cmd-k-input').focus();
-          }
-        }
 
         // 'c' to quickly create issue if button exists
         if (e.key === 'c' || e.key === 'C') {
