@@ -252,7 +252,7 @@ if (activeSprintId) {
 
     saveSprintBtn?.addEventListener('click', async () => {
       const name = (document.getElementById('sprint-name') as HTMLInputElement).value;
-      if (!name) return window.showToast?.('Name required', true);
+      if (!name) return window.showToast?.('Name required', 'error');
       
       const res = await fetch('/api/sprints', {
         method: 'POST',
@@ -285,7 +285,7 @@ if (activeSprintId) {
       const dueDate = (document.getElementById('new-issue-due-date') as HTMLInputElement).value;
       const description = (document.getElementById('new-issue-desc') as HTMLTextAreaElement).value;
 
-      if (!title) return window.showToast?.('Title is required', true);
+      if (!title) return window.showToast?.('Title is required', 'error');
 
       saveIssueBtn.textContent = 'Creating...';
       const sysTag = window.location.pathname.split('/')[2];
@@ -305,7 +305,7 @@ if (activeSprintId) {
       if (res.ok) {
         window.location.reload();
       } else {
-        window.showToast?.(await res.text(), true);
+        window.showToast?.(await res.text(), 'error');
       }
     });
 

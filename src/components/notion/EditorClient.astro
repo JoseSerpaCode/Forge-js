@@ -318,7 +318,10 @@ function formatDate(dateStr: string | undefined) {
     padding-bottom: 100px !important;
   }
   .ce-block--selected .ce-block__content {
+    background-color: color-mix(in srgb, var(--forge-primary) 15%, transparent) !important;
+  }
+  .editor-js-container ::selection {
     background-color: var(--forge-primary) !important;
-    opacity: 0.2;
+    color: #ffffff !important;
   }
 </style>
