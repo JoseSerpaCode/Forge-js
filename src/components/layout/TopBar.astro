@@ -20,13 +20,13 @@ const sysTag = match ? match[1] : null;
 const workspaceDashboardUrl = sysTag ? `/w/${sysTag}` : '#';
 const currentUrl = Astro.url.pathname;
 ---
-<header class="h-14 bg-forge-panel/80 backdrop-blur-md border-b border-forge-border flex items-center justify-between px-6 shrink-0 relative z-40">
+<header class="h-16 bg-forge-panel/80 backdrop-blur-xl border-b border-forge-border/60 flex items-center justify-between px-6 shrink-0 relative z-40 shadow-[0_4px_30px_rgba(0,0,0,0.05)]">
   {user?.is_sysadmin === 1 && (
     <div class="absolute top-0 left-0 w-full h-1 bg-forge-primary animate-pulse shadow-[0_0_10px_var(--forge-accent-primary)]" title="Privacy Mode (Sysadmin Bypass Active)"></div>
   )}
   <div class="flex items-center gap-4 flex-1">
     <div class="flex items-center gap-2">
-      <button id="btn-toggle-sidebar" class="text-forge-muted hover:text-forge-secondary transition-colors p-1.5 rounded hover:bg-forge-bg" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+      <button id="sidebar-toggle" class="text-forge-muted hover:text-forge-secondary transition-all p-2 rounded-lg hover:bg-forge-secondary/10 hover:scale-105 active:scale-95" title="Toggle Sidebar (Cmd+B)" aria-label="Toggle Sidebar">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
       </button>
       
@@ -51,7 +51,7 @@ const currentUrl = Astro.url.pathname;
       <span class="absolute right-2 top-1.5 text-[10px] text-forge-muted font-mono border border-forge-border rounded px-1.5 py-0.5 bg-forge-panel" aria-hidden="true">/</span>
       
       <!-- Search Dropdown -->
-      <div id="search-dropdown" class="hidden absolute top-full left-0 mt-2 w-full bg-forge-bg/95 backdrop-blur-md border border-forge-border rounded-lg shadow-2xl overflow-hidden">
+      <div id="search-dropdown" class="hidden absolute top-full left-0 mt-3 w-full bg-forge-panel/95 backdrop-blur-xl border border-forge-border/50 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-50">
         <ul id="search-results" class="max-h-64 overflow-y-auto p-2">
            <!-- Dynamic results -->
         </ul>
@@ -77,7 +77,7 @@ const currentUrl = Astro.url.pathname;
         <span id="notif-badge" class={`${unreadCount > 0 ? '' : 'hidden'} absolute top-1 right-1 w-2 h-2 bg-forge-primary rounded-full animate-ping`}></span>
       </button>
       
-      <div id="notif-dropdown" class="hidden absolute right-0 top-full mt-2 w-80 bg-forge-panel border border-forge-border rounded-lg shadow-2xl z-50 overflow-hidden">
+      <div id="notif-dropdown" class="hidden absolute right-0 top-full mt-3 w-80 bg-forge-panel/95 backdrop-blur-xl border border-forge-border/50 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 overflow-hidden">
         <div class="p-3 border-b border-forge-border flex justify-between items-center bg-forge-bg/50">
           <span class="text-xs font-bold uppercase tracking-widest text-forge-text">{t('sidebar.notifications') || 'Notifications'}</span>
           <button id="btn-mark-all-read" class="text-[10px] text-forge-secondary hover:underline">{t('notifications.markAllRead') || 'Mark all as read'}</button>
@@ -118,6 +118,10 @@ const currentUrl = Astro.url.pathname;
     <div class="w-1/3 border-r border-forge-border bg-forge-bg">
       <div class="flex flex-col">
         <button class="about-tab-btn active p-3 text-left text-sm border-l-2 border-forge-secondary bg-forge-panel font-bold" data-target="about-guide">{t('about.guide') || 'User Guide'}</button>
+        <button class="about-tab-btn p-3 text-left text-sm text-forge-muted border-l-2 border-transparent hover:bg-forge-panel/50 hover:text-forge-text transition-colors flex items-center justify-between" data-target="about-shortcuts">
+          {t('about.shortcuts') || 'Keyboard Shortcuts'}
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><path d="M4 7h16"></path><path d="M4 11h16"></path><path d="M4 15h16"></path><path d="M4 19h16"></path></svg>
+        </button>
         <button class="about-tab-btn p-3 text-left text-sm text-forge-muted border-l-2 border-transparent hover:bg-forge-panel/50 hover:text-forge-text transition-colors" data-target="about-docs">{t('about.docs') || 'Documentation'}</button>
         <button class="about-tab-btn p-3 text-left text-sm text-forge-muted border-l-2 border-transparent hover:bg-forge-panel/50 hover:text-forge-text transition-colors" data-target="about-legal">{t('about.legal') || 'License & Legal'}</button>
       </div>
@@ -137,6 +141,33 @@ const currentUrl = Astro.url.pathname;
         <div>
           <h3 class="font-bold text-forge-secondary mb-1 text-sm">{t('about.db.title') || 'Dynamic Databases'}</h3>
           <p class="text-xs text-forge-muted">{t('about.db.desc')}</p>
+        </div>
+      </div>
+      
+      <!-- Atajos de Teclado -->
+      <div id="about-shortcuts" class="about-tab-content hidden space-y-4">
+        <p class="text-xs text-forge-muted mb-4">{t('about.shortcuts.desc') || 'Master Forge OS using these quick keyboard shortcuts.'}</p>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between p-2.5 bg-forge-bg rounded-lg border border-forge-border hover:border-forge-secondary/30 transition-colors">
+            <span class="text-xs font-bold text-forge-text">Command Palette / Search</span>
+            <div class="flex gap-1.5 items-center">
+              <kbd class="px-2 py-1 bg-forge-panel border border-forge-border shadow-sm rounded text-[10px] text-forge-muted font-mono font-bold">/</kbd> 
+              <span class="text-[10px] text-forge-muted">or</span> 
+              <kbd class="px-2 py-1 bg-forge-panel border border-forge-border shadow-sm rounded text-[10px] text-forge-muted font-mono font-bold">⌘/Ctrl + K</kbd>
+            </div>
+          </div>
+          <div class="flex items-center justify-between p-2.5 bg-forge-bg rounded-lg border border-forge-border hover:border-forge-secondary/30 transition-colors">
+            <span class="text-xs font-bold text-forge-text">Create New Issue</span>
+            <kbd class="px-2 py-1 bg-forge-panel border border-forge-border shadow-sm rounded text-[10px] text-forge-muted font-mono font-bold">C</kbd>
+          </div>
+          <div class="flex items-center justify-between p-2.5 bg-forge-bg rounded-lg border border-forge-border hover:border-forge-secondary/30 transition-colors">
+            <span class="text-xs font-bold text-forge-text">Toggle Sidebar</span>
+            <kbd class="px-2 py-1 bg-forge-panel border border-forge-border shadow-sm rounded text-[10px] text-forge-muted font-mono font-bold">⌘/Ctrl + B</kbd>
+          </div>
+          <div class="flex items-center justify-between p-2.5 bg-forge-bg rounded-lg border border-forge-border hover:border-forge-secondary/30 transition-colors">
+            <span class="text-xs font-bold text-forge-text">Close Modal / Palette</span>
+            <kbd class="px-2 py-1 bg-forge-panel border border-forge-border shadow-sm rounded text-[10px] text-forge-muted font-mono font-bold">Esc</kbd>
+          </div>
         </div>
       </div>
       
@@ -537,7 +568,7 @@ const currentUrl = Astro.url.pathname;
   });
 
   // Sidebar Toggle
-  document.getElementById('btn-toggle-sidebar')?.addEventListener('click', (e) => {
+  document.getElementById('sidebar-toggle')?.addEventListener('click', (e) => {
     e.stopPropagation();
     const sidebar = document.getElementById('app-sidebar');
     const backdrop = document.getElementById('sidebar-backdrop');

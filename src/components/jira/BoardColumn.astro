@@ -6,17 +6,22 @@ interface Props {
 
 const { title, status } = Astro.props;
 ---
-<div class="board-column flex-1 flex flex-col bg-forge-bg border border-forge-border rounded-md overflow-hidden min-w-[280px]" data-status={status}>
-  <div class="bg-forge-panel border-b border-forge-border p-3 font-bold text-sm tracking-wide text-forge-text uppercase flex items-center justify-between">
-    {title}
-    <span class="text-xs bg-forge-bg px-2 py-0.5 rounded text-forge-muted font-mono border border-forge-border issue-count">0</span>
+<div class="board-column flex-1 flex flex-col bg-forge-bg/60 border border-forge-border/40 rounded-xl overflow-hidden min-w-[320px] shadow-sm relative group/boardcol" data-status={status}>
+  <!-- Subtle top accent line for column -->
+  <div class="h-1 w-full bg-gradient-to-r from-forge-secondary/10 via-forge-secondary/40 to-forge-secondary/10 opacity-0 group-hover/boardcol:opacity-100 transition-opacity"></div>
+  <div class="bg-forge-panel/70 backdrop-blur-sm border-b border-forge-border/40 p-4 font-bold text-[13px] tracking-wide text-forge-text uppercase flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="w-2 h-2 rounded-full bg-forge-secondary shadow-[0_0_8px_var(--forge-accent-secondary)]"></div>
+      {title}
+    </div>
+    <span class="text-xs bg-forge-bg/80 px-2 py-0.5 rounded-md text-forge-muted font-mono border border-forge-border/50 issue-count shadow-inner">0</span>
   </div>
-  <div class="flex-1 p-2 space-y-2 overflow-y-auto min-h-[150px] transition-colors column-content relative group/col">
-    <div class="empty-state absolute inset-2 flex-col items-center justify-center text-center p-4 border border-dashed border-forge-border/30 rounded bg-forge-panel/20 pointer-events-none hidden group-has-[.issue-card]/col:hidden">
+  <div class="flex-1 p-3 space-y-3 overflow-y-auto min-h-[200px] transition-colors column-content relative group/col">
+    <div class="empty-state absolute inset-3 flex-col items-center justify-center text-center p-4 border-2 border-dashed border-forge-border/30 rounded-xl bg-forge-panel/20 pointer-events-none hidden group-has-[.issue-card]/col:hidden">
       <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 50% 50%, var(--forge-muted) 2px, transparent 2px); background-size: 100% 100%;">
         <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M 20 20 L 80 80 M 80 20 L 20 80" fill="none" stroke="currentColor" class="text-forge-muted" stroke-dasharray="2,2" stroke-width="0.5" /></svg>
       </div>
-      <p class="text-forge-muted font-mono text-[10px] relative z-10 opacity-60">VOID</p>
+      <p class="text-forge-muted font-mono text-[10px] relative z-10 opacity-60">DROP ZONE</p>
     </div>
     <slot />
   </div>
