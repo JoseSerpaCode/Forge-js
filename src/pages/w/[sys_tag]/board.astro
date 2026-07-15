@@ -38,6 +38,7 @@ const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace
 
 let issuesQuery = `
   SELECT i.*, 
+         i.logged_hours,
          u1.username as reporter_username, 
          u1.avatar_url as reporter_avatar,
          u2.username as assignee_username,
@@ -133,8 +134,10 @@ if (activeSprintId) {
         )}
         
         {access.role !== 'viewer' && (
-          <button id="btn-new-issue" class="bg-forge-secondary text-forge-bg font-bold px-3 py-1.5 rounded-md text-sm hover:opacity-90 transition-opacity ml-2">
+          <button id="btn-new-issue" title="Create New Issue (Press C)" class="bg-forge-secondary text-forge-bg font-bold px-3 py-1.5 rounded-md text-sm hover:opacity-90 transition-opacity ml-2 relative group">
             + Issue
+            <!-- Tooltip -->
+            <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-forge-panel border border-forge-border text-forge-muted text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-lg">New Issue <kbd class="font-mono bg-forge-bg border border-forge-border px-1 py-0.5 rounded text-[8px] ml-1">C</kbd></span>
           </button>
         )}
       </div>

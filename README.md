@@ -25,35 +25,36 @@
 </div>
 
 <details>
-<summary><b>📖 Tabla de contenidos</b></summary>
+<summary><b>Tabla de contenidos</b></summary>
 
 - [Forge OS • Enterprise Multi-Tenant Workspace](#forge-os--enterprise-multi-tenant-workspace)
-- [✨ Características principales](#-características-principales)
-- [🚀 Para empezar](#-para-empezar)
+- [Características principales](#características-principales)
+- [Para empezar](#para-empezar)
   - [Prerequisitos](#prerequisitos)
   - [Instalación y Configuración](#instalación-y-configuración)
-- [🛠️ Stack Tecnológico](#️-stack-tecnológico)
-- [🛡️ Seguridad y Buenas Prácticas](#️-seguridad-y-buenas-prácticas)
-- [🤝 Contribuir al proyecto](#-contribuir-al-proyecto)
+- [Stack Tecnológico](#stack-tecnológico)
+- [Seguridad y Buenas Prácticas](#seguridad-y-buenas-prácticas)
+- [Roadmap](#roadmap)
+- [Contribuir al proyecto](#contribuir-al-proyecto)
 
 </details>
 
 <br/>
 
-## ✨ Características principales
+## Características principales
 
 Forge OS no es solo un gestor de tareas, es un ecosistema de colaboración completo:
 
-* 🛡️ **Aislamiento Multi-Tenant Total**: Espacios de trabajo (Workspaces) separados lógicamente, garantizando que un usuario no pueda acceder ni modificar datos de otros inquilinos (protección IDOR exhaustiva).
-* 📋 **Tablero Kanban Avanzado**: Gestión de Sprints, Issues y Épicas. Incluye rediseño de flujos, *drag & drop* persistente, y control de tiempo (Time Tracking) server-side con auto-pausa.
-* 📚 **Base de Conocimientos (Knowledge Base)**: Sistema de documentación estilo Notion, con enlaces bidireccionales, organización jerárquica y versionado automático.
-* 📊 **Bases de Datos Dinámicas (Fase 1)**: Crea tablas dinámicas tipo Airtable directamente desde la interfaz, adaptando el software a tus necesidades de negocio.
-* 🔔 **Sistema de Notificaciones Global**: TTL de invitaciones y alertas en tiempo real a nivel de UI para interacciones importantes.
-* 🌍 **Localización Intuitiva (i18n)**: Soporte nativo para Inglés y Español (detectado automáticamente).
+* **Aislamiento Multi-Tenant Total**: Espacios de trabajo (Workspaces) separados lógicamente, garantizando que un usuario no pueda acceder ni modificar datos de otros inquilinos (protección IDOR exhaustiva).
+* **Tablero Kanban Avanzado**: Gestión de Sprints, Issues y Épicas. Incluye rediseño de flujos, drag & drop persistente, y control de tiempo (Time Tracking) server-side con auto-pausa.
+* **Base de Conocimientos (Knowledge Base)**: Sistema de documentación estilo Notion, con enlaces bidireccionales, organización jerárquica y versionado automático.
+* **Bases de Datos Dinámicas (Fase 1)**: Crea tablas dinámicas tipo Airtable directamente desde la interfaz, adaptando el software a tus necesidades de negocio.
+* **Sistema de Notificaciones Global**: TTL de invitaciones y alertas en tiempo real a nivel de UI para interacciones importantes.
+* **Localización Intuitiva (i18n)**: Soporte nativo para Inglés y Español (detectado automáticamente).
 
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>
 
-## 🚀 Para empezar
+## Para empezar
 
 ### Prerequisitos
 
@@ -101,18 +102,18 @@ Te recomendamos encarecidamente utilizar **Node.js (v22+)** para una máxima com
 
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>
 
-## 🛠️ Stack Tecnológico
+## Stack Tecnológico
 
 [![Astro][astro-badge]][astro-url] [![TypeScript][typescript-badge]][typescript-url] [![Node.js][node-badge]][node-url] [![SQLite][sqlite-badge]][sqlite-url] [![Playwright][playwright-badge]][playwright-url]
 
-- **Frontend**: Astro + Vanilla JS + Vanilla CSS (Enfoque en alta velocidad y cero JavaScript innecesario).
-- **Backend**: Astro SSR (Node.js Adapter) + Middlewares empresariales.
-- **Base de datos**: SQLite utilizando `better-sqlite3` para I/O ultrarrápido y sincronización síncrona.
-- **Testing**: Playwright para pruebas End-to-End, Vitest para pruebas unitarias.
+- **Frontend**: Astro + Vanilla JS + Vanilla CSS (Enfoque en alta velocidad, sin Virtual DOM y cero JavaScript innecesario para los clientes).
+- **Backend**: Astro SSR (Node.js Adapter) actuando como servidor monolítico con Middlewares empresariales.
+- **Base de datos**: SQLite utilizando `better-sqlite3` para I/O ultrarrápido y sincronización síncrona en memoria/disco.
+- **Testing**: Playwright para pruebas End-to-End exhaustivas, Vitest para pruebas unitarias.
 
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>
 
-## 🛡️ Seguridad y Buenas Prácticas
+## Seguridad y Buenas Prácticas
 
 Forge OS cuenta con auditorías de seguridad incorporadas y Middlewares estrictos:
 - **Protección RBAC**: Roles de acceso (Owner, Admin, Editor, Viewer).
@@ -121,7 +122,19 @@ Forge OS cuenta con auditorías de seguridad incorporadas y Middlewares estricto
 
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>
 
-## 🤝 Contribuir al proyecto
+## Roadmap
+
+Actualmente Forge OS está en un ciclo de desarrollo activo. Aquí está nuestra hoja de ruta principal:
+
+- [x] **Módulo de Identidad y Workspaces**: Sistema de login y aislamiento multi-tenant.
+- [x] **Base de Conocimientos (Notion-like)**: Sistema de documentos, parseo seguro Markdown y enlaces bidireccionales.
+- [x] **Kanban & Sprints (Bloque 4)**: Tablero drag&drop, métricas avanzadas (Velocity, Distribution, Precision), control de tiempo (Time Tracking) preciso.
+- [ ] **Bases de Datos Dinámicas (Fase 1)**: Creación de tablas dinámicas tipo Airtable para flexibilizar la gestión de datos.
+- [ ] **Dashboard General**: Panel central para visualizar el resumen de todos los Workspaces y notificaciones globales.
+
+<p align="right">(<a href="#readme-top">volver arriba</a>)</p>
+
+## Contribuir al proyecto
 
 ¡Forge OS está abierto a mejoras y extensiones! Las contribuciones son lo que hacen a la comunidad _open source_ un lugar increíble. Toda contribución será **muy apreciada**.
 
