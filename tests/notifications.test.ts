@@ -5,11 +5,11 @@ import { NotificationService } from '../src/lib/NotificationService';
 
 describe('Notification Service API Tests', () => {
   let userId: string;
-  let workspaceId: string;
+
 
   beforeAll(async () => {
     userId = crypto.randomUUID();
-    workspaceId = crypto.randomUUID();
+
     
     // Configurar usuario de prueba con notificaciones habilitadas
     db.prepare(`
@@ -29,7 +29,7 @@ describe('Notification Service API Tests', () => {
     const count = NotificationService.getUnreadCount(userId);
     expect(count).toBeGreaterThan(0);
     
-    const notifs = NotificationService.getNotifications(userId);
+    const notifs = NotificationService.getNotifications(userId) as any[];
     expect(notifs.length).toBeGreaterThan(0);
     expect(notifs[0].title).toBe('Test Title');
     expect(notifs[0].message).toBe('Test Message');

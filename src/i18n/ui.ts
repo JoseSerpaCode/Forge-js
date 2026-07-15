@@ -200,6 +200,7 @@ export const ui = {
     '404.back': 'Return to Hub',
 
     // Dashboard
+    'dashboard.workspace_overview': 'Workspace Overview',
     'dashboard.time': 'Time',
     'dashboard.logged': 'logged',
     'dashboard.no_estimate': 'no estimate',
@@ -484,6 +485,7 @@ export const ui = {
     '404.back': 'Volver al Hub',
 
     // Dashboard
+    'dashboard.workspace_overview': 'Resumen del Espacio',
     'dashboard.time': 'Tiempo',
     'dashboard.logged': 'registradas',
     'dashboard.no_estimate': 'sin estimar',
