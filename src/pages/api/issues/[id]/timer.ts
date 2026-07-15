@@ -51,12 +51,7 @@ function processSession(active: any, customMessage?: string) {
       INSERT INTO work_logs (id, issue_id, user_id, hours_spent, description, logged_at)
       VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `).run(logId, active.issue_id, active.user_id, hours, customMessage || 'Session auto-logged');
-    
-    db.prepare(`
-      UPDATE issues SET 
-        logged_hours = (SELECT COALESCE(SUM(hours_spent), 0) FROM work_logs WHERE issue_id = ?)
-      WHERE id = ?
-    `).run(active.issue_id, active.issue_id);
+
     
     db.prepare('DELETE FROM time_tracking_sessions WHERE id = ?').run(active.id);
   })();

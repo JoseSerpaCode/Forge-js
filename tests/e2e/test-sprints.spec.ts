@@ -77,7 +77,8 @@ test.describe('Sprint Organizer & Isolation', () => {
     await expect(page).toHaveURL(new RegExp(`\\?sprint=`));
     
     // Switch back to backlog to find an issue
-    await page.selectOption('#sprint-selector', 'backlog');
+    await page.locator('#sprint-selector').selectOption('backlog');
+    await page.waitForURL(url => !url.searchParams.has('sprint'));
     await expect(page).not.toHaveURL(new RegExp(`\\?sprint=`));
 
     // 4. Open an issue and move it to the new sprint

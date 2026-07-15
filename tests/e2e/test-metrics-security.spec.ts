@@ -1,8 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 
 test.describe('Metrics API Security', () => {
-  let outsiderContext;
-  let outsiderPage;
+  let outsiderContext: BrowserContext;
+  let outsiderPage: Page;
   
   test.beforeAll(async ({ browser }) => {
     // Create an outsider user

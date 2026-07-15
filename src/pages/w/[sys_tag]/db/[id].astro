@@ -16,22 +16,28 @@ const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspace.id, 'vi
 if (!access.granted) return new Response('Access Denied', { status: 403 });
 const canEdit = access.role !== 'viewer';
 
-const database = db.prepare('SELECT * FROM dynamic_databases WHERE id = ? AND workspace_id = ?').get(id, workspace.id) as any;
+import { orm } from '../../../../lib/db/drizzle';
+import { dynamicDatabases, dynamicEntries, dynamicViews } from '../../../../lib/db/schema';
+import { eq, and, desc } from 'drizzle-orm';
+
+const database = orm.select().from(dynamicDatabases)
+  .where(and(eq(dynamicDatabases.id, id as string), eq(dynamicDatabases.workspaceId, workspace.id)))
+  .get() as any;
 if (!database) return Astro.redirect('/404');
 
-const schema = JSON.parse(database.schema_json);
+const schema = JSON.parse(database.schemaJson);
 const columns = schema.columns || [];
 
 // Fetch entries for table
-const entries = db.prepare(`
-  SELECT id, payload_json, created_at
-  FROM dynamic_entries
-  WHERE database_id = ?
-  ORDER BY created_at DESC
-  LIMIT 500
-`).all(database.id) as any[];
+const entries = orm.select().from(dynamicEntries)
+  .where(eq(dynamicEntries.databaseId, database.id))
+  .orderBy(desc(dynamicEntries.createdAt))
+  .limit(500)
+  .all() as any[];
 
-const view = db.prepare('SELECT * FROM dynamic_views WHERE database_id = ? LIMIT 1').get(database.id) as any;
+const view = orm.select().from(dynamicViews)
+  .where(eq(dynamicViews.databaseId, database.id))
+  .get() as any;
 let visibleColumns = columns.map((c: any) => c.id);
 if (view && view.visible_columns_json) {
   try { visibleColumns = JSON.parse(view.visible_columns_json); } catch(e){}
@@ -98,7 +104,7 @@ if (view && view.visible_columns_json) {
               </tr>
             ) : (
               entries.map(entry => {
-                const payload = JSON.parse(entry.payload_json);
+                const payload = JSON.parse(entry.payloadJson);
                 return (
                   <tr class="hover:bg-forge-bg/30 transition-colors group">
                     {columns.filter((c: any) => visibleColumns.includes(c.id)).map((col: any) => {

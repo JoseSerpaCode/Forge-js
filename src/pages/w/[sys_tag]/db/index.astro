@@ -17,12 +17,14 @@ if (!workspace) return Astro.redirect('/404');
 const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspace.id, 'viewer');
 if (!access.granted) return new Response('Access Denied', { status: 403 });
 
-const databases = db.prepare(`
-  SELECT id, name, description, icon, schema_json, created_at 
-  FROM dynamic_databases 
-  WHERE workspace_id = ?
-  ORDER BY created_at DESC
-`).all(workspace.id) as any[];
+import { orm } from '../../../../lib/db/drizzle';
+import { dynamicDatabases } from '../../../../lib/db/schema';
+import { desc, eq } from 'drizzle-orm';
+
+const databases = orm.select().from(dynamicDatabases)
+  .where(eq(dynamicDatabases.workspaceId, workspace.id))
+  .orderBy(desc(dynamicDatabases.createdAt))
+  .all() as any[];
 
 const canEdit = access.role !== 'viewer';
 ---

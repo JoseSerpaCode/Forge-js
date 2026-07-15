@@ -121,7 +121,7 @@ function getInitials(username: string) {
         const pointsEl = document.getElementById('modal-issue-points') as HTMLInputElement;
         
         if (!modal || !titleEl || !idEl || !descEl || !pointsEl) {
-          alert('Missing elements: ' + [modal, titleEl, idEl, descEl, pointsEl].map(e => !!e).join(', '));
+          if (window.showToast) window.showToast('Missing modal elements', true);
           return;
         }
 
@@ -167,7 +167,7 @@ function getInitials(username: string) {
           document.getElementById('issue-details-backdrop')?.classList.remove('hidden');
         }
       } catch (err: any) {
-        alert('Error opening modal: ' + err.message + '\n' + err.stack);
+        if (window.showToast) window.showToast('Error opening modal: ' + err.message, true);
       }
     });
   });
@@ -337,7 +337,7 @@ function getInitials(username: string) {
         
         if (data.success) {
           if (data.stopped_previous) {
-            alert(`El timer anterior del issue ${data.stopped_details.issueId.substring(0,8).toUpperCase()} se detuvo automáticamente y se registraron ${data.stopped_details.hours}h.`);
+            if (window.showToast) window.showToast(`Auto-stopped previous timer on ${data.stopped_details.issueId.substring(0,8).toUpperCase()} and logged ${data.stopped_details.hours}h.`, false);
           }
           
           const card = btn.closest('.issue-card');
@@ -352,7 +352,7 @@ function getInitials(username: string) {
           }
           window.location.reload();
         } else {
-          alert('Error: ' + data.message);
+          if (window.showToast) window.showToast('Error: ' + data.message, true);
           btn.innerHTML = 'Start';
         }
       } catch (err) {
@@ -379,7 +379,7 @@ function getInitials(username: string) {
         if (data.success) {
           window.location.reload();
         } else {
-          alert('Error: ' + data.message);
+          if (window.showToast) window.showToast('Error: ' + data.message, true);
           btn.innerHTML = originalHtml;
         }
       } catch (err) {
