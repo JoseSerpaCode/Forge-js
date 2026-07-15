@@ -23,6 +23,13 @@ const requestedSprintId = Astro.url.searchParams.get('sprint');
 let activeSprintId = null;
 let currentSprintObj = null;
 
+if (!Astro.url.search.includes('sprint=')) {
+  const savedSprint = Astro.cookies.get(`forge_last_sprint_${workspace.id}`)?.value;
+  if (savedSprint && savedSprint !== 'backlog') {
+    return Astro.redirect(`/w/${sys_tag}/board?sprint=${savedSprint}`);
+  }
+}
+
 // IDOR Protection: Validate requested sprint belongs to this workspace
 if (requestedSprintId && requestedSprintId !== 'backlog') {
   const sprintCheck = db.prepare('SELECT workspace_id, status FROM sprints WHERE id = ?').get(requestedSprintId) as any;
@@ -218,20 +225,9 @@ if (activeSprintId) {
     const urlParams = new URLSearchParams(window.location.search);
     const sprintParam = urlParams.get('sprint');
     
-    // If no sprint param is present at all (not even empty), check localStorage
-    if (!window.location.search.includes('sprint=')) {
-      const savedSprint = localStorage.getItem(`forge_last_sprint_${workspaceId}`);
-      if (savedSprint && savedSprint !== 'backlog') {
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.set('sprint', savedSprint);
-        window.location.replace(newUrl.toString());
-      } else if (!savedSprint) {
-        localStorage.setItem(`forge_last_sprint_${workspaceId}`, 'backlog');
-      }
-    } else {
-      // Save current sprint to localStorage
-      localStorage.setItem(`forge_last_sprint_${workspaceId}`, sprintParam || 'backlog');
-    }
+    const sprintToSave = sprintParam || 'backlog';
+    localStorage.setItem(`forge_last_sprint_${workspaceId}`, sprintToSave);
+    document.cookie = `forge_last_sprint_${workspaceId}=${sprintToSave}; path=/; max-age=31536000`;
 
     // SPRINT SELECTOR
     const selector = document.getElementById('sprint-selector') as HTMLSelectElement;
