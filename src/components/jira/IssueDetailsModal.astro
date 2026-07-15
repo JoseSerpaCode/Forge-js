@@ -393,6 +393,10 @@ const t = useTranslations(lang);
 
   // Estimated Hours
   const estimatedEl = document.getElementById('modal-issue-estimated') as HTMLInputElement;
+  let oldEstimated = 0;
+  estimatedEl?.addEventListener('focus', () => {
+    oldEstimated = parseFloat(estimatedEl.value) || 0;
+  });
   estimatedEl?.addEventListener('change', async () => {
     const idEl = document.getElementById('modal-issue-id');
     const issueId = idEl?.getAttribute('data-full-id');
@@ -408,6 +412,10 @@ const t = useTranslations(lang);
       if (window.showToast) window.showToast('Estimated hours saved');
       // @ts-ignore
       window.refreshTimeTrackingUI(issueId);
+
+      const delta = estimated - oldEstimated;
+      window.dispatchEvent(new CustomEvent('estimate-changed', { detail: { estimateDelta: delta } }));
+      oldEstimated = estimated;
     } catch (e) {
       console.error('Failed to update estimated hours', e);
     }

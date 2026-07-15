@@ -200,6 +200,9 @@ export const ui = {
     '404.back': 'Return to Hub',
 
     // Dashboard
+    'dashboard.time': 'Time',
+    'dashboard.logged': 'logged',
+    'dashboard.no_estimate': 'no estimate',
     'dashboard.open_board': 'Open Board',
     'dashboard.knowledge_base': 'Knowledge Base',
     'dashboard.active_sprint': 'Active Sprint',
@@ -481,6 +484,9 @@ export const ui = {
     '404.back': 'Volver al Hub',
 
     // Dashboard
+    'dashboard.time': 'Tiempo',
+    'dashboard.logged': 'registradas',
+    'dashboard.no_estimate': 'sin estimar',
     'dashboard.open_board': 'Abrir Tablero',
     'dashboard.knowledge_base': 'Base de Conocimiento',
     'dashboard.active_sprint': 'Sprint Activo',
