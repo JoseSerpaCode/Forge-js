@@ -299,7 +299,7 @@ function formatDate(dateStr: string | undefined) {
   }
 
   .cdx-marker {
-    background-color: var(--forge-primary) !important;
+    background-color: var(--forge-accent-primary) !important;
     color: #fff !important;
     padding: 0.1rem 0.2rem !important;
     border-radius: 3px !important;
@@ -318,12 +318,24 @@ function formatDate(dateStr: string | undefined) {
     padding-bottom: 100px !important;
   }
   .ce-block--selected .ce-block__content {
-    background-color: color-mix(in srgb, var(--forge-primary) 15%, transparent) !important;
+    background-color: color-mix(in srgb, var(--forge-accent-primary) 15%, transparent) !important;
   }
 
   /* Force override Editor.js dynamically injected selection styles */
+  .editor-js-container ::selection {
+    background-color: var(--forge-accent-primary) !important;
+    color: #ffffff !important;
+  }
   .editor-js-container *::selection {
-    background-color: var(--forge-primary) !important;
+    background-color: var(--forge-accent-primary) !important;
+    color: #ffffff !important;
+  }
+  .ce-block__content ::selection {
+    background-color: var(--forge-accent-primary) !important;
+    color: #ffffff !important;
+  }
+  .cdx-block ::selection {
+    background-color: var(--forge-accent-primary) !important;
     color: #ffffff !important;
   }
 </style>
