@@ -116,6 +116,14 @@ function formatDate(dateStr: string | undefined) {
   import InlineCode from '@editorjs/inline-code';
   // @ts-ignore
   import Undo from 'editorjs-undo';
+  // @ts-ignore
+  import Underline from '@editorjs/underline';
+  import Table from '@editorjs/table';
+  import Delimiter from '@editorjs/delimiter';
+  import Warning from '@editorjs/warning';
+  import CodeTool from '@editorjs/code';
+  // @ts-ignore
+  import DragDrop from 'editorjs-drag-drop';
 
   const editorDiv = document.getElementById('page-editor');
   const titleInput = document.getElementById('editor-title') as HTMLInputElement;
@@ -165,6 +173,23 @@ function formatDate(dateStr: string | undefined) {
         },
         inlineCode: {
           class: InlineCode,
+        },
+        underline: {
+          class: Underline,
+        },
+        table: {
+          class: Table,
+          inlineToolbar: true,
+        },
+        delimiter: {
+          class: Delimiter,
+        },
+        warning: {
+          class: Warning,
+          inlineToolbar: true,
+        },
+        code: {
+          class: CodeTool,
         }
       },
       onChange: () => {
@@ -172,6 +197,7 @@ function formatDate(dateStr: string | undefined) {
       },
       onReady: () => {
         new Undo({ editor });
+        new DragDrop(editor);
       }
     });
 
