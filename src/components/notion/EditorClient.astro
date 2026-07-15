@@ -91,7 +91,7 @@ function formatDate(dateStr: string | undefined) {
     <!-- Editor.js Container -->
     <div 
       id="page-editor"
-      class="flex-1 text-forge-text outline-none prose dark:prose-invert max-w-none relative editor-js-container"
+      class="flex-1 text-forge-text outline-none prose dark:prose-invert max-w-none relative editor-js-container selection:bg-forge-primary selection:text-white"
       data-page-id={pageId}
       data-initial-content={initialContent}
       data-can-edit={canEdit.toString()}
@@ -319,9 +319,5 @@ function formatDate(dateStr: string | undefined) {
   }
   .ce-block--selected .ce-block__content {
     background-color: color-mix(in srgb, var(--forge-primary) 15%, transparent) !important;
-  }
-  .editor-js-container ::selection {
-    background-color: var(--forge-primary) !important;
-    color: #ffffff !important;
   }
 </style>
