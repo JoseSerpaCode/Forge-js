@@ -143,6 +143,47 @@ export const ui = {
     'hub.no_workspaces': 'You are not assigned to any workspaces. Create one to begin.',
     'hub.no_tasks': 'No pending tasks. Forge a new issue to begin.',
 
+    // KB Index
+    'kb.empty_title': 'No pages yet.',
+    'kb.empty_desc': 'No pages found in this workspace.',
+    'kb.empty_cta': 'Click "New Page" in the sidebar to create one.',
+
+    // Metrics
+    'metrics.title': 'Dashboard & Metrics',
+    'metrics.desc': 'Analyze team performance and workload',
+    'metrics.global_hist': 'Global (Historical)',
+    'metrics.workload_dist': 'Workload Distribution',
+    'metrics.scope_hist': 'Scope: Historical Total',
+    'metrics.todo': 'TODO',
+    'metrics.in_progress': 'IN PROGRESS',
+    'metrics.done': 'DONE',
+    'metrics.sprint_burndown': 'Sprint Burndown (Snapshot)',
+    'metrics.scope_sprint': 'Scope: Requires Sprint',
+    'metrics.select_sprint': 'Select a specific sprint above to view',
+    'metrics.velocity_trend': 'Velocity Trend',
+    'metrics.scope_5sprints': 'Scope: Historical (Last 5 Sprints)',
+    'metrics.not_enough_sprints': 'Not enough completed sprints',
+    'metrics.estimation_precision': 'Estimation Precision',
+    'metrics.estimated_h': 'Estimated (h)',
+    'metrics.logged_h': 'Logged (h)',
+
+    // DB Index
+    'db.title': 'Databases & Tables',
+    'db.subtitle': 'Create structured tables to manage CRMs, inventories, or trackers directly inside your workspace. Think of it as your own integrated spreadsheet or Notion table.',
+    'db.columns': 'COLUMNS',
+
+    // Dashboard / Hub common table headers
+    'table.type': 'TYPE',
+    'table.name': 'NAME',
+    'table.due_date': 'DUE DATE',
+    'table.status': 'STATUS',
+
+    // Statuses
+    'status.todo': 'todo',
+    'status.in_progress': 'in progress',
+    'status.in_review': 'in review',
+    'status.done': 'done',
+
     // Auth & Misc
     'auth.authorized': 'AUTHORIZED PERSONNEL ONLY',
     'auth.new_personnel': 'NEW PERSONNEL REGISTRATION',
@@ -377,6 +418,47 @@ export const ui = {
     'hub.pending_tasks': 'Mis Tareas Pendientes',
     'hub.no_workspaces': 'No estás asignado a ningún workspace. Crea uno para empezar.',
     'hub.no_tasks': 'No tienes tareas pendientes. Forja un nuevo ticket para comenzar.',
+
+    // KB Index
+    'kb.empty_title': 'Aún no hay páginas.',
+    'kb.empty_desc': 'No se encontraron páginas en este workspace.',
+    'kb.empty_cta': 'Haz clic en "Nueva Página" en la barra lateral para crear una.',
+
+    // Metrics
+    'metrics.title': 'Dashboard & Métricas',
+    'metrics.desc': 'Analiza el rendimiento y la carga de trabajo del equipo',
+    'metrics.global_hist': 'Global (Histórico)',
+    'metrics.workload_dist': 'Distribución de Trabajo',
+    'metrics.scope_hist': 'Alcance: Total Histórico',
+    'metrics.todo': 'POR HACER',
+    'metrics.in_progress': 'EN PROGRESO',
+    'metrics.done': 'HECHO',
+    'metrics.sprint_burndown': 'Burndown del Sprint (Instantánea)',
+    'metrics.scope_sprint': 'Alcance: Requiere un Sprint',
+    'metrics.select_sprint': 'Selecciona un sprint específico arriba para ver',
+    'metrics.velocity_trend': 'Tendencia de Velocidad',
+    'metrics.scope_5sprints': 'Alcance: Histórico (Últimos 5 Sprints)',
+    'metrics.not_enough_sprints': 'No hay suficientes sprints completados',
+    'metrics.estimation_precision': 'Precisión de Estimación',
+    'metrics.estimated_h': 'Estimado (h)',
+    'metrics.logged_h': 'Registrado (h)',
+
+    // DB Index
+    'db.title': 'Bases de Datos & Tablas',
+    'db.subtitle': 'Crea tablas estructuradas para gestionar CRMs, inventarios o rastreadores directamente en tu workspace. Piensa en ello como tu propia hoja de cálculo o tabla de Notion integrada.',
+    'db.columns': 'COLUMNAS',
+
+    // Dashboard / Hub common table headers
+    'table.type': 'TIPO',
+    'table.name': 'NOMBRE',
+    'table.due_date': 'FECHA LÍMITE',
+    'table.status': 'ESTADO',
+
+    // Statuses
+    'status.todo': 'por hacer',
+    'status.in_progress': 'en progreso',
+    'status.in_review': 'en revisión',
+    'status.done': 'hecho',
 
     // Auth & Misc
     'auth.authorized': 'SÓLO PERSONAL AUTORIZADO',
