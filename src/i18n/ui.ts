@@ -179,6 +179,9 @@ export const ui = {
     'table.due_date': 'DUE DATE',
     'table.status': 'STATUS',
 
+    // Modals
+    'modal.due_date': 'Due Date',
+
     // Statuses
     'status.todo': 'todo',
     'status.in_progress': 'in progress',
@@ -463,6 +466,9 @@ export const ui = {
     'table.name': 'NOMBRE',
     'table.due_date': 'FECHA LÍMITE',
     'table.status': 'ESTADO',
+
+    // Modals
+    'modal.due_date': 'Fecha Límite',
 
     // Statuses
     'status.todo': 'por hacer',

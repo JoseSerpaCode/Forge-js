@@ -277,9 +277,9 @@ const currentUrl = Astro.url.pathname;
       active.closest('[contenteditable="true"]')
     );
     
-    if (e.key === '/' && document.activeElement !== searchInput && !isEditable) {
+    if (e.key === '/' && document.activeElement !== globalSearch && !isEditable) {
       e.preventDefault();
-      searchInput?.focus();
+      globalSearch?.focus();
     }
     // Close search with Escape
     if (e.key === 'Escape') {
@@ -294,7 +294,7 @@ const currentUrl = Astro.url.pathname;
       const active = document.activeElement;
       const currentIndex = items.indexOf(active as HTMLElement);
       if (e.key === 'ArrowDown') {
-        // If focus is still in searchInput or not in list, go to first item
+        // If focus is still in globalSearch or not in list, go to first item
         const nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
         items[nextIndex]?.focus();
       } else {
@@ -313,14 +313,14 @@ const currentUrl = Astro.url.pathname;
   });
 
   // Show hints immediately when input gets focus
-  searchInput?.addEventListener('focus', () => {
-    if (!searchInput.value) {
+  globalSearch?.addEventListener('focus', () => {
+    if (!globalSearch.value) {
       // Show slash command hints immediately when empty
-      searchInput.value = '/';
+      globalSearch.value = '/';
       searchDropdown?.classList.remove('hidden');
-      searchInput.dispatchEvent(new Event('input'));
+      globalSearch.dispatchEvent(new Event('input'));
       // Select all so user can just type over the slash
-      searchInput.select();
+      globalSearch.select();
     }
   });
 
@@ -583,9 +583,9 @@ const currentUrl = Astro.url.pathname;
         e.preventDefault();
         e.stopPropagation(); // Prevent document click listener from hiding the dropdown
         const insert = item.getAttribute('data-insert');
-        if (searchInput && insert) {
-          searchInput.value = insert;
-          searchInput.focus();
+        if (globalSearch && insert) {
+          globalSearch.value = insert;
+          globalSearch.focus();
           // Programmatically trigger search since dispatchEvent doesn't always bubble correctly in all browsers
           if (typeof performSearch === 'function') {
             performSearch(insert);
