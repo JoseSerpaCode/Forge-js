@@ -114,6 +114,8 @@ function formatDate(dateStr: string | undefined) {
   // @ts-ignore
   import Marker from '@editorjs/marker';
   import InlineCode from '@editorjs/inline-code';
+  // @ts-ignore
+  import Undo from 'editorjs-undo';
 
   const editorDiv = document.getElementById('page-editor');
   const titleInput = document.getElementById('editor-title') as HTMLInputElement;
@@ -167,6 +169,9 @@ function formatDate(dateStr: string | undefined) {
       },
       onChange: () => {
         debounceSave();
+      },
+      onReady: () => {
+        new Undo({ editor });
       }
     });
 
