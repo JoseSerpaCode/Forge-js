@@ -130,8 +130,9 @@ Actualmente Forge OS está en un ciclo de desarrollo activo. Aquí está nuestra
 - [x] **Módulo de Identidad y Workspaces**: Sistema de login y aislamiento multi-tenant.
 - [x] **Base de Conocimientos (Notion-like)**: Sistema de documentos, parseo seguro Markdown y enlaces bidireccionales.
 - [x] **Kanban & Sprints (Bloque 4)**: Tablero drag&drop, métricas avanzadas (Velocity, Distribution, Precision), control de tiempo (Time Tracking) preciso.
+- [x] **Dashboard General**: Panel central para visualizar el resumen de todos los Workspaces y notificaciones globales.
+- [x] **UI/UX & Command Palette**: Mejoras de usabilidad, atajos globales de teclado, diseño de modales y feedback (Toasts).
 - [ ] **Bases de Datos Dinámicas (Fase 1)**: Creación de tablas dinámicas tipo Airtable para flexibilizar la gestión de datos.
-- [ ] **Dashboard General**: Panel central para visualizar el resumen de todos los Workspaces y notificaciones globales.
 
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>
 
