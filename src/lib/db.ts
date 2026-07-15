@@ -315,7 +315,7 @@ CREATE TABLE IF NOT EXISTS labels (
   id TEXT PRIMARY KEY,
   workspace_id TEXT NOT NULL,
   name TEXT NOT NULL,
-  color TEXT NOT NULL DEFAULT '#00E5FF',
+  color TEXT NOT NULL DEFAULT '#FF5D00',
   FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_labels_workspace ON labels(workspace_id);
