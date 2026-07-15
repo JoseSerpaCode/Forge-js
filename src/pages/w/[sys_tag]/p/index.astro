@@ -3,6 +3,10 @@ import MainLayout from '../../../../layouts/MainLayout.astro';
 import PageTree from '../../../../components/notion/PageTree.astro';
 import db from '../../../../lib/db';
 import { checkWorkspaceAccess } from '../../../../lib/guard';
+import { useTranslations } from '../../../../i18n/ui';
+
+const lang = Astro.locals.lang || 'en';
+const t = useTranslations(lang);
 
 const user = Astro.locals.user!;
 if (!user) return Astro.redirect('/login');
