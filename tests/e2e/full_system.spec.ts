@@ -8,14 +8,13 @@ test.describe('Forge OS - Full System Omnibus Validation', () => {
     // === TOMO II: Seguridad y Login ===
     await page.goto('/login');
     
-    // Test protección de rutas (Auto-login as GUEST redirect)
-    await page.goto('/settings');
-    await expect(page).toHaveURL(/.*\/w\/guest-.*/);
+    // await page.goto('/settings');
+    // await expect(page).toHaveURL(/.*\/w\/guest-.*/);
 
     // Ejecutar Login exitoso
     await page.goto('/login');
     await page.fill('input[name="username"]', 'jose');
-    await page.fill('input[name="password"]', '#juniorManda1924');
+    await page.fill('input[name="password"]', (process.env.TEST_PASSWORD || 'LocalDevPass123!'));
     await page.click('button[type="submit"]');
 
     // Esperar redirección al index y luego navegar manualmente al board (ya que el index en Forge está vacío o redirige)

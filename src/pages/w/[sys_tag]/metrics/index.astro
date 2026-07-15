@@ -1,0 +1,400 @@
+---
+import MainLayout from '../../../../layouts/MainLayout.astro';
+import db from '../../../../lib/db';
+import { checkWorkspaceAccess } from '../../../../lib/guard';
+
+const { sys_tag } = Astro.params;
+const user = Astro.locals.user!;
+
+if (!user) return Astro.redirect('/login');
+
+const workspace = db.prepare('SELECT id, name FROM workspaces WHERE sys_tag = ?').get(sys_tag) as any;
+if (!workspace) return Astro.redirect('/404');
+
+const access = checkWorkspaceAccess(user.id, user.is_sysadmin, workspace.id, 'viewer');
+if (!access.granted) return new Response('Access Denied', { status: 403 });
+
+// Fetch sprints for the scope selector
+const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace_id = ? ORDER BY start_date DESC, rowid DESC').all(workspace.id) as any[];
+
+---
+
+<MainLayout title={`Metrics - ${workspace.name}`} workspaceId={workspace.id}>
+  <div class="h-full flex flex-col p-4 overflow-y-auto">
+    <header class="mb-6 flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold text-forge-text">Dashboard & Metrics</h1>
+        <p class="text-forge-muted text-sm mt-1">Analyze team performance and workload</p>
+      </div>
+      <div>
+        <!-- Global Sprint Scope for metrics that support it -->
+        <select id="global-sprint-selector" class="bg-forge-bg text-forge-text border border-forge-border rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-forge-secondary">
+          <option value="all">Global (Historical)</option>
+          {sprints.map(s => (
+            <option value={s.id}>{s.name} {s.status === 'active' ? '(Active)' : s.status === 'completed' ? '(Completed)' : ''}</option>
+          ))}
+        </select>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="metrics-grid">
+      <!-- WIDGET: DISTRIBUTION -->
+      <div class="bg-forge-panel border border-forge-border rounded-lg p-5 flex flex-col min-h-[350px]">
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-forge-text">Workload Distribution</h2>
+            <p class="text-xs text-forge-muted mt-1" id="dist-scope-label">Scope: Historical Total</p>
+          </div>
+        </div>
+        <div id="dist-empty-state" class="hidden flex-1 flex flex-col items-center justify-center text-forge-muted">
+          <svg class="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+          <p class="text-sm">No issues found</p>
+        </div>
+        <div class="relative flex-1 w-full" id="dist-chart-container">
+          <canvas id="distributionChart"></canvas>
+        </div>
+      </div>
+
+      <!-- WIDGET: BURNDOWN (SNAPSHOT) -->
+      <div class="bg-forge-panel border border-forge-border rounded-lg p-5 flex flex-col min-h-[350px]">
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-forge-text">Sprint Burndown (Snapshot)</h2>
+            <p class="text-xs text-forge-muted mt-1" id="burn-scope-label">Scope: Requires Sprint</p>
+          </div>
+        </div>
+        <div id="burn-empty-state" class="flex-1 flex flex-col items-center justify-center text-forge-muted">
+          <svg class="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          <p class="text-sm">Select a specific sprint above to view</p>
+        </div>
+        <div class="relative flex-1 w-full hidden" id="burn-chart-container">
+          <canvas id="burndownChart"></canvas>
+        </div>
+      </div>
+
+      <!-- WIDGET: VELOCITY -->
+      <div class="bg-forge-panel border border-forge-border rounded-lg p-5 flex flex-col min-h-[350px]">
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-forge-text">Velocity Trend</h2>
+            <p class="text-xs text-forge-muted mt-1" id="vel-scope-label">Scope: Historical (Last 5 Sprints)</p>
+          </div>
+        </div>
+        <div id="vel-empty-state" class="hidden flex-1 flex flex-col items-center justify-center text-forge-muted">
+          <svg class="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+          <p class="text-sm">Not enough completed sprints</p>
+        </div>
+        <div class="relative flex-1 w-full" id="vel-chart-container">
+          <canvas id="velocityChart"></canvas>
+        </div>
+      </div>
+
+      <!-- WIDGET: PRECISION -->
+      <div class="bg-forge-panel border border-forge-border rounded-lg p-5 flex flex-col min-h-[350px]">
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-forge-text">Estimation Precision</h2>
+            <p class="text-xs text-forge-muted mt-1" id="prec-scope-label">Scope: Historical Total</p>
+          </div>
+        </div>
+        <div id="prec-empty-state" class="hidden flex-1 flex flex-col items-center justify-center text-forge-muted">
+          <svg class="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <p class="text-sm">No time tracking data found</p>
+        </div>
+        <div class="relative flex-1 w-full" id="prec-chart-container">
+          <canvas id="precisionChart"></canvas>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    import Chart from 'chart.js/auto';
+    
+    // @ts-ignore
+    const sysTag = window.location.pathname.split('/')[2];
+    let distChart: any = null;
+
+    // Set chart defaults to match theme
+    // @ts-ignore
+    Chart.defaults.color = '#8b949e'; // forge-muted
+    // @ts-ignore
+    Chart.defaults.borderColor = 'rgba(48, 54, 61, 0.5)'; // forge-border with opacity
+
+    const sprintSelector = document.getElementById('global-sprint-selector') as HTMLSelectElement;
+
+    // Load Distribution
+    async function loadDistribution(sprintId: string) {
+      const url = sprintId === 'all' 
+        ? `/api/w/${sysTag}/metrics/distribution`
+        : `/api/w/${sysTag}/metrics/distribution?sprint_id=${sprintId}`;
+      
+      const res = await fetch(url);
+      const emptyState = document.getElementById('dist-empty-state');
+      const chartContainer = document.getElementById('dist-chart-container');
+      const label = document.getElementById('dist-scope-label');
+      
+      if (!res.ok) {
+        if (emptyState) emptyState.querySelector('p')!.textContent = 'Failed to load data';
+        emptyState?.classList.remove('hidden');
+        chartContainer?.classList.add('hidden');
+        return;
+      }
+      
+      const data = await res.json();
+      
+      if (label) {
+        label.textContent = sprintId === 'all' ? 'Scope: Historical Total' : `Scope: Sprint Specific`;
+      }
+
+      if (!data || data.length === 0) {
+        emptyState?.classList.remove('hidden');
+        chartContainer?.classList.add('hidden');
+        return;
+      }
+
+      emptyState?.classList.add('hidden');
+      chartContainer?.classList.remove('hidden');
+
+      // Process 2D data: Group by assignee, stack by status
+      const assignees = [...new Set(data.map((d: any) => d.assignee))];
+      const statuses = ['todo', 'in_progress', 'done'];
+      
+      const datasets = statuses.map(status => {
+        let color = '#3b82f6'; // blue
+        if (status === 'todo') color = '#6b7280'; // gray
+        if (status === 'done') color = '#10b981'; // green
+
+        return {
+          label: status.replace('_', ' ').toUpperCase(),
+          data: assignees.map(a => {
+            const row = data.find((d: any) => d.assignee === a && d.status === status);
+            return row ? row.count : 0;
+          }),
+          backgroundColor: color,
+        };
+      });
+
+      const ctx = document.getElementById('distributionChart') as HTMLCanvasElement;
+      if (distChart) distChart.destroy();
+      
+      // @ts-ignore
+      distChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: assignees,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } }
+          }
+        }
+      });
+    }
+
+    sprintSelector.addEventListener('change', (e) => {
+      const sprintId = (e.target as HTMLSelectElement).value;
+      loadDistribution(sprintId);
+      loadBurndown(sprintId);
+      loadPrecision(sprintId);
+    });
+
+    // Initial load - read selected value instead of hardcoding 'all'
+    const initialSprintId = sprintSelector.value || 'all';
+    loadDistribution(initialSprintId);
+    loadBurndown(initialSprintId);
+    loadVelocity(); // Velocity is always historical
+    loadPrecision(initialSprintId);
+
+    let burnChart: any = null;
+
+    async function loadBurndown(sprintId: string) {
+      const emptyState = document.getElementById('burn-empty-state');
+      const chartContainer = document.getElementById('burn-chart-container');
+      const label = document.getElementById('burn-scope-label');
+
+      if (sprintId === 'all') {
+        if (label) label.textContent = 'Scope: Requires Sprint';
+        if (emptyState) emptyState.querySelector('p')!.textContent = 'Select a specific sprint above to view';
+        emptyState?.classList.remove('hidden');
+        chartContainer?.classList.add('hidden');
+        return;
+      }
+
+      if (label) label.textContent = 'Scope: Current Sprint';
+      
+      const res = await fetch(`/api/w/${sysTag}/metrics/burndown?sprint_id=${sprintId}`);
+      if (!res.ok) {
+        if (emptyState) emptyState.querySelector('p')!.textContent = 'Failed to load burndown data';
+        emptyState?.classList.remove('hidden');
+        chartContainer?.classList.add('hidden');
+        return;
+      }
+      const data = await res.json();
+
+      if (!data || data.total_issues === 0) {
+        if (emptyState) emptyState.querySelector('p')!.textContent = 'No issues in this sprint';
+        emptyState?.classList.remove('hidden');
+        chartContainer?.classList.add('hidden');
+        return;
+      }
+
+      emptyState?.classList.add('hidden');
+      chartContainer?.classList.remove('hidden');
+
+      const remaining = data.total_issues - data.completed_issues;
+
+      const ctx = document.getElementById('burndownChart') as HTMLCanvasElement;
+      if (burnChart) burnChart.destroy();
+      
+      // @ts-ignore
+      burnChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Completed', 'Remaining'],
+          datasets: [{
+            data: [data.completed_issues, remaining],
+            backgroundColor: ['#10b981', '#374151'],
+            borderWidth: 0,
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '75%',
+          plugins: {
+            title: {
+              display: true,
+              text: `${data.completed_issues} of ${data.total_issues} Done`,
+              color: '#c9d1d9',
+              font: { size: 16 }
+            }
+          }
+        }
+      });
+    }
+
+    let velChart: any = null;
+
+    async function loadVelocity() {
+      const res = await fetch(`/api/w/${sysTag}/metrics/velocity`);
+      const emptyState = document.getElementById('vel-empty-state');
+      const chartContainer = document.getElementById('vel-chart-container');
+      
+      if (!res.ok) {
+        if (emptyState) emptyState.querySelector('p')!.textContent = 'Failed to load velocity';
+        emptyState?.classList.remove('hidden');
+        chartContainer?.classList.add('hidden');
+        return;
+      }
+      const data = await res.json();
+
+      if (!data || data.length === 0) {
+        emptyState?.classList.remove('hidden');
+        chartContainer?.classList.add('hidden');
+        return;
+      }
+
+      emptyState?.classList.add('hidden');
+      chartContainer?.classList.remove('hidden');
+
+      const ctx = document.getElementById('velocityChart') as HTMLCanvasElement;
+      if (velChart) velChart.destroy();
+      
+      // @ts-ignore
+      velChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.map((d: any) => d.sprint_name),
+          datasets: [{
+            label: 'Completed Issues',
+            data: data.map((d: any) => d.velocity),
+            borderColor: '#8b5cf6', // purple
+            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } }
+          }
+        }
+      });
+    }
+
+    let precChart: any = null;
+
+    async function loadPrecision(sprintId: string) {
+      const url = sprintId === 'all' 
+        ? `/api/w/${sysTag}/metrics/precision`
+        : `/api/w/${sysTag}/metrics/precision?sprint_id=${sprintId}`;
+      
+      const res = await fetch(url);
+      const emptyState = document.getElementById('prec-empty-state');
+      const chartContainer = document.getElementById('prec-chart-container');
+      const label = document.getElementById('prec-scope-label');
+      
+      if (!res.ok) {
+        if (emptyState) emptyState.querySelector('p')!.textContent = 'Failed to load precision data';
+        emptyState?.classList.remove('hidden');
+        chartContainer?.classList.add('hidden');
+        return;
+      }
+      const data = await res.json();
+      
+      if (label) {
+        label.textContent = sprintId === 'all' ? 'Scope: Historical Total' : `Scope: Sprint Specific`;
+      }
+
+      if (!data || data.length === 0 || data.every((d: any) => d.estimated_hours === 0 && d.logged_hours === 0)) {
+        emptyState?.classList.remove('hidden');
+        chartContainer?.classList.add('hidden');
+        return;
+      }
+
+      emptyState?.classList.add('hidden');
+      chartContainer?.classList.remove('hidden');
+
+      const ctx = document.getElementById('precisionChart') as HTMLCanvasElement;
+      if (precChart) precChart.destroy();
+      
+      // @ts-ignore
+      precChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: data.map((d: any) => d.assignee),
+          datasets: [
+            {
+              label: 'Estimated (h)',
+              data: data.map((d: any) => d.estimated_hours),
+              backgroundColor: '#6b7280', // gray
+            },
+            {
+              label: 'Logged (h)',
+              data: data.map((d: any) => d.logged_hours),
+              backgroundColor: '#f59e0b', // amber/orange
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } }
+          }
+        }
+      });
+    }
+
+  </script>
+</MainLayout>

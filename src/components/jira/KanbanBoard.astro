@@ -81,6 +81,9 @@ function getInitials(username: string) {
         e.dataTransfer.setData('text/plain', card.id);
         card.classList.add('opacity-50');
         e.dataTransfer.effectAllowed = 'move';
+        
+        // Store current status in card BEFORE it is moved by dragover appendChild
+        card.setAttribute('data-status-val', card.closest('.board-column')?.getAttribute('data-status') || '');
       });
 
       card.addEventListener('dragend', () => {
@@ -237,6 +240,14 @@ function getInitials(username: string) {
           if (!response.ok) {
             throw new Error('Failed to update status and position');
           }
+          
+          // If we move to review or done, the backend auto-stops the timer.
+          // Or if we move from done to another column, we need the server to render the Start button.
+          // To ensure UI consistency without complex DOM manipulation, reload if changing columns.
+          const oldStatus = card.getAttribute('data-status-val');
+          if (oldStatus !== newStatus) {
+             window.location.reload();
+          }
         } catch (error) {
           console.error('[SYS.NET] Update failed', error);
           // Omitimos rollback visual para no complicar el script en el entorno actual
@@ -275,13 +286,16 @@ function getInitials(username: string) {
       
       const started = new Date(dateStr).getTime();
       const now = Date.now();
-      const elapsed = Math.floor((now - started) / 1000);
+      const sessionElapsed = Math.floor((now - started) / 1000);
       
-      if (elapsed < 0) return;
+      if (sessionElapsed < 0) return;
       
-      const h = Math.floor(elapsed / 3600);
-      const m = Math.floor((elapsed % 3600) / 60);
-      const s = elapsed % 60;
+      const loggedHours = parseFloat(display.getAttribute('data-logged-hours') || '0');
+      const totalElapsedSeconds = sessionElapsed + Math.floor(loggedHours * 3600);
+      
+      const h = Math.floor(totalElapsedSeconds / 3600);
+      const m = Math.floor((totalElapsedSeconds % 3600) / 60);
+      const s = totalElapsedSeconds % 60;
       
       const textEl = display.querySelector('.timer-text');
       if (textEl) {
@@ -328,6 +342,33 @@ function getInitials(username: string) {
       } catch (err) {
         console.error(err);
         btn.innerHTML = 'Start';
+      }
+    });
+  });
+
+  // Stop Timer Logic
+  document.querySelectorAll('.btn-stop-timer').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const issueId = btn.getAttribute('data-issue-id');
+      if (!issueId) return;
+      
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '<span>Stopping...</span>';
+      
+      try {
+        const response = await fetch(`/api/issues/${issueId}/timer`, { method: 'DELETE' });
+        const data = await response.json();
+        
+        if (data.success) {
+          window.location.reload();
+        } else {
+          alert('Error: ' + data.message);
+          btn.innerHTML = originalHtml;
+        }
+      } catch (err) {
+        console.error(err);
+        btn.innerHTML = originalHtml;
       }
     });
   });

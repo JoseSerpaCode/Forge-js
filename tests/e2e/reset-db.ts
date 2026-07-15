@@ -29,7 +29,7 @@ export default function resetDb() {
   `);
 
   // Seed data
-  const pwHash = bcrypt.hashSync('#juniorManda1924', 10);
+  const pwHash = bcrypt.hashSync((process.env.TEST_PASSWORD || 'LocalDevPass123!'), 10);
   
   // Re-add 'jose' because several legacy tests (kanban.spec.ts, ui_integrity.spec.ts) depend on it
   db.prepare(`

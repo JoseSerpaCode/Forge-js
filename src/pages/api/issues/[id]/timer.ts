@@ -11,17 +11,17 @@ export function finalizeActiveSession(userId: string) {
 }
 
 // Shared utility for closing all active sessions for a specific issue (e.g. when moved to Done)
-export function finalizeIssueSessions(issueId: string) {
+export function finalizeIssueSessions(issueId: string, message?: string) {
   const sessions = db.prepare('SELECT id, issue_id, started_at, user_id FROM time_tracking_sessions WHERE issue_id = ?').all(issueId) as any[];
   const results = [];
   for (const session of sessions) {
-    const res = processSession(session);
+    const res = processSession(session, message);
     if (res) results.push(res);
   }
   return results;
 }
 
-function processSession(active: any) {
+function processSession(active: any, customMessage?: string) {
   
   // Calculate hours passed robustly
   let dateStr = active.started_at;
@@ -36,21 +36,21 @@ function processSession(active: any) {
     hours = 12;
   }
   
-  // If it's too short (e.g. less than 1 minute), don't log it, just delete
-  if (hours < 0.016) {
+  // If it's too short (e.g. less than 10 seconds), don't log it, just delete
+  if (hours < 0.002) {
     db.prepare('DELETE FROM time_tracking_sessions WHERE id = ?').run(active.id);
     return null;
   }
   
-  // Round to 2 decimals
-  hours = Math.round(hours * 100) / 100;
+  // Round to 4 decimals (sub-second precision)
+  hours = Math.round(hours * 10000) / 10000;
   
   const logId = crypto.randomUUID();
   db.transaction(() => {
     db.prepare(`
       INSERT INTO work_logs (id, issue_id, user_id, hours_spent, description, logged_at)
       VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-    `).run(logId, active.issue_id, active.user_id, hours, 'Session auto-logged');
+    `).run(logId, active.issue_id, active.user_id, hours, customMessage || 'Session auto-logged');
     
     db.prepare(`
       UPDATE issues SET 

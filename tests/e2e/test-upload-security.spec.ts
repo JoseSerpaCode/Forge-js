@@ -7,7 +7,7 @@ test.describe('Upload API Security', () => {
     // Login
     await page.goto('/login');
     await page.fill('input[name="username"]', 'jose');
-    await page.fill('input[name="password"]', '#juniorManda1924'); // Use test seed password
+    await page.fill('input[name="password"]', (process.env.TEST_PASSWORD || 'LocalDevPass123!')); // Use test seed password
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/$/);
     

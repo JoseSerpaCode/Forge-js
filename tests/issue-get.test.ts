@@ -14,8 +14,8 @@ describe('GET /api/issues/[id]', () => {
     userId = crypto.randomUUID();
     issueId = crypto.randomUUID();
 
-    db.prepare('INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)').run(userId, 'testuser_issue_get', 'hash');
-    db.prepare('INSERT INTO workspaces (id, name, sys_tag, created_by) VALUES (?, ?, ?, ?)').run(wsId, 'Test WS Issue', 'test_ws_issue', userId);
+    db.prepare('INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)').run(userId, `testuser_issue_get_${crypto.randomUUID().substring(0,8)}`, 'hash');
+    db.prepare('INSERT INTO workspaces (id, name, sys_tag, created_by) VALUES (?, ?, ?, ?)').run(wsId, 'Test WS Issue', `test_ws_issue_${crypto.randomUUID().substring(0,8)}`, userId);
     // Explicitly add as editor so checkWorkspaceAccess passes
     db.prepare('INSERT INTO workspace_members (workspace_id, user_id, ws_role) VALUES (?, ?, ?)').run(wsId, userId, 'editor');
     db.prepare('INSERT INTO issues (id, workspace_id, type, title, reporter_id) VALUES (?, ?, ?, ?, ?)').run(issueId, wsId, 'task', 'Integration Test Issue', userId);

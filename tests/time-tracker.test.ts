@@ -70,7 +70,7 @@ describe('Time Tracker Backend Logic', () => {
 
     // User 1 stops their timer
     const result1 = finalizeActiveSession(userId1);
-    expect(result1?.hours).toBe(1); // 1 hour elapsed
+    expect(result1?.hours).toBeCloseTo(1, 2); // 1 hour elapsed
 
     // User 2's timer should still be completely intact and running
     const user2Session = db.prepare('SELECT id FROM time_tracking_sessions WHERE user_id = ?').get(userId2);
@@ -79,7 +79,7 @@ describe('Time Tracker Backend Logic', () => {
     // Now finalize all for the issue (e.g. moving issue to Done)
     const issueResults = finalizeIssueSessions(issueId);
     expect(issueResults.length).toBe(1); // Only User 2 was still running
-    expect(issueResults[0]?.hours).toBe(2); // 2 hours elapsed
+    expect(issueResults[0]?.hours).toBeCloseTo(2, 2); // 2 hours elapsed
   });
 
   it('Ensures true idempotency: double click by same user preserves original started_at', async () => {

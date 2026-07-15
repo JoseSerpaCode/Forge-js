@@ -4,8 +4,10 @@ import '../styles/themes.css';
 
 import { useTranslations } from '../i18n/ui';
 import db from '../lib/db';
-const user = Astro.locals.user!;
-if (user && !user.is_guest) return Astro.redirect('/');
+const user = Astro.locals.user;
+if (user && !user.is_guest) {
+  return Astro.redirect('/');
+}
 
 let guestWorkspaces: any[] = [];
 if (user && user.is_guest) {

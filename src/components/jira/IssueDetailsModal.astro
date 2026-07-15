@@ -545,10 +545,13 @@ const t = useTranslations(lang);
         // Also refresh the UI progress bar (we need to get the latest issue details to know the real logged_hours, 
         // but for now we can just compute from logs and estimated field)
         // @ts-ignore
-        window.refreshTimeTrackingUI(issueId);
+        if (window.refreshTimeTrackingUI) window.refreshTimeTrackingUI(issueId);
+      } else {
+        throw new Error(`Failed with status ${res.status}: ${await res.text()}`);
       }
     } catch (e) {
-      container.innerHTML = '<div class="text-xs text-red-400">Failed to load work logs</div>';
+      console.error('[loadWorkLogs] Error:', e);
+      container.innerHTML = `<div class="text-xs text-red-400">Failed to load work logs: ${e.message}</div>`;
     }
   };
 

@@ -3,6 +3,7 @@ import { checkWorkspaceAccess } from '../lib/guard';
 import type { Issue } from '../types/db';
 import { NotificationService } from './NotificationService';
 import crypto from 'crypto';
+import { finalizeIssueSessions } from '../pages/api/issues/[id]/timer';
 
 export class ApiError extends Error {
   constructor(public statusCode: number, message: string) {
@@ -60,6 +61,11 @@ export class IssueService {
     db.prepare(`UPDATE issues SET ${finalClause} WHERE id = ?`).run(...values);
 
     // Automation logic could be hooked here (EventEmitter pattern)
+    
+    // Auto-stop time tracker on done
+    if (safeData.status === 'done' || safeData.status === 'review') {
+      finalizeIssueSessions(issueId, 'Auto-registrado al completar');
+    }
 
     // Assignee Notification Hook
     if (data.assignee_id !== undefined && data.assignee_id !== null && data.assignee_id !== userId) {

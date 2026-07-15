@@ -89,10 +89,14 @@ if (activeSprintId) {
       <div class="flex items-center gap-4">
         <h1 class="text-2xl font-bold text-forge-text">{workspace.name} Board</h1>
         {activeSprintId && (
-          <div class="hidden md:flex flex-col w-32" id="sprint-time-container" data-logged={totalLogged} data-estimated={totalEstimated}>
+          <div class="hidden md:flex flex-col min-w-[12rem] max-w-[20rem]" id="sprint-time-container" data-logged={totalLogged} data-estimated={totalEstimated}>
             <div class="flex justify-between text-[10px] font-mono mb-1">
               <span class="text-forge-muted">Time</span>
-              <span class="font-bold text-forge-secondary" id="sprint-time-text">{totalLogged}h / {totalEstimated > 0 ? totalEstimated + 'h' : '0h'}</span>
+              <span class="font-bold text-forge-secondary" id="sprint-time-text">
+                {totalEstimated > 0 
+                  ? `${totalLogged}h / ${totalEstimated}h` 
+                  : `${totalLogged}h registradas — sin estimar`}
+              </span>
             </div>
             <div class="h-1.5 w-full bg-forge-bg rounded-full overflow-hidden border border-forge-border/30">
               <div id="sprint-time-bar" class={`h-full transition-all ${totalEstimated > 0 && (totalLogged / totalEstimated) > 1 ? 'bg-red-500' : 'bg-forge-secondary'}`} style={`width: ${totalEstimated > 0 ? Math.min((totalLogged / totalEstimated) * 100, 100) : 0}%`}></div>
@@ -384,7 +388,11 @@ if (activeSprintId) {
       const displayLogged = Math.round(logged * 10) / 10;
       const displayEst = Math.round(estimated * 10) / 10;
 
-      text.textContent = `${displayLogged}h / ${estimated > 0 ? displayEst + 'h' : '0h'}`;
+      if (estimated > 0) {
+        text.textContent = `${displayLogged}h / ${displayEst}h`;
+      } else {
+        text.textContent = `${displayLogged}h registradas — sin estimar`;
+      }
 
       if (estimated > 0) {
         const pct = Math.min((logged / estimated) * 100, 100);

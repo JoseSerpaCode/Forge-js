@@ -7,7 +7,7 @@ test.describe('UI Integrity & DB Sync', () => {
     // 1. Iniciar sesión
     await page.goto('/login');
     await page.fill('input[name="username"]', 'jose');
-    await page.fill('input[name="password"]', '#juniorManda1924');
+    await page.fill('input[name="password"]', (process.env.TEST_PASSWORD || 'LocalDevPass123!'));
     await page.click('button[type="submit"]');
     
     // 2. Navegar a Dashboard y luego a Settings

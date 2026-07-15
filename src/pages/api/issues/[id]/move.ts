@@ -6,7 +6,7 @@ import crypto from 'crypto';
 import { finalizeIssueSessions } from './timer';
 
 export const PATCH: APIRoute = async ({ params, request, locals }) => {
-  const issueId = params.id;
+  const issueId = params.id as string;
   const user = locals.user!;
   
   
@@ -98,7 +98,7 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
     
     // 5. Auto-stop time tracker si pasa a review o done
     if (status === 'review' || status === 'done') {
-      finalizeIssueSessions(issueId);
+      finalizeIssueSessions(issueId, 'Auto-registrado al completar');
     }
     
     db.prepare('INSERT INTO audit_logs (id, workspace_id, user_id, action, entity_type, entity_id, details_json) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
