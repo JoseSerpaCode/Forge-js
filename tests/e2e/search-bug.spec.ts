@@ -4,7 +4,7 @@ import path from 'path';
 
 test('Search dropdown does not hide when clicking hint', async ({ page }) => {
   // 1. Setup session in DB
-  const dbPath = path.resolve('forge.db');
+  const dbPath = path.resolve(process.env.NODE_ENV === 'test' ? 'forge_test.db' : 'forge.db');
   const db = new Database(dbPath);
   
   const user = db.prepare('SELECT id FROM users LIMIT 1').get() as any;
@@ -12,7 +12,7 @@ test('Search dropdown does not hide when clicking hint', async ({ page }) => {
   
   const sessionId = 'test-session-12345';
   db.prepare('DELETE FROM sessions WHERE id = ?').run(sessionId);
-  db.prepare('INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, datetime("now", "+1 day"))').run(sessionId, user.id);
+  db.prepare("INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, datetime('now', '+1 day'))").run(sessionId, user.id);
   
   // 2. Set cookie
   await page.context().addCookies([
@@ -25,7 +25,7 @@ test('Search dropdown does not hide when clicking hint', async ({ page }) => {
   ]);
   
   console.log('Navigating to dashboard...');
-  await page.goto('http://localhost:4321/w/proyect-orion');
+  await page.goto('/w/test-workspace');
   
   // 3. Test the search bar
   await page.click('#global-search');
