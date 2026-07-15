@@ -130,7 +130,7 @@ const maxWorkload = Math.max(...members.map((m: any) => m.openCount), 1);
 const myTasks = db.prepare(`
   SELECT i.id, i.title, i.status, i.priority, i.sprint_id, i.type, i.due_date 
   FROM issues i
-  WHERE i.workspace_id = ? ${activeSprint ? "AND i.sprint_id = '" + activeSprint.id + "'" : ''} AND i.status != 'done' AND i.assignee_id = ?
+  WHERE i.workspace_id = ? AND i.status != 'done' AND i.assignee_id = ?
   ORDER BY 
     CASE i.priority WHEN 'highest' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 WHEN 'low' THEN 4 ELSE 5 END ASC
   LIMIT 5
