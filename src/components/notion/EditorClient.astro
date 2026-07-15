@@ -82,10 +82,29 @@ function formatDate(dateStr: string | undefined) {
           </>
         ) : null}
       </div>
-      <button id="btn-share-page" class="ml-auto text-forge-muted hover:text-forge-secondary hover:bg-forge-secondary/10 px-3 py-1.5 rounded-md text-xs font-bold transition-all border border-transparent hover:border-forge-secondary/30 flex items-center gap-1" title="Copy Link to Page">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-        Share
-      </button>
+      <div class="ml-auto flex items-center gap-2">
+        <div class="relative group">
+          <button class="text-forge-muted hover:text-forge-primary px-2 py-1.5 rounded-md transition-colors" aria-label="Editor Tips">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+          </button>
+          
+          <div class="absolute right-0 top-full mt-2 w-56 bg-forge-panel border border-forge-border rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 p-3 text-xs text-forge-text pointer-events-none">
+            <h4 class="font-bold text-forge-primary mb-2 border-b border-forge-border pb-1">Editor Shortcuts</h4>
+            <ul class="space-y-2 text-forge-muted">
+              <li class="flex justify-between items-center"><span>Add Block</span> <span class="font-mono text-[10px] bg-forge-bg px-1.5 py-0.5 rounded border border-forge-border/50">TAB / +</span></li>
+              <li class="flex justify-between items-center"><span>Move Block</span> <span class="text-[10px]">Drag <span class="bg-forge-bg px-1 py-0.5 rounded font-bold border border-forge-border/50">::</span></span></li>
+              <li class="flex justify-between items-center"><span>Undo/Redo</span> <span class="font-mono text-[10px] bg-forge-bg px-1.5 py-0.5 rounded border border-forge-border/50">Ctrl Z / Y</span></li>
+              <li class="flex justify-between items-center"><span>Styles</span> <span class="font-mono text-[10px] bg-forge-bg px-1.5 py-0.5 rounded border border-forge-border/50">Ctrl B/I/U</span></li>
+              <li class="flex justify-between items-center"><span>Link</span> <span class="font-mono text-[10px] bg-forge-bg px-1.5 py-0.5 rounded border border-forge-border/50">Ctrl K</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <button id="btn-share-page" class="text-forge-muted hover:text-forge-secondary hover:bg-forge-secondary/10 px-3 py-1.5 rounded-md text-xs font-bold transition-all border border-transparent hover:border-forge-secondary/30 flex items-center gap-1" title="Copy Link to Page">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+          Share
+        </button>
+      </div>
     </div>
 
     <!-- Editor.js Container -->
