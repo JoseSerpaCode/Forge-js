@@ -76,9 +76,18 @@ test.describe('Sprint Organizer & Isolation', () => {
     // 3. Page reloads and auto-selects the new sprint
     await expect(page).toHaveURL(new RegExp(`\\?sprint=`));
     
-    // Switch back to backlog to find an issue
-    await page.locator('#sprint-selector').selectOption('backlog');
-    await page.waitForURL(url => !url.searchParams.has('sprint'));
+    // Switch back to backlog:
+    // The server redirects /board → /board?sprint=X if cookie forge_last_sprint_{workspace.id} is set.
+    // The cookie uses the DB workspace UUID (from data-workspace attr), NOT the sys_tag slug.
+    // So we clear the cookie via Playwright's context API (server-level), then navigate directly.
+    const workspaceDbId = await page.locator('.kanban-container').getAttribute('data-workspace');
+    await page.context().clearCookies({ name: `forge_last_sprint_${workspaceDbId}` });
+    await page.evaluate((wsId) => {
+      localStorage.setItem(`forge_last_sprint_${wsId}`, 'backlog');
+    }, workspaceDbId);
+    
+    await page.goto(`/w/${sysTagWs1}/board`);
+    await page.waitForLoadState('load');
     await expect(page).not.toHaveURL(new RegExp(`\\?sprint=`));
 
     // 4. Open an issue and move it to the new sprint

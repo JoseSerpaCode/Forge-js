@@ -284,7 +284,7 @@ const currentUrl = Astro.url.pathname;
     // Close search with Escape
     if (e.key === 'Escape') {
       searchDropdown?.classList.add('hidden');
-      searchInput?.blur();
+      globalSearch?.blur();
     }
     // Arrow navigation in results
     if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && searchDropdown && !searchDropdown.classList.contains('hidden')) {
@@ -372,7 +372,7 @@ const currentUrl = Astro.url.pathname;
     }
   };
 
-  searchInput?.addEventListener('input', (e: any) => {
+  globalSearch?.addEventListener('input', (e: any) => {
     performSearch(e.target.value);
   });
 
@@ -526,7 +526,7 @@ const currentUrl = Astro.url.pathname;
   });
 
   document.addEventListener('click', (e: any) => {
-    if (!searchInput?.contains(e.target) && !searchDropdown?.contains(e.target)) {
+    if (!globalSearch?.contains(e.target) && !searchDropdown?.contains(e.target)) {
       searchDropdown?.classList.add('hidden');
     }
     if (!notifBtn?.contains(e.target) && !notifDropdown?.contains(e.target)) {
