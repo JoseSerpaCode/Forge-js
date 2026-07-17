@@ -8,10 +8,10 @@ const t = useTranslations(lang);
   <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-forge-primary/30 to-transparent"></div>
   <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-forge-secondary/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
 
-  <div class="max-w-[1440px] mx-auto px-6 py-16 relative z-10">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-12 mb-16">
-      <div class="col-span-1 md:col-span-2">
-        <a href="/" class="inline-flex items-center gap-3 mb-6 group cursor-pointer">
+  <div class="max-w-[1440px] mx-auto px-6 py-8 relative z-10">
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 lg:gap-8 mb-8">
+      <div class="col-span-2 md:col-span-4 lg:col-span-2 mb-2 lg:mb-0">
+        <a href="/" class="inline-flex items-center gap-3 mb-4 group cursor-pointer">
           <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-forge-secondary to-forge-primary flex items-center justify-center font-black text-white text-lg shadow-[0_0_15px_rgba(255,93,0,0.3)] group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(255,93,0,0.5)] transition-all">
             F
           </div>
@@ -22,9 +22,9 @@ const t = useTranslations(lang);
         </p>
       </div>
       
-      <div class="col-span-1">
-        <h3 class="font-bold text-forge-text mb-6 uppercase tracking-wider text-xs">{t('footer.product')}</h3>
-        <ul class="space-y-4">
+      <div class="col-span-1 md:col-span-1">
+        <h3 class="font-bold text-forge-text mb-4 uppercase tracking-wider text-[10px]">{t('footer.product')}</h3>
+        <ul class="space-y-2.5">
           <li><a href="/" class="text-sm text-forge-muted hover:text-forge-secondary hover:translate-x-1 inline-block transition-all">{t('footer.product.kanban')}</a></li>
           <li><a href="/" class="text-sm text-forge-muted hover:text-forge-secondary hover:translate-x-1 inline-block transition-all">{t('footer.product.kb')}</a></li>
           <li><a href="/" class="text-sm text-forge-muted hover:text-forge-secondary hover:translate-x-1 inline-block transition-all">{t('footer.product.chat')}</a></li>
@@ -32,26 +32,25 @@ const t = useTranslations(lang);
         </ul>
       </div>
 
-      <div class="col-span-1">
-        <h3 class="font-bold text-forge-text mb-6 uppercase tracking-wider text-xs">{t('footer.resources')}</h3>
-        <ul class="space-y-4">
+      <div class="col-span-1 md:col-span-1">
+        <h3 class="font-bold text-forge-text mb-4 uppercase tracking-wider text-[10px]">{t('footer.resources')}</h3>
+        <ul class="space-y-2.5">
           <li><button onclick="document.getElementById('docs-modal')?.showModal() || window.showToast('Documentation unavailable', true)" class="text-sm text-forge-muted hover:text-forge-secondary hover:translate-x-1 inline-block transition-all text-left">{t('footer.resources.docs')}</button></li>
           <li><a href="https://github.com/JoseSerpaCode/Forge-js/commits/main" target="_blank" class="text-sm text-forge-muted hover:text-forge-secondary hover:translate-x-1 inline-block transition-all">{t('footer.resources.changelog')}</a></li>
           <li><button onclick="window.showToast('All systems operational.', false)" class="text-sm text-forge-muted hover:text-forge-secondary hover:translate-x-1 inline-block transition-all text-left flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-forge-success inline-block"></span>{t('footer.resources.status')}</button></li>
         </ul>
       </div>
 
-      <div class="col-span-1">
-        <h3 class="font-bold text-forge-text mb-6 uppercase tracking-wider text-xs">{t('footer.legal')}</h3>
-        <ul class="space-y-4">
+      <div class="col-span-1 md:col-span-2 lg:col-span-1 mt-4 md:mt-0">
+        <h3 class="font-bold text-forge-text mb-4 uppercase tracking-wider text-[10px]">{t('footer.legal')}</h3>
+        <ul class="space-y-2.5">
           <li><a href="#" class="text-sm text-forge-muted hover:text-forge-secondary hover:translate-x-1 inline-block transition-all">{t('footer.legal.privacy')}</a></li>
           <li><a href="#" class="text-sm text-forge-muted hover:text-forge-secondary hover:translate-x-1 inline-block transition-all">{t('footer.legal.terms')}</a></li>
           <li><a href="#" class="text-sm text-forge-muted hover:text-forge-secondary hover:translate-x-1 inline-block transition-all">{t('footer.legal.security')}</a></li>
         </ul>
       </div>
     </div>
-    
-    <div class="pt-8 border-t border-forge-border/40 flex flex-col md:flex-row items-center justify-between gap-6">
+    <div class="pt-6 border-t border-forge-border/40 flex flex-col md:flex-row items-center justify-between gap-4">
       <p class="text-xs text-forge-muted/70 font-medium">
         {t('footer.built_by')}
       </p>
