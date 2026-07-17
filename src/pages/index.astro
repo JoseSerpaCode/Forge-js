@@ -145,6 +145,16 @@ const totalFriends = db.prepare(`
             </div>
           </div>
         </section>
+        
+        <!-- Pending Tasks Section -->
+        <section>
+          <h2 class="text-xl font-bold text-forge-text mb-4 border-b border-forge-border pb-2">{t('hub.pending_tasks')}</h2>
+          <div class="bg-forge-panel border border-forge-border rounded-lg overflow-hidden max-h-[320px] flex flex-col">
+            <div class="overflow-y-auto custom-scrollbar flex-1">
+              <TaskTable tasks={myTasks} />
+            </div>
+          </div>
+        </section>
       </div>
 
       <!-- Right Column: Social & Activity -->
@@ -236,18 +246,6 @@ const totalFriends = db.prepare(`
       
     </div>
 
-    <!-- Pending Tasks Section -->
-    <section class="mb-10">
-          <h2 class="text-xl font-bold text-forge-text mb-4 border-b border-forge-border pb-2">{t('hub.pending_tasks')}</h2>
-          <div class="bg-forge-panel border border-forge-border rounded-lg overflow-hidden max-h-[320px] flex flex-col">
-            <div class="overflow-y-auto custom-scrollbar flex-1">
-              <TaskTable tasks={myTasks} />
-            </div>
-          </div>
-        </section>
-
-
-    
     <!-- Welcome / Collaboration Banner -->
     <div class="mb-10 bg-gradient-to-r from-forge-secondary/10 via-forge-primary/5 to-forge-bg border border-forge-secondary/20 rounded-2xl p-8 relative overflow-hidden group shadow-lg">
       <div class="absolute right-0 top-0 w-64 h-64 bg-forge-secondary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 group-hover:bg-forge-secondary/20 transition-colors"></div>
