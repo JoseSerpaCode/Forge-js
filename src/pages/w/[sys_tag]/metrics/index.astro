@@ -22,7 +22,7 @@ const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace
 
 ---
 
-<MainLayout title={`Metrics - ${workspace.name}`} workspaceId={workspace.id}>
+<MainLayout hideFooter={true} title={`Metrics - ${workspace.name}`} workspaceId={workspace.id}>
   <div class="h-full flex flex-col p-4 overflow-y-auto">
     <header class="mb-6 flex justify-between items-center">
       <div>

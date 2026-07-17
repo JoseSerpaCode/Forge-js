@@ -9,9 +9,10 @@ interface Props {
   workspaceId?: string;
   description?: string;
   ogImage?: string;
+  hideFooter?: boolean;
 }
 
-const { title, workspaceId, description, ogImage } = Astro.props;
+const { title, workspaceId, description, ogImage, hideFooter = false } = Astro.props;
 const user = Astro.locals.user!;
 
 import db from '../lib/db';
@@ -88,7 +89,7 @@ Astro.response.headers.set('Pragma', 'no-cache');
         <div class="max-w-[1440px] w-full mx-auto px-6 py-6 flex-1 shrink-0">
           <slot />
         </div>
-        <Footer />
+        {!hideFooter && <Footer />}
       </main>
     </div>
     

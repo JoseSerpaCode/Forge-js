@@ -73,7 +73,7 @@ const wsPendingInvites = pendingInvites.filter(n => {
 });
 ---
 
-<MainLayout title={`${t('sidebar.settings')} - ${ws.name}`} workspaceId={ws.id}>
+<MainLayout hideFooter={true} title={`${t('sidebar.settings')} - ${ws.name}`} workspaceId={ws.id}>
   <div class="max-w-4xl mx-auto mt-4 sm:mt-10 p-0 sm:p-6 space-y-6 sm:space-y-8 relative">
     <div class="flex items-center justify-between">
       <h1 class="text-3xl font-bold text-forge-text">{t('ws.settings.title')}</h1>
