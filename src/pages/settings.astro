@@ -13,14 +13,14 @@ const memberships = db.prepare(`
   WHERE wm.user_id = ?
 `).all(user.id) as any[];
 
-const userProfile = db.prepare('SELECT bio, pronouns, public_email, github_id, google_id, notif_mute_all, notif_mute_assign, notif_mute_mention, notif_mute_sprint, notif_mute_system FROM users WHERE id = ?').get(user.id) as any || {};
+const userProfile = db.prepare('SELECT bio, pronouns, public_email, is_public, github_id, google_id, notif_mute_all, notif_mute_assign, notif_mute_mention, notif_mute_sprint, notif_mute_system FROM users WHERE id = ?').get(user.id) as any || {};
 import { useTranslations } from '../i18n/ui';
 const lang = Astro.locals.lang || 'en';
 const t = useTranslations(lang);
 ---
 
 <MainLayout title={t('user.settings.title')}>
-  <div class="max-w-5xl mx-auto mt-4 sm:mt-8 p-0 sm:p-6 pb-20">
+  <div id="settings-wrapper" data-i18n-saved={t('user.settings.saved_short') || 'Saved'} class="max-w-5xl mx-auto mt-4 sm:mt-8 p-0 sm:p-6 pb-20">
     
     <div class="border-b border-forge-border/40 pb-5 mb-8 flex justify-between items-center">
       <div>
@@ -92,6 +92,17 @@ const t = useTranslations(lang);
                   <input type="hidden" id="profile-email" value={userProfile.public_email || ''} />
                 </div>
               </div>
+              
+              <div class="pt-4 border-t border-forge-border/40 flex items-center justify-between">
+                <div>
+                  <h4 class="text-sm font-semibold text-forge-text">Public Profile</h4>
+                  <p class="text-xs text-forge-muted">Allow other users to find you via global search and view your profile.</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="profile-is-public" class="sr-only peer" checked={userProfile.is_public !== 0} />
+                  <div class="w-11 h-6 bg-forge-bg peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-forge-muted after:border-forge-muted after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-forge-primary peer-checked:after:bg-white border border-forge-border/60"></div>
+                </label>
+              </div>
             </div>
           </div>
           <!-- Card Footer -->
@@ -123,8 +134,8 @@ const t = useTranslations(lang);
                 <div>
                   <label class="block text-sm font-semibold text-forge-text mb-2">{t('user.settings.theme')}</label>
                   <select id="theme-selector" class="w-full bg-forge-bg border border-forge-border/60 rounded-md p-2.5 text-sm text-forge-text focus:outline-none focus:border-forge-secondary focus:ring-1 focus:ring-forge-secondary shadow-sm cursor-pointer">
-                    <option value="dark">{t('user.settings.dark')}</option>
-                    <option value="light">{t('user.settings.light')}</option>
+                    <option value="dark" selected={userProfile.theme_preference === 'dark'}>{t('user.settings.dark')}</option>
+                    <option value="light" selected={userProfile.theme_preference === 'light'}>{t('user.settings.light')}</option>
                   </select>
                 </div>
                 
@@ -329,12 +340,8 @@ const t = useTranslations(lang);
 
 <script is:inline>
   const userId = document.getElementById('avatar-preview-container')?.getAttribute('data-user-id');
-  // Restore theme dropdown from localStorage
   const themeSelector = document.getElementById('theme-selector');
   if (themeSelector) {
-    const currentTheme = localStorage.getItem('forge_theme') || 'dark';
-    themeSelector.value = currentTheme;
-    
     // Apply theme immediately
     themeSelector.addEventListener('change', () => {
       const selected = themeSelector.value;
@@ -425,26 +432,72 @@ const t = useTranslations(lang);
     }
   });
 
+  const wrapper = document.getElementById('settings-wrapper');
+  const i18nSaved = wrapper?.dataset?.i18nSaved || 'Saved';
+
+  function showInlineSuccess(btn) {
+    const existing = btn.nextElementSibling;
+    if (existing?.classList.contains('inline-success-msg')) existing.remove();
+
+    const msg = document.createElement('span');
+    // Start with opacity-0 and transform
+    msg.className = 'inline-success-msg text-green-500 font-bold text-sm flex items-center gap-1.5 opacity-0 transition-all duration-300 transform translate-x-2 pointer-events-none';
+    msg.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="animate-bounce"><polyline points="20 6 9 17 4 12"></polyline></svg> ${i18nSaved}`;
+    
+    btn.parentNode.insertBefore(msg, btn.nextSibling);
+
+    // Double requestAnimationFrame ensures the browser paints the starting state before transitioning
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        msg.classList.remove('opacity-0', 'translate-x-2');
+        msg.classList.add('opacity-100', 'translate-x-0');
+      });
+    });
+
+    setTimeout(() => {
+      msg.classList.remove('opacity-100', 'translate-x-0');
+      msg.classList.add('opacity-0', 'translate-x-2');
+      // Wait for the exit transition to finish before removing
+      setTimeout(() => msg.remove(), 300);
+    }, 2500);
+  }
+
+  async function handleSave(btn, endpoint, payload, successMsg, onSuccess) {
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="opacity-70">...</span>';
+    btn.disabled = true;
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        window.showToast?.(successMsg);
+        showInlineSuccess(btn);
+        if (onSuccess) onSuccess();
+      } else {
+        window.showToast?.('Failed: ' + await res.text(), true);
+      }
+    } catch (e) {
+      console.error(e);
+      window.showToast?.('Network error occurred', true);
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  }
+
   const btnSaveProfile = document.getElementById('btn-save-profile');
     btnSaveProfile?.addEventListener('click', async () => {
-      const bio = document.getElementById('profile-bio').value;
-      const pronouns = document.getElementById('profile-pronouns').value;
-      const public_email = document.getElementById('profile-email').value;
-
-      btnSaveProfile.innerHTML = 'Saving...';
-      try {
-        const res = await fetch('/api/users/profile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bio, pronouns, public_email, avatar_url: newAvatarUrl })
-        });
-        if (res.ok) window.showToast?.('Profile updated successfully!');
-        else window.showToast?.('Failed to update profile', true);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        btnSaveProfile.innerHTML = 'Update Profile';
-      }
+      const payload = {
+        bio: document.getElementById('profile-bio').value,
+        pronouns: document.getElementById('profile-pronouns').value,
+        public_email: document.getElementById('profile-email').value,
+        is_public: document.getElementById('profile-is-public').checked,
+        avatar_url: newAvatarUrl
+      };
+      await handleSave(btnSaveProfile, '/api/users/profile', payload, 'Profile updated successfully!');
     });
 
     const btnLogout = document.getElementById('btn-logout');
@@ -460,18 +513,20 @@ const t = useTranslations(lang);
     });
 
   // User settings save
-  document.getElementById('btn-save-settings')?.addEventListener('click', async () => {
+  document.getElementById('btn-save-settings')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
     const newUsername = document.getElementById('username-input').value;
     const currentPassword = document.getElementById('current-password').value;
     const newPassword = document.getElementById('new-password').value;
     const confirmPassword = document.getElementById('confirm-password').value;
+    const theme_preference = document.getElementById('theme-selector').value;
 
     if (newPassword && newPassword !== confirmPassword) {
       // @ts-ignore
       return window.showToast('New passwords do not match!', true);
     }
 
-    const payload = { username: newUsername };
+    const payload = { username: newUsername, theme_preference };
     if (newAvatarUrl) {
       payload.avatar_url = newAvatarUrl;
     }
@@ -480,20 +535,9 @@ const t = useTranslations(lang);
       payload.new_password = newPassword;
     }
 
-    const res = await fetch('/api/user/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+    await handleSave(btn, '/api/user/settings', payload, 'Settings updated successfully!', () => {
+      setTimeout(() => window.location.reload(), 1200);
     });
-    
-    if (res.ok) {
-      // @ts-ignore
-      window.showToast('Settings updated successfully!');
-      setTimeout(() => window.location.reload(), 1500);
-    } else {
-      // @ts-ignore
-      window.showToast('Failed to update settings: ' + await res.text(), true);
-    }
   });
 
   // Notifications logic
@@ -511,30 +555,14 @@ const t = useTranslations(lang);
 
   document.getElementById('btn-save-notifs')?.addEventListener('click', async (e) => {
     const btn = e.currentTarget;
-    btn.innerHTML = 'Saving...';
-    try {
-      const payload = {
-        notif_mute_all: muteAllChk.checked ? 1 : 0,
-        notif_mute_assign: document.getElementById('notif-mute-assign').checked ? 1 : 0,
-        notif_mute_mention: document.getElementById('notif-mute-mention').checked ? 1 : 0,
-        notif_mute_sprint: document.getElementById('notif-mute-sprint').checked ? 1 : 0,
-        notif_mute_system: document.getElementById('notif-mute-system').checked ? 1 : 0,
-      };
-      const res = await fetch('/api/user/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) {
-        window.showToast?.('Notification preferences saved!');
-      } else {
-        window.showToast?.('Failed to save preferences', true);
-      }
-    } catch(err) {
-      console.error(err);
-    } finally {
-      btn.innerHTML = 'Save Notifications';
-    }
+    const payload = {
+      notif_mute_all: muteAllChk.checked ? 1 : 0,
+      notif_mute_assign: document.getElementById('notif-mute-assign').checked ? 1 : 0,
+      notif_mute_mention: document.getElementById('notif-mute-mention').checked ? 1 : 0,
+      notif_mute_sprint: document.getElementById('notif-mute-sprint').checked ? 1 : 0,
+      notif_mute_system: document.getElementById('notif-mute-system').checked ? 1 : 0,
+    };
+    await handleSave(btn, '/api/user/settings', payload, 'Notification preferences saved!');
   });
 
   // Delete Workspace

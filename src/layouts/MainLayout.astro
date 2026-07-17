@@ -6,9 +6,11 @@ import Sidebar from '../components/layout/Sidebar.astro';
 interface Props {
   title: string;
   workspaceId?: string;
+  description?: string;
+  ogImage?: string;
 }
 
-const { title, workspaceId } = Astro.props;
+const { title, workspaceId, description, ogImage } = Astro.props;
 const user = Astro.locals.user!;
 
 import db from '../lib/db';
@@ -17,6 +19,9 @@ if (workspaceId) {
   const ws = db.prepare('SELECT name FROM workspaces WHERE id = ?').get(workspaceId) as any;
   if (ws) workspaceName = ws.name;
 }
+
+const metaDesc = description || "Forge OS - Advanced workspace management and task tracking application for professional teams.";
+const metaImg = ogImage || "/forge-icon.svg";
 
 // Prevent BFCache and caching to ensure data is always fresh and 404s trigger correctly
 Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
@@ -27,19 +32,22 @@ Astro.response.headers.set('Pragma', 'no-cache');
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-    <meta name="description" content="Forge OS - Advanced workspace management and task tracking application for professional teams." />
+    <meta name="description" content={metaDesc} />
     <meta name="keywords" content="workspace, kanban, knowledge base, forge os, team collaboration, productivity" />
     <meta name="author" content="Forge OS" />
     <meta name="theme-color" content="#FF5D00" />
     
     <!-- Open Graph / Social -->
     <meta property="og:title" content={`${title} | Forge OS`} />
-    <meta property="og:description" content="Advanced workspace management and task tracking application for professional teams." />
+    <meta property="og:description" content={metaDesc} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={Astro.url.href} />
+    {ogImage && <meta property="og:image" content={metaImg} />}
+    
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={`${title} | Forge OS`} />
-    <meta name="twitter:description" content="Advanced workspace management and task tracking application for professional teams." />
+    <meta name="twitter:description" content={metaDesc} />
+    {ogImage && <meta name="twitter:image" content={metaImg} />}
     
     <link rel="canonical" href={Astro.url.href} />
     
@@ -143,9 +151,21 @@ Astro.response.headers.set('Pragma', 'no-cache');
           toast.classList.remove('translate-y-20', 'opacity-0');
           setTimeout(() => {
             toast.classList.add('translate-y-20', 'opacity-0');
-          }, 3000);
+          }, 4000);
         }
       };
+
+      // Generic intercept for guest-restricted actions globally
+      document.addEventListener('click', (e) => {
+        const restrictedEl = e.target.closest('.guest-restricted-action');
+        if (restrictedEl && restrictedEl.getAttribute('data-guest') === 'true') {
+          e.preventDefault();
+          e.stopPropagation();
+          const msg = restrictedEl.getAttribute('data-guest-msg') || 'Please create an account to access this feature.';
+          if (window.showToast) window.showToast(msg, true);
+          setTimeout(() => window.location.href = '/register', 1500);
+        }
+      }, true); // Use capture phase to ensure we intercept before other listeners
 
       window.forgeConfirm = function(msg, callback, title = "Confirm") {
         const modal = document.getElementById('forge-confirm-modal');

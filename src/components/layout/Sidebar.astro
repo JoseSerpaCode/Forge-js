@@ -25,7 +25,7 @@ const isMetrics  = sys_tag && currentPath.includes('/metrics');
 const isBoard    = sys_tag && (currentPath.includes('/board') || currentPath.includes('/backlog'));
 const isKB       = sys_tag && (currentPath.endsWith('/p') || currentPath.includes('/p/'));
 const isDB       = sys_tag && currentPath.includes('/db');
-const isSettings = sys_tag && currentPath.includes('/settings');
+const isSettings = sys_tag && currentPath.match(/\/w\/[^\/]+\/settings/);
 
 // Get user's workspace role
 let userRole = user?.is_sysadmin === 1 ? 'sysadmin' : 'viewer';
@@ -94,9 +94,10 @@ const isOwner = userRole === 'owner' || userRole === 'sysadmin';
         {/* Dynamic Databases */}
         <a 
           href={`/w/${sys_tag}/db`} 
-          class={`sidebar-link guest-db-link ${isDB ? 'active' : ''}`}
+          class={`sidebar-link guest-restricted-action ${isDB ? 'active' : ''}`}
           aria-current={isDB ? 'page' : undefined}
           data-guest={user?.is_guest ? 'true' : 'false'}
+          data-guest-msg="Please create an account to use Dynamic Databases."
         >
           <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
           {t('sidebar.databases')}
@@ -105,8 +106,10 @@ const isOwner = userRole === 'owner' || userRole === 'sysadmin';
         {/* Metrics */}
         <a 
           href={`/w/${sys_tag}/metrics`} 
-          class={`sidebar-link ${isMetrics ? 'active' : ''}`}
+          class={`sidebar-link guest-restricted-action ${isMetrics ? 'active' : ''}`}
           aria-current={isMetrics ? 'page' : undefined}
+          data-guest={user?.is_guest ? 'true' : 'false'}
+          data-guest-msg="Please create an account to view workspace Metrics."
         >
           <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
           {t('sidebar.metrics')}
@@ -200,21 +203,4 @@ const isOwner = userRole === 'owner' || userRole === 'sysadmin';
   }
 </style>
 
-<script>
-  // Intercept Databases click for guests
-  document.querySelectorAll('.guest-db-link').forEach(link => {
-    link.addEventListener('click', (e) => {
-      if (link.getAttribute('data-guest') === 'true') {
-        e.preventDefault();
-        // @ts-ignore
-        if (window.showToast) {
-          // @ts-ignore
-          window.showToast('Please create an account to use Dynamic Databases.', true);
-        }
-        setTimeout(() => {
-          window.location.href = '/register';
-        }, 1500);
-      }
-    });
-  });
-</script>
+</style>

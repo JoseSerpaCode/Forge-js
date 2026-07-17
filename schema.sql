@@ -14,16 +14,18 @@ CREATE TABLE sessions (
  expires_at INTEGER NOT NULL,
  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-CREATE TABLE workspaces (
- id TEXT PRIMARY KEY,
- name TEXT NOT NULL,
- sys_tag TEXT NOT NULL UNIQUE,
- icon TEXT,
- description TEXT,
- created_by TEXT NOT NULL,
- created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
- FOREIGN KEY (created_by) REFERENCES users(id)
-);
+ CREATE TABLE workspaces (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  sys_tag TEXT NOT NULL UNIQUE,
+  icon TEXT,
+  description TEXT,
+  created_by TEXT NOT NULL,
+  is_public BOOLEAN DEFAULT 0 CHECK(is_public IN (0, 1)),
+  join_policy TEXT DEFAULT 'disabled' CHECK(join_policy IN ('open', 'friends_only', 'disabled')),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (created_by) REFERENCES users(id)
+ );
 CREATE TABLE workspace_members (
  workspace_id TEXT NOT NULL,
  user_id TEXT NOT NULL,
@@ -243,4 +245,36 @@ CREATE TABLE time_tracking_sessions (
  started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
  FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE,
  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE friendships (
+  id TEXT PRIMARY KEY,
+  user_a_id TEXT NOT NULL,
+  user_b_id TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('pending','accepted','rejected','ended','blocked')),
+  action_user_id TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  CHECK (user_a_id < user_b_id),
+  CHECK (user_a_id != user_b_id),
+  UNIQUE (user_a_id, user_b_id)
+);
+
+CREATE TABLE user_blocks (
+  id TEXT PRIMARY KEY,
+  blocker_id TEXT NOT NULL,
+  blocked_id TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (blocker_id, blocked_id),
+  CHECK (blocker_id != blocked_id)
+);
+
+CREATE TABLE workspace_join_requests (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('pending','approved','rejected','cancelled')),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (workspace_id, user_id)
 );

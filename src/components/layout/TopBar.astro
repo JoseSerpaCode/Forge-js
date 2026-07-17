@@ -104,6 +104,9 @@ const currentUrl = Astro.url.pathname;
             <li class="p-6 text-center text-forge-muted text-sm" id="empty-notifs">No notifications yet.</li>
           )}
         </ul>
+        <div class="p-2 border-t border-forge-border bg-forge-bg/80 text-center">
+          <a href="/activity" class="text-xs font-bold text-forge-secondary hover:underline py-1 block">{t('activity.view_all')}</a>
+        </div>
       </div>
     </div>
   </div>
@@ -244,9 +247,23 @@ const currentUrl = Astro.url.pathname;
         iconLight?.classList.remove('hidden');
         iconDark?.classList.add('hidden');
       }
+      
+      // Keep settings dropdown in sync if we happen to be on that page
+      const themeSelector = document.getElementById('theme-selector') as HTMLSelectElement;
+      if (themeSelector && themeSelector.value !== currentTheme) {
+        themeSelector.value = currentTheme;
+      }
     };
     
     updateIcon();
+    
+    // Automatically sync icon if theme changes from elsewhere (e.g., Settings dropdown)
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((m) => {
+        if (m.attributeName === 'data-theme') updateIcon();
+      });
+    });
+    observer.observe(document.documentElement, { attributes: true });
     
     btnToggleTheme.addEventListener('click', () => {
       const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
@@ -254,6 +271,13 @@ const currentUrl = Astro.url.pathname;
       document.documentElement.setAttribute('data-theme', newTheme);
       localStorage.setItem('forge_theme', newTheme);
       updateIcon();
+      
+      // Sync with database silently
+      fetch('/api/user/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ theme_preference: newTheme })
+      }).catch(err => console.error('Failed to sync theme preference', err));
     });
   }
   const searchDropdown = document.getElementById('search-dropdown');
@@ -591,9 +615,6 @@ const currentUrl = Astro.url.pathname;
             performSearch(insert);
           }
         }
-      } else if (type === 'user') {
-        e.preventDefault();
-        window.showToast?.('User profiles coming soon');
       } else {
         searchDropdown?.classList.add('hidden');
       }

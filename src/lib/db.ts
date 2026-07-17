@@ -50,6 +50,8 @@ CREATE TABLE IF NOT EXISTS workspaces (
  icon TEXT,
  description TEXT,
  created_by TEXT NOT NULL,
+ is_public BOOLEAN DEFAULT 0 CHECK(is_public IN (0, 1)),
+ join_policy TEXT DEFAULT 'disabled' CHECK(join_policy IN ('open', 'friends_only', 'disabled')),
  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
  FOREIGN KEY (created_by) REFERENCES users(id)
 );
@@ -59,6 +61,18 @@ try {
   db.exec('ALTER TABLE users ADD COLUMN is_guest BOOLEAN DEFAULT 0 CHECK(is_guest IN (0, 1))');
 } catch (e) {
   // Ignorar error si la columna ya existe
+}
+
+try {
+  db.exec('ALTER TABLE users ADD COLUMN is_public BOOLEAN DEFAULT 1 CHECK(is_public IN (0, 1))');
+} catch (e) {
+  // Ignorar
+}
+
+try {
+  db.exec('ALTER TABLE users ADD COLUMN banner_url TEXT');
+} catch (e) {
+  // Ignorar
 }
 
 // 3. Diccionario de Datos: Aislamiento Multi-Tenant (El Pivote)
@@ -73,6 +87,45 @@ CREATE TABLE IF NOT EXISTS workspace_members (
  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_ws_members_user ON workspace_members(user_id);
+
+CREATE TABLE IF NOT EXISTS workspace_join_requests (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('pending','approved','rejected','cancelled')),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE (workspace_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS friendships (
+  id TEXT PRIMARY KEY,
+  user_a_id TEXT NOT NULL,
+  user_b_id TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('pending','accepted','rejected','ended','blocked')),
+  action_user_id TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_a_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_b_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (action_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CHECK (user_a_id < user_b_id),
+  CHECK (user_a_id != user_b_id),
+  UNIQUE (user_a_id, user_b_id)
+);
+
+CREATE TABLE IF NOT EXISTS user_blocks (
+  id TEXT PRIMARY KEY,
+  blocker_id TEXT NOT NULL,
+  blocked_id TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (blocker_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (blocked_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE (blocker_id, blocked_id),
+  CHECK (blocker_id != blocked_id)
+);
 `);
 
 // 4. Diccionario de Datos: Módulos de Operación
@@ -372,6 +425,8 @@ CREATE TABLE IF NOT EXISTS time_tracking_sessions (
 `);
 
 const migrations = [
+  "ALTER TABLE workspaces ADD COLUMN is_public BOOLEAN DEFAULT 0 CHECK(is_public IN (0, 1))",
+  "ALTER TABLE workspaces ADD COLUMN join_policy TEXT DEFAULT 'disabled' CHECK(join_policy IN ('open', 'friends_only', 'disabled'))",
   "ALTER TABLE sprints ADD COLUMN goal TEXT",
   "ALTER TABLE users ADD COLUMN bio TEXT",
   "ALTER TABLE users ADD COLUMN pronouns TEXT",
