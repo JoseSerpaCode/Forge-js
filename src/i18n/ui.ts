@@ -21,6 +21,10 @@ export const ui = {
     'topbar.lang_es': '🇪🇸 ES',
     'hub.search_placeholder': "Search across Forge (Press '/')",
     
+    // Auth
+    'auth.login': 'Sign In',
+    'auth.register': 'Register',
+    
     // User Settings
     'user.settings.title': 'User Settings',
     'user.settings.profile': 'Profile',
@@ -372,6 +376,10 @@ export const ui = {
     'topbar.lang_en': '🇬🇧 EN',
     'topbar.lang_es': '🇪🇸 ES',
     'hub.search_placeholder': "Busca en todo Forge (Presiona '/')",
+    
+    // Auth
+    'auth.login': 'Iniciar sesión',
+    'auth.register': 'Registrarse',
     
     // User Settings
     'user.settings.title': 'Ajustes de Usuario',
