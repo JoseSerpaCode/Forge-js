@@ -40,7 +40,7 @@ const isOwner = userRole === 'owner' || userRole === 'sysadmin';
   
   <!-- Logo -->
   <a href="/" class="h-14 px-4 border-b border-forge-border flex items-center gap-2.5 hover:bg-forge-bg transition-colors shrink-0 group" aria-label="Home">
-    <div class="w-7 h-7 rounded-lg flex items-center justify-center font-black text-white text-xs bg-forge-primary transition-all group-hover:scale-110 group-hover:rotate-3 shadow-[0_0_12px_var(--forge-accent-primary)]">
+    <div class="w-7 h-7 rounded-lg flex items-center justify-center font-black text-white text-xs bg-gradient-to-br from-forge-secondary to-forge-primary transition-all group-hover:scale-110 group-hover:rotate-3 shadow-[0_0_12px_var(--forge-accent-primary)]">
       F
     </div>
     <span class="font-black text-base tracking-wider text-forge-text">FORGE OS</span>
@@ -48,7 +48,7 @@ const isOwner = userRole === 'owner' || userRole === 'sysadmin';
 
   <!-- Workspace switcher -->
   {workspaceName && (
-    <a href="/" class="mx-3 mt-3 mb-1 flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-forge-border/50 bg-forge-bg/30 hover:border-forge-secondary/50 hover:bg-forge-bg transition-colors group text-left shrink-0" title="Switch workspace" aria-label="Switch workspace">
+    <a href="/" class="mx-3 mt-3 mb-4 flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-forge-border/50 bg-forge-bg/30 hover:border-forge-secondary/50 hover:bg-forge-bg transition-colors group text-left shrink-0" title="Switch workspace" aria-label="Switch workspace">
       <div class="flex-1 min-w-0">
         <div class="text-[9px] text-forge-muted font-bold tracking-widest uppercase">{t('sidebar.workspace') || 'Workspace'}</div>
         <span class="text-xs font-bold text-forge-text truncate group-hover:text-forge-secondary transition-colors block">{workspaceName}</span>
@@ -58,7 +58,7 @@ const isOwner = userRole === 'owner' || userRole === 'sysadmin';
   )}
 
   <!-- Nav -->
-  <nav class="flex-1 overflow-y-auto py-3 px-3 space-y-1.5">
+  <nav class="flex-1 overflow-y-auto py-3 px-3 space-y-3">
     {sys_tag ? (
       <>
         {/* Dashboard */}
@@ -116,7 +116,7 @@ const isOwner = userRole === 'owner' || userRole === 'sysadmin';
         </a>
 
         {/* Divider */}
-        <div class="h-px bg-forge-border/50 my-3 mx-1"></div>
+        <div class="h-px bg-forge-border/50 my-4 mx-1"></div>
 
         {/* Settings (owner only) */}
         {isOwner && (
@@ -143,6 +143,11 @@ const isOwner = userRole === 'owner' || userRole === 'sysadmin';
 
   <!-- User Footer -->
   <div class="p-3 border-t border-forge-border shrink-0">
+    {user?.is_guest === 1 && (
+      <a href="/register" class="flex items-center justify-center w-full mb-3 py-1.5 bg-forge-primary text-forge-bg rounded text-xs font-bold hover:bg-forge-primary/90 transition-colors">
+        {t('auth.login') || 'Sign In'} / {t('auth.register') || 'Register'}
+      </a>
+    )}
     <a href={user?.is_guest ? "/register" : "/settings"} class="flex items-center gap-2.5 hover:bg-forge-bg p-2 -mx-1 rounded-lg transition-colors group" id="btn-user-settings" title={user?.is_guest ? "Create Account to Save Data" : "Account Settings"}>
       {user?.avatar_url && !user.is_guest ? (
         <img src={user.avatar_url} class="w-7 h-7 rounded-full border border-forge-border bg-forge-bg object-cover shrink-0" alt={`${user.username} avatar`} />

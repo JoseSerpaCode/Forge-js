@@ -120,7 +120,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // If hitting an API that expects workspace ID, we could validate here.
   // But for now, we just pass the valid session.
 
-  if (context.url.pathname === '/login' || context.url.pathname === '/register') {
+  if ((context.url.pathname === '/login' || context.url.pathname === '/register') && sessionData.is_guest !== 1) {
     return context.redirect('/');
   }
 

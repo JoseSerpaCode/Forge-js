@@ -21,6 +21,10 @@ export const ui = {
     'topbar.lang_es': '🇪🇸 ES',
     'hub.search_placeholder': "Search across Forge (Press '/')",
     
+    // Auth
+    'auth.login': 'Sign In',
+    'auth.register': 'Register',
+    
     // User Settings
     'user.settings.title': 'User Settings',
     'user.settings.profile': 'Profile',
@@ -251,6 +255,22 @@ export const ui = {
     'dashboard.all_caught_up': "You're all caught up! 🎉",
     'dashboard.view_all_board': 'View all in board →',
 
+    'footer.description': 'Kanban, wiki, chat and databases, in one workspace.',
+    'footer.product': 'Product',
+    'footer.product.kanban': 'Kanban boards',
+    'footer.product.kb': 'Knowledge base',
+    'footer.product.chat': 'Team chat',
+    'footer.product.db': 'Databases',
+    'footer.resources': 'Resources',
+    'footer.resources.docs': 'Documentation',
+    'footer.resources.changelog': 'Changelog',
+    'footer.resources.status': 'Status',
+    'footer.legal': 'Legal',
+    'footer.legal.privacy': 'Privacy policy',
+    'footer.legal.terms': 'Terms of service',
+    'footer.legal.security': 'Security',
+    'footer.built_by': '© 2026 Forge. Built by JoseSerpaCode.',
+
     'modal.create_issue': 'Create Issue',
     'modal.title': 'Title',
     'modal.title_placeholder': 'What needs to be done?',
@@ -372,6 +392,10 @@ export const ui = {
     'topbar.lang_en': '🇬🇧 EN',
     'topbar.lang_es': '🇪🇸 ES',
     'hub.search_placeholder': "Busca en todo Forge (Presiona '/')",
+    
+    // Auth
+    'auth.login': 'Iniciar sesión',
+    'auth.register': 'Registrarse',
     
     // User Settings
     'user.settings.title': 'Ajustes de Usuario',
@@ -602,6 +626,22 @@ export const ui = {
     'dashboard.no_tasks': 'No tienes tareas asignadas',
     'dashboard.all_caught_up': "¡Estás al día! 🎉",
     'dashboard.view_all_board': 'Ver todo en el tablero →',
+
+    'footer.description': 'Kanban, wiki, chat y bases de datos, en un solo espacio.',
+    'footer.product': 'Producto',
+    'footer.product.kanban': 'Tableros Kanban',
+    'footer.product.kb': 'Base de conocimiento',
+    'footer.product.chat': 'Chat de equipo',
+    'footer.product.db': 'Bases de datos',
+    'footer.resources': 'Recursos',
+    'footer.resources.docs': 'Documentación',
+    'footer.resources.changelog': 'Changelog',
+    'footer.resources.status': 'Estado',
+    'footer.legal': 'Legal',
+    'footer.legal.privacy': 'Política de privacidad',
+    'footer.legal.terms': 'Términos de servicio',
+    'footer.legal.security': 'Seguridad',
+    'footer.built_by': '© 2026 Forge. Construido por JoseSerpaCode.',
 
     'modal.create_issue': 'Crear Issue',
     'modal.title': 'Título',

@@ -44,7 +44,7 @@ if (view && view.visible_columns_json) {
 }
 ---
 
-<MainLayout title={`${database.icon || ''} ${database.name} — ${workspace.name}`} workspaceId={workspace.id}>
+<MainLayout hideFooter={true} title={`${database.icon || ''} ${database.name} — ${workspace.name}`} workspaceId={workspace.id}>
   <div class="h-full flex flex-col -mx-4 -mt-4 p-4 lg:p-6 lg:-m-6 lg:h-[calc(100vh-2rem)]">
     
     <header class="flex flex-col md:flex-row md:items-center justify-between mb-6 shrink-0 gap-4">

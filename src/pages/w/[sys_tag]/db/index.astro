@@ -29,7 +29,7 @@ const databases = orm.select().from(dynamicDatabases)
 const canEdit = access.role !== 'viewer';
 ---
 
-<MainLayout title={`Databases — ${workspace.name}`} workspaceId={workspace.id}>
+<MainLayout hideFooter={true} title={`Databases — ${workspace.name}`} workspaceId={workspace.id}>
   <div class="max-w-[1200px] mx-auto space-y-6">
     <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-forge-panel to-forge-panel/50 p-6 rounded-2xl border border-forge-border/40 shadow-sm relative overflow-hidden">
       <!-- Decorative background blur -->

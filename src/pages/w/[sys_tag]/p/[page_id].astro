@@ -41,7 +41,7 @@ if (page.parent_page_id) {
 }
 ---
 
-<MainLayout title={`${page.title} | Knowledge Base`} workspaceId={ws.id}>
+<MainLayout hideFooter={true} title={`${page.title} | Knowledge Base`} workspaceId={ws.id}>
   <div class="flex h-full overflow-hidden">
     <PageTree workspaceId={ws.id} sysTag={sys_tag!} currentPageId={page.id} />
     
