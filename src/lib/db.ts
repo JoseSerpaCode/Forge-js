@@ -50,6 +50,8 @@ CREATE TABLE IF NOT EXISTS workspaces (
  icon TEXT,
  description TEXT,
  created_by TEXT NOT NULL,
+ is_public BOOLEAN DEFAULT 0 CHECK(is_public IN (0, 1)),
+ join_policy TEXT DEFAULT 'disabled' CHECK(join_policy IN ('open', 'friends_only', 'disabled')),
  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
  FOREIGN KEY (created_by) REFERENCES users(id)
 );
@@ -85,6 +87,29 @@ CREATE TABLE IF NOT EXISTS workspace_members (
  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_ws_members_user ON workspace_members(user_id);
+
+CREATE TABLE IF NOT EXISTS workspace_join_requests (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'approved', 'rejected')),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE (workspace_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS friendships (
+  id TEXT PRIMARY KEY,
+  user_id1 TEXT NOT NULL,
+  user_id2 TEXT NOT NULL,
+  status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'accepted', 'rejected', 'blocked')),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id1) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id2) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE(user_id1, user_id2)
+);
 `);
 
 // 4. Diccionario de Datos: Módulos de Operación
@@ -384,6 +409,8 @@ CREATE TABLE IF NOT EXISTS time_tracking_sessions (
 `);
 
 const migrations = [
+  "ALTER TABLE workspaces ADD COLUMN is_public BOOLEAN DEFAULT 0 CHECK(is_public IN (0, 1))",
+  "ALTER TABLE workspaces ADD COLUMN join_policy TEXT DEFAULT 'disabled' CHECK(join_policy IN ('open', 'friends_only', 'disabled'))",
   "ALTER TABLE sprints ADD COLUMN goal TEXT",
   "ALTER TABLE users ADD COLUMN bio TEXT",
   "ALTER TABLE users ADD COLUMN pronouns TEXT",
