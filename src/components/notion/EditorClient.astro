@@ -137,6 +137,7 @@ function formatDate(dateStr: string | undefined) {
   import Undo from 'editorjs-undo';
   // @ts-ignore
   import Underline from '@editorjs/underline';
+  // @ts-ignore
   import Table from '@editorjs/table';
   import Delimiter from '@editorjs/delimiter';
   import Warning from '@editorjs/warning';
@@ -197,6 +198,7 @@ function formatDate(dateStr: string | undefined) {
           class: Underline,
         },
         table: {
+          // @ts-ignore - @editorjs/table has non-standard type exports
           class: Table,
           inlineToolbar: true,
         },

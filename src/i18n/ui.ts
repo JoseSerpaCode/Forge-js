@@ -267,6 +267,8 @@ export const ui = {
     // About Modal
     'about.title': 'About Forge JS',
     'about.guide': 'User Guide',
+    'about.shortcuts': 'Keyboard Shortcuts',
+    'about.shortcuts.desc': 'Speed up your workflow with these shortcuts.',
     'about.docs': 'Documentation',
     'about.legal': 'License & Legal',
     'about.kanban.empty_title': 'Welcome to your new board',
@@ -555,6 +557,8 @@ export const ui = {
     // About Modal
     'about.title': 'Acerca de Forge JS',
     'about.guide': 'Guía de Uso',
+    'about.shortcuts': 'Atajos de Teclado',
+    'about.shortcuts.desc': 'Acelera tu flujo de trabajo con estos atajos.',
     'about.docs': 'Documentación',
     'about.legal': 'Licencia & Legal',
     'about.kanban.empty_title': 'Bienvenido a tu nuevo tablero',
@@ -583,7 +587,9 @@ export const ui = {
 export type Language = keyof typeof ui;
 
 export function useTranslations(lang: Language) {
-  return function t(key: keyof typeof ui[typeof defaultLang]) {
-    return ui[lang][key] || ui[defaultLang][key];
+  return function t(key: keyof typeof ui[typeof defaultLang]): string {
+    const langDict = ui[lang] as Record<string, string>;
+    const defaultDict = ui[defaultLang] as Record<string, string>;
+    return langDict[key as string] || defaultDict[key as string] || key;
   }
 }

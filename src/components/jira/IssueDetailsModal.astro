@@ -559,7 +559,8 @@ const t = useTranslations(lang);
       }
     } catch (e) {
       console.error('[loadWorkLogs] Error:', e);
-      container.innerHTML = `<div class="text-xs text-red-400">Failed to load work logs: ${e.message}</div>`;
+      const errMsg = e instanceof Error ? e.message : String(e);
+      container.innerHTML = `<div class="text-xs text-red-400">Failed to load work logs: ${errMsg}</div>`;
     }
   };
 

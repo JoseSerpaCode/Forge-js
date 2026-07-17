@@ -4,7 +4,6 @@ declare namespace App {
     user: {
       id: string;
       username: string;
-      role: 'admin' | 'manager' | 'engineer' | 'viewer';
       is_sysadmin: 0 | 1;
       is_guest: 0 | 1;
       theme_preference: string;
@@ -22,5 +21,5 @@ declare namespace App {
 }
 
 interface Window {
-  showToast?: (message: string, type?: 'success' | 'error') => void;
+  showToast?: (message: string, type?: boolean | 'success' | 'error') => void;
 }

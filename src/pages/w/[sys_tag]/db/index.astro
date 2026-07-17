@@ -256,7 +256,6 @@ const canEdit = access.role !== 'viewer';
       extractColumns() {
         const columns = [];
         const colDefs = document.querySelectorAll('.col-def');
-        let validationError = null;
         
         if (colDefs.length === 0) {
           return { error: 'You must add at least one column' };

@@ -23,7 +23,7 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
 Astro.response.headers.set('Pragma', 'no-cache');
 ---
 
-<html lang={user?.language || 'es'} data-theme={user?.theme_preference || 'dark'}>
+<html lang={Astro.locals.lang || 'es'} data-theme={user?.theme_preference || 'dark'}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
@@ -129,11 +129,12 @@ Astro.response.headers.set('Pragma', 'no-cache');
     </dialog>
 
     <script is:inline>
-      window.showToast = function(msg, isError = false) {
+      window.showToast = function(msg, type = false) {
         const toast = document.getElementById('forge-toast');
         const text = document.getElementById('forge-toast-msg');
         if (toast && text) {
           text.textContent = msg;
+          const isError = type === true || type === 'error';
           if (isError) {
              toast.classList.replace('border-forge-secondary', 'border-red-500');
           } else {
