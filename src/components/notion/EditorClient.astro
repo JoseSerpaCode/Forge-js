@@ -82,30 +82,40 @@ function formatDate(dateStr: string | undefined) {
           </>
         ) : null}
       </div>
-      <button id="btn-share-page" class="ml-auto text-forge-muted hover:text-forge-secondary hover:bg-forge-secondary/10 px-3 py-1.5 rounded-md text-xs font-bold transition-all border border-transparent hover:border-forge-secondary/30 flex items-center gap-1" title="Copy Link to Page">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-        Share
-      </button>
+      <div class="ml-auto flex items-center gap-2">
+        <div class="relative group">
+          <button class="text-forge-muted hover:text-forge-primary px-2 py-1.5 rounded-md transition-colors" aria-label="Editor Tips">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+          </button>
+          
+          <div class="absolute right-0 top-full mt-2 w-56 bg-forge-panel border border-forge-border rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 p-3 text-xs text-forge-text pointer-events-none">
+            <h4 class="font-bold text-forge-primary mb-2 border-b border-forge-border pb-1">Editor Shortcuts</h4>
+            <ul class="space-y-2 text-forge-muted">
+              <li class="flex justify-between items-center"><span>Add Block</span> <span class="font-mono text-[10px] bg-forge-bg px-1.5 py-0.5 rounded border border-forge-border/50">TAB / +</span></li>
+              <li class="flex justify-between items-center"><span>Move Block</span> <span class="text-[10px]">Drag <span class="bg-forge-bg px-1 py-0.5 rounded font-bold border border-forge-border/50">::</span></span></li>
+              <li class="flex justify-between items-center"><span>Undo/Redo</span> <span class="font-mono text-[10px] bg-forge-bg px-1.5 py-0.5 rounded border border-forge-border/50">Ctrl Z / Y</span></li>
+              <li class="flex justify-between items-center"><span>Styles</span> <span class="font-mono text-[10px] bg-forge-bg px-1.5 py-0.5 rounded border border-forge-border/50">Ctrl B/I/U</span></li>
+              <li class="flex justify-between items-center"><span>Link</span> <span class="font-mono text-[10px] bg-forge-bg px-1.5 py-0.5 rounded border border-forge-border/50">Ctrl K</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <button id="btn-share-page" class="text-forge-muted hover:text-forge-secondary hover:bg-forge-secondary/10 px-3 py-1.5 rounded-md text-xs font-bold transition-all border border-transparent hover:border-forge-secondary/30 flex items-center gap-1" title="Copy Link to Page">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+          Share
+        </button>
+      </div>
     </div>
 
     <!-- Editor.js Container -->
     <div 
       id="page-editor"
-      class="flex-1 text-forge-text outline-none prose prose-invert max-w-none relative"
+      class="flex-1 text-forge-text outline-none prose dark:prose-invert max-w-none relative editor-js-container selection:bg-forge-primary selection:text-white"
       data-page-id={pageId}
       data-initial-content={initialContent}
       data-can-edit={canEdit.toString()}
     ></div>
 
-    <!-- Slash Menu Popover -->
-    <div id="slash-menu" class="hidden absolute bg-forge-bg border border-forge-border rounded shadow-lg p-2 flex flex-col gap-1 w-48 z-50">
-      <button class="slash-menu-item text-left px-2 py-1 hover:bg-forge-highlight rounded text-sm text-forge-text" data-type="header" data-level="1">H1 - Heading 1</button>
-      <button class="slash-menu-item text-left px-2 py-1 hover:bg-forge-highlight rounded text-sm text-forge-text" data-type="header" data-level="2">H2 - Heading 2</button>
-      <button class="slash-menu-item text-left px-2 py-1 hover:bg-forge-highlight rounded text-sm text-forge-text" data-type="list" data-style="unordered">Bulleted List</button>
-      <button class="slash-menu-item text-left px-2 py-1 hover:bg-forge-highlight rounded text-sm text-forge-text" data-type="list" data-style="ordered">Numbered List</button>
-      <button class="slash-menu-item text-left px-2 py-1 hover:bg-forge-highlight rounded text-sm text-forge-text" data-type="checklist">Checklist</button>
-      <button class="slash-menu-item text-left px-2 py-1 hover:bg-forge-highlight rounded text-sm text-forge-text" data-type="quote">Quote</button>
-    </div>
 
     <div class="fixed bottom-4 right-8 flex items-center gap-2 text-xs font-mono text-forge-muted">
       <span id="save-status">Saved</span>
@@ -123,6 +133,17 @@ function formatDate(dateStr: string | undefined) {
   // @ts-ignore
   import Marker from '@editorjs/marker';
   import InlineCode from '@editorjs/inline-code';
+  // @ts-ignore
+  import Undo from 'editorjs-undo';
+  // @ts-ignore
+  import Underline from '@editorjs/underline';
+  // @ts-ignore
+  import Table from '@editorjs/table';
+  import Delimiter from '@editorjs/delimiter';
+  import Warning from '@editorjs/warning';
+  import CodeTool from '@editorjs/code';
+  // @ts-ignore
+  import DragDrop from 'editorjs-drag-drop';
 
   const editorDiv = document.getElementById('page-editor');
   const titleInput = document.getElementById('editor-title') as HTMLInputElement;
@@ -149,19 +170,57 @@ function formatDate(dateStr: string | undefined) {
       tools: {
         header: {
           class: Header,
+          inlineToolbar: true,
           config: {
             levels: [1, 2, 3, 4, 5, 6],
             defaultLevel: 1
           }
         },
-        list: List,
-        checklist: Checklist,
-        quote: Quote,
-        marker: Marker,
-        inlineCode: InlineCode
+        list: {
+          class: List,
+          inlineToolbar: true,
+        },
+        checklist: {
+          class: Checklist,
+          inlineToolbar: true,
+        },
+        quote: {
+          class: Quote,
+          inlineToolbar: true,
+        },
+        marker: {
+          class: Marker,
+        },
+        inlineCode: {
+          class: InlineCode,
+        },
+        underline: {
+          class: Underline,
+        },
+        table: {
+          // @ts-ignore - @editorjs/table has non-standard type exports
+          class: Table,
+          inlineToolbar: true,
+        },
+        delimiter: {
+          class: Delimiter,
+        },
+        warning: {
+          class: Warning,
+          inlineToolbar: true,
+        },
+        code: {
+          class: CodeTool,
+        }
       },
       onChange: () => {
         debounceSave();
+      },
+      onReady: () => {
+        new Undo({ editor });
+        new DragDrop(editor);
+        // Expose for E2E testing
+        (window as any).__editorInstance = editor;
       }
     });
 
@@ -198,72 +257,6 @@ function formatDate(dateStr: string | undefined) {
 
     titleInput?.addEventListener('input', debounceSave);
 
-    const slashMenu = document.getElementById('slash-menu');
-    let currentBlockIndex = -1;
-
-    editorDiv.addEventListener('keyup', (e) => {
-      if (!slashMenu || !canEdit) return;
-      
-      const currentBlockIndexApi = editor.blocks.getCurrentBlockIndex();
-      if (currentBlockIndexApi < 0) return;
-      
-      const currentBlock = editor.blocks.getBlockByIndex(currentBlockIndexApi);
-      if (!currentBlock) return;
-
-      const textNode = currentBlock.holder.querySelector('.ce-paragraph');
-      if (!textNode) {
-        slashMenu.classList.add('hidden');
-        return;
-      }
-
-      const text = textNode.textContent || '';
-      const cleanText = text.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
-      if (cleanText === '/') {
-        const selection = window.getSelection();
-        if (selection && selection.rangeCount > 0) {
-          const range = selection.getRangeAt(0);
-          const rect = range.getBoundingClientRect();
-          slashMenu.style.top = `${rect.bottom + window.scrollY}px`;
-          slashMenu.style.left = `${rect.left + window.scrollX}px`;
-        } else {
-          slashMenu.style.top = '100px';
-          slashMenu.style.left = '100px';
-        }
-        slashMenu.classList.remove('hidden');
-        currentBlockIndex = currentBlockIndexApi;
-      } else {
-        slashMenu.classList.add('hidden');
-      }
-    });
-
-    document.querySelectorAll('.slash-menu-item').forEach(item => {
-      item.addEventListener('click', async (e) => {
-        if (!canEdit) return;
-        const target = e.currentTarget as HTMLElement;
-        const type = target.dataset.type;
-        const level = target.dataset.level;
-        const style = target.dataset.style;
-        
-        if (currentBlockIndex >= 0 && type) {
-          editor.blocks.delete(currentBlockIndex);
-          
-          let data: any = {};
-          if (level) data.level = parseInt(level);
-          if (style) data.style = style;
-          
-          editor.blocks.insert(type, data, {}, currentBlockIndex, true);
-          editor.caret.setToBlock(currentBlockIndex, 'start');
-        }
-        
-        slashMenu?.classList.add('hidden');
-      });
-    });
-
-    document.addEventListener('click', (e) => {
-      if (slashMenu && !slashMenu.contains(e.target as Node) && !(e.target as Element).closest('#page-editor')) {
-        slashMenu.classList.add('hidden');
-      }
-    });
 
     document.getElementById('btn-delete-page')?.addEventListener('click', async () => {
       if (!confirm('Are you sure you want to delete this page and ALL its subpages? This action cannot be undone.')) return;
@@ -288,3 +281,115 @@ function formatDate(dateStr: string | undefined) {
     });
   }
 </script>
+
+<style is:global>
+  /* Fix EditorJS internal variables for perfect dark/light mode integration */
+  .editor-js-container {
+    --color-text-primary: var(--forge-text);
+    --color-background-item-hover: var(--forge-bg);
+    --color-background-item-focus: var(--forge-bg);
+    --color-border: var(--forge-border);
+  }
+
+  .ce-popover, .ce-inline-toolbar, .ce-settings, .ce-conversion-toolbar, .tc-popover {
+    --color-border: var(--forge-border) !important;
+    --color-background: var(--forge-panel) !important;
+    --color-text-primary: var(--forge-text) !important;
+    --color-text-secondary: var(--forge-muted) !important;
+    --color-border-icon: var(--forge-border) !important;
+    --color-background-item-hover: var(--forge-bg) !important;
+    --color-background-item-focus: var(--forge-bg) !important;
+    --color-shadow: rgba(0, 0, 0, 0.3) !important;
+    
+    background-color: var(--forge-panel) !important;
+    border: 1px solid var(--forge-border) !important;
+    color: var(--forge-text) !important;
+  }
+  
+  /* Fallbacks for older editor.js DOM elements if CSS vars aren't fully supported */
+  .ce-popover-item, .tc-popover__item, .ce-inline-tool, .ce-conversion-tool {
+    color: var(--forge-text) !important;
+  }
+  .ce-popover-item:hover, .tc-popover__item:hover, .ce-inline-tool:hover, .ce-conversion-tool:hover {
+    background-color: var(--forge-bg) !important;
+  }
+  .ce-popover-item__title, .tc-popover__item-label {
+    color: var(--forge-text) !important;
+  }
+  .ce-popover-item__icon, .tc-popover__item-icon {
+    background-color: transparent !important;
+    box-shadow: none !important;
+    color: var(--forge-text) !important;
+  }
+  .ce-popover__search {
+    background-color: var(--forge-bg) !important;
+    color: var(--forge-text) !important;
+    border-bottom: 1px solid var(--forge-border) !important;
+  }
+
+  /* Typography / Block Styles */
+  .ce-block__content, .ce-toolbar__content {
+    max-width: 800px !important;
+  }
+  
+  .ce-header {
+    color: var(--forge-text) !important;
+  }
+  
+  .cdx-quote {
+    border-left: 4px solid var(--forge-secondary) !important;
+    background-color: var(--forge-bg) !important;
+  }
+  
+  .cdx-checklist__item-checkbox {
+    border: 1px solid var(--forge-border) !important;
+    background: var(--forge-bg) !important;
+    border-radius: 4px !important;
+    margin-top: 0.25rem !important;
+  }
+  .cdx-checklist__item--checked .cdx-checklist__item-checkbox {
+    background: var(--forge-secondary) !important;
+    border-color: var(--forge-secondary) !important;
+  }
+
+  .cdx-marker {
+    background-color: var(--forge-accent-primary) !important;
+    color: #fff !important;
+    padding: 0.1rem 0.2rem !important;
+    border-radius: 3px !important;
+  }
+
+  .inline-code {
+    background-color: var(--forge-bg) !important;
+    border: 1px solid var(--forge-border) !important;
+    padding: 0.1rem 0.3rem !important;
+    border-radius: 4px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.9em !important;
+  }
+
+  .codex-editor__redactor {
+    padding-bottom: 100px !important;
+  }
+  .ce-block--selected .ce-block__content {
+    background-color: color-mix(in srgb, var(--forge-accent-primary) 15%, transparent) !important;
+  }
+
+  /* Force override Editor.js dynamically injected selection styles */
+  .editor-js-container ::selection {
+    background-color: var(--forge-accent-primary) !important;
+    color: #ffffff !important;
+  }
+  .editor-js-container *::selection {
+    background-color: var(--forge-accent-primary) !important;
+    color: #ffffff !important;
+  }
+  .ce-block__content ::selection {
+    background-color: var(--forge-accent-primary) !important;
+    color: #ffffff !important;
+  }
+  .cdx-block ::selection {
+    background-color: var(--forge-accent-primary) !important;
+    color: #ffffff !important;
+  }
+</style>

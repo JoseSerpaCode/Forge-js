@@ -1,5 +1,6 @@
 /* src/styles/themes.css */
 @import 'tailwindcss';
+@plugin '@tailwindcss/typography';
 
 @theme {
   --color-forge-bg: var(--forge-bg);
@@ -34,7 +35,7 @@
     /* Orion's Forge Identity */
     --forge-accent-primary: #FF5D00;
     --forge-accent-primary-hover: #E05200;
-    --forge-accent-secondary: #00E5FF;
+    --forge-accent-secondary: #FF8533;
 
     /* State Colors */
     --forge-success: #10B981;
@@ -53,7 +54,7 @@
 
     --forge-accent-primary: #FF5D00;
     --forge-accent-primary-hover: #E05200;
-    --forge-accent-secondary: #00E5FF;
+    --forge-accent-secondary: #FF8533;
 
     --forge-success: #10B981;
     --forge-error: #EF4444;
@@ -61,23 +62,7 @@
     --forge-info: #3B82F6;
   }
 
-  [data-theme="ocean"] { 
-    color-scheme: dark;
-    --forge-bg: #0F172A;
-    --forge-panel: #1E293B;
-    --forge-text: #F8FAFC;
-    --forge-muted: #94A3B8;
-    --forge-border: #334155;
 
-    --forge-accent-primary: #3B82F6;
-    --forge-accent-primary-hover: #2563EB;
-    --forge-accent-secondary: #0EA5E9;
-
-    --forge-success: #10B981;
-    --forge-error: #EF4444;
-    --forge-warning: #F59E0B;
-    --forge-info: #0EA5E9;
-  }
 
   [data-theme="light"] {
     color-scheme: light;
@@ -87,9 +72,9 @@
     --forge-muted: #64748B;
     --forge-border: #CBD5E1;
     
-    --forge-accent-primary: #3B82F6;
-    --forge-accent-primary-hover: #2563EB;
-    --forge-accent-secondary: #0EA5E9;
+    --forge-accent-primary: #FF5D00;
+    --forge-accent-primary-hover: #E05200;
+    --forge-accent-secondary: #CC4A00;
 
     --forge-success: #059669;
     --forge-error: #DC2626;
@@ -102,6 +87,11 @@
     color: var(--forge-text);
     font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
+  }
+  
+  ::selection {
+    background-color: var(--forge-accent-primary);
+    color: #fff;
   }
   
   .font-mono {

@@ -130,7 +130,7 @@ const maxWorkload = Math.max(...members.map((m: any) => m.openCount), 1);
 const myTasks = db.prepare(`
   SELECT i.id, i.title, i.status, i.priority, i.sprint_id, i.type, i.due_date 
   FROM issues i
-  WHERE i.workspace_id = ? ${activeSprint ? "AND i.sprint_id = '" + activeSprint.id + "'" : ''} AND i.status != 'done' AND i.assignee_id = ?
+  WHERE i.workspace_id = ? AND i.status != 'done' AND i.assignee_id = ?
   ORDER BY 
     CASE i.priority WHEN 'highest' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 WHEN 'low' THEN 4 ELSE 5 END ASC
   LIMIT 5
@@ -182,13 +182,13 @@ const priorityColor: Record<string, string> = {
 ---
 
 <MainLayout title={`${t('sidebar.dashboard')} — ${workspace.name}`} workspaceId={workspace.id}>
-  <div class="space-y-6 max-w-[1400px]">
+  <div class="space-y-6 max-w-[1400px] pb-12">
     
     <!-- Header -->
     <header class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-forge-text">{workspace.name}</h1>
-        <p class="text-sm text-forge-muted mt-0.5">{t('sidebar.dashboard')} — workspace overview</p>
+        <p class="text-sm text-forge-muted mt-0.5">{t('sidebar.dashboard')} — {t('dashboard.workspace_overview')}</p>
       </div>
       <div class="flex gap-2">
         <a href={`/w/${sys_tag}/board`} class="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded bg-forge-secondary text-forge-bg hover:opacity-90 transition-opacity">

@@ -40,16 +40,16 @@ const canEdit = access.role !== 'viewer';
           <div class="w-10 h-10 rounded-xl bg-forge-bg flex items-center justify-center border border-forge-border/60 shadow-sm">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-forge-secondary"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
           </div>
-          Databases & Tables
+          {t('db.title')}
         </h1>
         <p class="text-sm text-forge-muted mt-2 max-w-xl leading-relaxed">
-          Create structured tables to manage <span class="text-forge-text font-medium">CRMs, inventories, or trackers</span> directly inside your workspace. Think of it as your own integrated spreadsheet or Notion table.
+          {t('db.subtitle')}
         </p>
       </div>
       {canEdit && (
         <button id="btn-new-db" class="bg-forge-text text-forge-bg text-sm font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-all flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Create New Table
+          {t('db.create')}
         </button>
       )}
     </header>
@@ -79,7 +79,7 @@ const canEdit = access.role !== 'viewer';
                   <div class="flex items-center gap-2 mt-1">
                     <span class="inline-flex items-center gap-1 text-[10px] uppercase font-bold text-forge-muted tracking-wider bg-forge-bg px-2 py-0.5 rounded-md border border-forge-border/50">
                       <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-                      {JSON.parse(database.schema_json).columns?.length || 0} columns
+                      {(() => { try { return JSON.parse(database.schema_json || '{}').columns?.length || 0; } catch(e) { return 0; } })()} {t('db.columns')}
                     </span>
                   </div>
                 </div>
@@ -256,7 +256,6 @@ const canEdit = access.role !== 'viewer';
       extractColumns() {
         const columns = [];
         const colDefs = document.querySelectorAll('.col-def');
-        let validationError = null;
         
         if (colDefs.length === 0) {
           return { error: 'You must add at least one column' };

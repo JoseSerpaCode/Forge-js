@@ -23,6 +23,13 @@ const requestedSprintId = Astro.url.searchParams.get('sprint');
 let activeSprintId = null;
 let currentSprintObj = null;
 
+if (!Astro.url.search.includes('sprint=')) {
+  const savedSprint = Astro.cookies.get(`forge_last_sprint_${workspace.id}`)?.value;
+  if (savedSprint && savedSprint !== 'backlog') {
+    return Astro.redirect(`/w/${sys_tag}/board?sprint=${savedSprint}`);
+  }
+}
+
 // IDOR Protection: Validate requested sprint belongs to this workspace
 if (requestedSprintId && requestedSprintId !== 'backlog') {
   const sprintCheck = db.prepare('SELECT workspace_id, status FROM sprints WHERE id = ?').get(requestedSprintId) as any;
@@ -90,17 +97,17 @@ if (activeSprintId) {
       <div class="flex items-center gap-4">
         <h1 class="text-2xl font-bold text-forge-text">{workspace.name} Board</h1>
         {activeSprintId && (
-          <div class="hidden md:flex flex-col min-w-[12rem] max-w-[20rem]" id="sprint-time-container" data-logged={totalLogged} data-estimated={totalEstimated}>
-            <div class="flex justify-between text-[10px] font-mono mb-1">
-              <span class="text-forge-muted">Time</span>
+          <div class="hidden md:flex flex-col min-w-[14rem] bg-forge-bg/80 border border-forge-border rounded-lg px-3 py-1.5 shadow-sm" id="sprint-time-container" data-logged={totalLogged} data-estimated={totalEstimated}>
+            <div class="flex justify-between items-center text-[10px] font-mono mb-1.5">
+              <span class="text-forge-muted font-bold tracking-wider uppercase">{t('dashboard.time') || 'Time'}</span>
               <span class="font-bold text-forge-secondary" id="sprint-time-text">
                 {totalEstimated > 0 
                   ? `${totalLogged}h / ${totalEstimated}h` 
-                  : `${totalLogged}h registradas — sin estimar`}
+                  : `${totalLogged}h ${t('dashboard.logged') || 'logged'} — ${t('dashboard.no_estimate') || 'no estimate'}`}
               </span>
             </div>
-            <div class="h-1.5 w-full bg-forge-bg rounded-full overflow-hidden border border-forge-border/30">
-              <div id="sprint-time-bar" class={`h-full transition-all ${totalEstimated > 0 && (totalLogged / totalEstimated) > 1 ? 'bg-red-500' : 'bg-forge-secondary'}`} style={`width: ${totalEstimated > 0 ? Math.min((totalLogged / totalEstimated) * 100, 100) : 0}%`}></div>
+            <div class="h-1.5 w-full bg-forge-panel rounded-full overflow-hidden border border-forge-border">
+              <div id="sprint-time-bar" class={`h-full transition-all ${totalEstimated > 0 && (totalLogged / totalEstimated) > 1 ? 'bg-forge-error' : 'bg-forge-secondary'}`} style={`width: ${totalEstimated > 0 ? Math.min((totalLogged / totalEstimated) * 100, 100) : 0}%`}></div>
             </div>
           </div>
         )}
@@ -134,10 +141,10 @@ if (activeSprintId) {
         )}
         
         {access.role !== 'viewer' && (
-          <button id="btn-new-issue" title="Create New Issue (Press C)" class="bg-forge-secondary text-forge-bg font-bold px-3 py-1.5 rounded-md text-sm hover:opacity-90 transition-opacity ml-2 relative group">
+          <button id="btn-new-issue" title="Create New Issue (Press C)" class="bg-forge-secondary text-forge-bg font-bold px-3 py-1.5 rounded-md text-sm hover:opacity-90 transition-opacity ml-2 relative group z-50">
             + Issue
             <!-- Tooltip -->
-            <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-forge-panel border border-forge-border text-forge-muted text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-lg">New Issue <kbd class="font-mono bg-forge-bg border border-forge-border px-1 py-0.5 rounded text-[8px] ml-1">C</kbd></span>
+            <span class="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-forge-panel border border-forge-border text-forge-text text-[10px] px-2 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl z-50">New Issue <kbd class="font-mono bg-forge-bg border border-forge-border px-1 py-0.5 rounded text-[8px] ml-1">C</kbd></span>
           </button>
         )}
       </div>
@@ -218,20 +225,9 @@ if (activeSprintId) {
     const urlParams = new URLSearchParams(window.location.search);
     const sprintParam = urlParams.get('sprint');
     
-    // If no sprint param is present at all (not even empty), check localStorage
-    if (!window.location.search.includes('sprint=')) {
-      const savedSprint = localStorage.getItem(`forge_last_sprint_${workspaceId}`);
-      if (savedSprint && savedSprint !== 'backlog') {
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.set('sprint', savedSprint);
-        window.location.replace(newUrl.toString());
-      } else if (!savedSprint) {
-        localStorage.setItem(`forge_last_sprint_${workspaceId}`, 'backlog');
-      }
-    } else {
-      // Save current sprint to localStorage
-      localStorage.setItem(`forge_last_sprint_${workspaceId}`, sprintParam || 'backlog');
-    }
+    const sprintToSave = sprintParam || 'backlog';
+    localStorage.setItem(`forge_last_sprint_${workspaceId}`, sprintToSave);
+    document.cookie = `forge_last_sprint_${workspaceId}=${sprintToSave}; path=/; max-age=31536000`;
 
     // SPRINT SELECTOR
     const selector = document.getElementById('sprint-selector') as HTMLSelectElement;
@@ -256,7 +252,7 @@ if (activeSprintId) {
 
     saveSprintBtn?.addEventListener('click', async () => {
       const name = (document.getElementById('sprint-name') as HTMLInputElement).value;
-      if (!name) return window.showToast?.('Name required', true);
+      if (!name) return window.showToast?.('Name required', 'error');
       
       const res = await fetch('/api/sprints', {
         method: 'POST',
@@ -289,7 +285,7 @@ if (activeSprintId) {
       const dueDate = (document.getElementById('new-issue-due-date') as HTMLInputElement).value;
       const description = (document.getElementById('new-issue-desc') as HTMLTextAreaElement).value;
 
-      if (!title) return window.showToast?.('Title is required', true);
+      if (!title) return window.showToast?.('Title is required', 'error');
 
       saveIssueBtn.textContent = 'Creating...';
       const sysTag = window.location.pathname.split('/')[2];
@@ -309,7 +305,7 @@ if (activeSprintId) {
       if (res.ok) {
         window.location.reload();
       } else {
-        window.showToast?.(await res.text(), true);
+        window.showToast?.(await res.text(), 'error');
       }
     });
 
@@ -387,24 +383,60 @@ if (activeSprintId) {
       logged = Math.max(0, logged + delta);
       container.setAttribute('data-logged', logged.toString());
 
-      // Format rounding to 1 decimal to avoid floating point weirdness like 3.40000000001
       const displayLogged = Math.round(logged * 10) / 10;
       const displayEst = Math.round(estimated * 10) / 10;
 
       if (estimated > 0) {
         text.textContent = `${displayLogged}h / ${displayEst}h`;
       } else {
-        text.textContent = `${displayLogged}h registradas — sin estimar`;
+        text.textContent = `${displayLogged}h logged — no estimate`;
       }
 
       if (estimated > 0) {
         const pct = Math.min((logged / estimated) * 100, 100);
         bar.style.width = `${pct}%`;
         if (logged / estimated > 1) {
-          bar.className = 'h-full transition-all bg-red-500';
+          bar.className = 'h-full transition-all bg-forge-error';
         } else {
           bar.className = 'h-full transition-all bg-forge-secondary';
         }
+      } else {
+        bar.style.width = '0%';
+      }
+    });
+
+    window.addEventListener('estimate-changed', (e: any) => {
+      const container = document.getElementById('sprint-time-container');
+      const text = document.getElementById('sprint-time-text');
+      const bar = document.getElementById('sprint-time-bar');
+      if (!container || !text || !bar) return;
+
+      const delta = e.detail.estimateDelta;
+      let estimated = parseFloat(container.getAttribute('data-estimated') || '0');
+      const logged = parseFloat(container.getAttribute('data-logged') || '0');
+
+      estimated = Math.max(0, estimated + delta);
+      container.setAttribute('data-estimated', estimated.toString());
+
+      const displayLogged = Math.round(logged * 10) / 10;
+      const displayEst = Math.round(estimated * 10) / 10;
+
+      if (estimated > 0) {
+        text.textContent = `${displayLogged}h / ${displayEst}h`;
+      } else {
+        text.textContent = `${displayLogged}h logged — no estimate`;
+      }
+
+      if (estimated > 0) {
+        const pct = Math.min((logged / estimated) * 100, 100);
+        bar.style.width = `${pct}%`;
+        if (logged / estimated > 1) {
+          bar.className = 'h-full transition-all bg-forge-error';
+        } else {
+          bar.className = 'h-full transition-all bg-forge-secondary';
+        }
+      } else {
+        bar.style.width = '0%';
       }
     });
   </script>

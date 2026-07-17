@@ -5,6 +5,8 @@ import { checkWorkspaceAccess } from '../../../../lib/guard';
 
 const { sys_tag } = Astro.params;
 const user = Astro.locals.user!;
+import { useTranslations } from '../../../../i18n/ui';
+const t = useTranslations(Astro.locals.lang || 'en');
 
 if (!user) return Astro.redirect('/login');
 
@@ -23,13 +25,13 @@ const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace
   <div class="h-full flex flex-col p-4 overflow-y-auto">
     <header class="mb-6 flex justify-between items-center">
       <div>
-        <h1 class="text-2xl font-bold text-forge-text">Dashboard & Metrics</h1>
-        <p class="text-forge-muted text-sm mt-1">Analyze team performance and workload</p>
+        <h1 class="text-2xl font-bold text-forge-text">{t('metrics.title')}</h1>
+        <p class="text-forge-muted text-sm mt-1">{t('metrics.desc')}</p>
       </div>
       <div>
         <!-- Global Sprint Scope for metrics that support it -->
         <select id="global-sprint-selector" class="bg-forge-bg text-forge-text border border-forge-border rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-forge-secondary">
-          <option value="all">Global (Historical)</option>
+          <option value="all">{t('metrics.global_hist')}</option>
           {sprints.map(s => (
             <option value={s.id}>{s.name} {s.status === 'active' ? '(Active)' : s.status === 'completed' ? '(Completed)' : ''}</option>
           ))}
@@ -42,8 +44,8 @@ const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace
       <div class="bg-forge-panel border border-forge-border rounded-lg p-5 flex flex-col min-h-[350px]">
         <div class="flex justify-between items-start mb-4">
           <div>
-            <h2 class="text-lg font-bold text-forge-text">Workload Distribution</h2>
-            <p class="text-xs text-forge-muted mt-1" id="dist-scope-label">Scope: Historical Total</p>
+            <h2 class="text-lg font-bold text-forge-text">{t('metrics.workload_dist')}</h2>
+            <p class="text-xs text-forge-muted mt-1" id="dist-scope-label">{t('metrics.scope_hist')}</p>
           </div>
         </div>
         <div id="dist-empty-state" class="hidden flex-1 flex flex-col items-center justify-center text-forge-muted">
@@ -59,13 +61,13 @@ const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace
       <div class="bg-forge-panel border border-forge-border rounded-lg p-5 flex flex-col min-h-[350px]">
         <div class="flex justify-between items-start mb-4">
           <div>
-            <h2 class="text-lg font-bold text-forge-text">Sprint Burndown (Snapshot)</h2>
-            <p class="text-xs text-forge-muted mt-1" id="burn-scope-label">Scope: Requires Sprint</p>
+            <h2 class="text-lg font-bold text-forge-text">{t('metrics.sprint_burndown')}</h2>
+            <p class="text-xs text-forge-muted mt-1" id="burn-scope-label">{t('metrics.scope_sprint')}</p>
           </div>
         </div>
         <div id="burn-empty-state" class="flex-1 flex flex-col items-center justify-center text-forge-muted">
           <svg class="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-          <p class="text-sm">Select a specific sprint above to view</p>
+          <p class="text-sm">{t('metrics.select_sprint')}</p>
         </div>
         <div class="relative flex-1 w-full hidden" id="burn-chart-container">
           <canvas id="burndownChart"></canvas>
@@ -76,13 +78,13 @@ const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace
       <div class="bg-forge-panel border border-forge-border rounded-lg p-5 flex flex-col min-h-[350px]">
         <div class="flex justify-between items-start mb-4">
           <div>
-            <h2 class="text-lg font-bold text-forge-text">Velocity Trend</h2>
-            <p class="text-xs text-forge-muted mt-1" id="vel-scope-label">Scope: Historical (Last 5 Sprints)</p>
+            <h2 class="text-lg font-bold text-forge-text">{t('metrics.velocity_trend')}</h2>
+            <p class="text-xs text-forge-muted mt-1" id="vel-scope-label">{t('metrics.scope_5sprints')}</p>
           </div>
         </div>
         <div id="vel-empty-state" class="hidden flex-1 flex flex-col items-center justify-center text-forge-muted">
           <svg class="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-          <p class="text-sm">Not enough completed sprints</p>
+          <p class="text-sm">{t('metrics.not_enough_sprints')}</p>
         </div>
         <div class="relative flex-1 w-full" id="vel-chart-container">
           <canvas id="velocityChart"></canvas>
@@ -93,8 +95,8 @@ const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace
       <div class="bg-forge-panel border border-forge-border rounded-lg p-5 flex flex-col min-h-[350px]">
         <div class="flex justify-between items-start mb-4">
           <div>
-            <h2 class="text-lg font-bold text-forge-text">Estimation Precision</h2>
-            <p class="text-xs text-forge-muted mt-1" id="prec-scope-label">Scope: Historical Total</p>
+            <h2 class="text-lg font-bold text-forge-text">{t('metrics.estimation_precision')}</h2>
+            <p class="text-xs text-forge-muted mt-1" id="prec-scope-label">{t('metrics.scope_hist')}</p>
           </div>
         </div>
         <div id="prec-empty-state" class="hidden flex-1 flex flex-col items-center justify-center text-forge-muted">
@@ -108,6 +110,22 @@ const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace
 
     </div>
   </div>
+
+  <script define:vars={{
+    tTodo: t('metrics.todo'),
+    tInProgress: t('metrics.in_progress'),
+    tDone: t('metrics.done'),
+    tEstimated: t('metrics.estimated_h'),
+    tLogged: t('metrics.logged_h')
+  }}>
+    window.metricsLabels = {
+      todo: tTodo,
+      in_progress: tInProgress,
+      done: tDone,
+      estimated: tEstimated,
+      logged: tLogged
+    };
+  </script>
 
   <script>
     import Chart from 'chart.js/auto';
@@ -167,7 +185,7 @@ const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace
         if (status === 'done') color = '#10b981'; // green
 
         return {
-          label: status.replace('_', ' ').toUpperCase(),
+          label: (window as any).metricsLabels[status] || status.replace('_', ' ').toUpperCase(),
           data: assignees.map(a => {
             const row = data.find((d: any) => d.assignee === a && d.status === status);
             return row ? row.count : 0;
@@ -375,12 +393,12 @@ const sprints = db.prepare('SELECT id, name, status FROM sprints WHERE workspace
           labels: data.map((d: any) => d.assignee),
           datasets: [
             {
-              label: 'Estimated (h)',
+              label: (window as any).metricsLabels.estimated,
               data: data.map((d: any) => d.estimated_hours),
               backgroundColor: '#6b7280', // gray
             },
             {
-              label: 'Logged (h)',
+              label: (window as any).metricsLabels.logged,
               data: data.map((d: any) => d.logged_hours),
               backgroundColor: '#f59e0b', // amber/orange
             }

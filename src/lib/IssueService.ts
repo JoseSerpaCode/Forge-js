@@ -40,7 +40,7 @@ export class IssueService {
     }
 
     // Whitelist allowed fields to prevent SQL injection via keys
-    const allowedFields = ['title', 'description', 'status', 'priority', 'points', 'assignee_id', 'sprint_id', 'position', 'due_date'];
+    const allowedFields = ['title', 'description', 'status', 'priority', 'story_points', 'estimated_hours', 'type', 'assignee_id', 'sprint_id', 'position', 'due_date'];
     const safeData: any = {};
     for (const key of Object.keys(data)) {
       if (allowedFields.includes(key)) {

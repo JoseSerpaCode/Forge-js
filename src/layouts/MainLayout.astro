@@ -23,7 +23,7 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
 Astro.response.headers.set('Pragma', 'no-cache');
 ---
 
-<html lang="en" data-theme={user?.theme_preference || 'dark'}>
+<html lang={Astro.locals.lang || 'es'} data-theme={user?.theme_preference || 'dark'}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
@@ -36,13 +36,20 @@ Astro.response.headers.set('Pragma', 'no-cache');
     <meta property="og:title" content={`${title} | Forge OS`} />
     <meta property="og:description" content="Advanced workspace management and task tracking application for professional teams." />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content={Astro.url.href} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={`${title} | Forge OS`} />
+    <meta name="twitter:description" content="Advanced workspace management and task tracking application for professional teams." />
     
-    <!-- Preconnect for Performance -->
+    <link rel="canonical" href={Astro.url.href} />
+    
+    <!-- Preconnect & Preload for Performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
     
     <link rel="icon" type="image/svg+xml" href="/forge-icon.svg" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
     
     <title>{title} | Forge OS</title>
     <script is:inline>
@@ -63,7 +70,7 @@ Astro.response.headers.set('Pragma', 'no-cache');
       });
     </script>
   </head>
-  <body class="bg-forge-bg text-forge-text flex h-screen overflow-hidden" data-user-role={user?.role} data-is-sysadmin={user?.is_sysadmin}>
+  <body class="bg-forge-bg text-forge-text flex h-screen overflow-hidden selection:bg-forge-primary selection:text-white" data-user-role={user?.role} data-is-sysadmin={user?.is_sysadmin}>
     <Sidebar workspaceId={workspaceId} workspaceName={workspaceName} />
     <div id="sidebar-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden transition-opacity opacity-0 backdrop-blur-sm cursor-pointer"></div>
     <div class="flex-1 flex flex-col min-w-0">
@@ -122,11 +129,12 @@ Astro.response.headers.set('Pragma', 'no-cache');
     </dialog>
 
     <script is:inline>
-      window.showToast = function(msg, isError = false) {
+      window.showToast = function(msg, type = false) {
         const toast = document.getElementById('forge-toast');
         const text = document.getElementById('forge-toast-msg');
         if (toast && text) {
           text.textContent = msg;
+          const isError = type === true || type === 'error';
           if (isError) {
              toast.classList.replace('border-forge-secondary', 'border-red-500');
           } else {

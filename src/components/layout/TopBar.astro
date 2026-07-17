@@ -70,6 +70,11 @@ const currentUrl = Astro.url.pathname;
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
     </button>
 
+    <button id="btn-toggle-theme" class="text-forge-muted hover:text-forge-secondary transition-colors p-1.5 rounded hover:bg-forge-bg hidden sm:block" title="Toggle Theme" aria-label="Toggle Theme">
+      <svg id="theme-icon-light" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg id="theme-icon-dark" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+
     <div class="h-5 w-px bg-forge-border hidden sm:block"></div>
     <div class="relative">
       <button id="btn-notifications" class="text-forge-muted hover:text-forge-secondary transition-colors relative group p-1.5 rounded hover:bg-forge-bg" aria-label="Notifications">
@@ -222,7 +227,35 @@ const currentUrl = Astro.url.pathname;
 
 <script>
   // Event listener for / key
-  const searchInput = document.getElementById('global-search') as HTMLInputElement;
+  const globalSearch = document.getElementById('global-search') as HTMLInputElement;
+
+  // Theme Toggle Logic
+  const btnToggleTheme = document.getElementById('btn-toggle-theme');
+  const iconLight = document.getElementById('theme-icon-light');
+  const iconDark = document.getElementById('theme-icon-dark');
+  
+  if (btnToggleTheme) {
+    const updateIcon = () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+      if (currentTheme === 'light') {
+        iconDark?.classList.remove('hidden');
+        iconLight?.classList.add('hidden');
+      } else {
+        iconLight?.classList.remove('hidden');
+        iconDark?.classList.add('hidden');
+      }
+    };
+    
+    updateIcon();
+    
+    btnToggleTheme.addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('forge_theme', newTheme);
+      updateIcon();
+    });
+  }
   const searchDropdown = document.getElementById('search-dropdown');
   const searchResults = document.getElementById('search-results');
 
@@ -244,14 +277,14 @@ const currentUrl = Astro.url.pathname;
       active.closest('[contenteditable="true"]')
     );
     
-    if (e.key === '/' && document.activeElement !== searchInput && !isEditable) {
+    if (e.key === '/' && document.activeElement !== globalSearch && !isEditable) {
       e.preventDefault();
-      searchInput?.focus();
+      globalSearch?.focus();
     }
     // Close search with Escape
     if (e.key === 'Escape') {
       searchDropdown?.classList.add('hidden');
-      searchInput?.blur();
+      globalSearch?.blur();
     }
     // Arrow navigation in results
     if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && searchDropdown && !searchDropdown.classList.contains('hidden')) {
@@ -261,7 +294,7 @@ const currentUrl = Astro.url.pathname;
       const active = document.activeElement;
       const currentIndex = items.indexOf(active as HTMLElement);
       if (e.key === 'ArrowDown') {
-        // If focus is still in searchInput or not in list, go to first item
+        // If focus is still in globalSearch or not in list, go to first item
         const nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
         items[nextIndex]?.focus();
       } else {
@@ -280,14 +313,14 @@ const currentUrl = Astro.url.pathname;
   });
 
   // Show hints immediately when input gets focus
-  searchInput?.addEventListener('focus', () => {
-    if (!searchInput.value) {
+  globalSearch?.addEventListener('focus', () => {
+    if (!globalSearch.value) {
       // Show slash command hints immediately when empty
-      searchInput.value = '/';
+      globalSearch.value = '/';
       searchDropdown?.classList.remove('hidden');
-      searchInput.dispatchEvent(new Event('input'));
+      globalSearch.dispatchEvent(new Event('input'));
       // Select all so user can just type over the slash
-      searchInput.select();
+      globalSearch.select();
     }
   });
 
@@ -339,7 +372,7 @@ const currentUrl = Astro.url.pathname;
     }
   };
 
-  searchInput?.addEventListener('input', (e: any) => {
+  globalSearch?.addEventListener('input', (e: any) => {
     performSearch(e.target.value);
   });
 
@@ -493,7 +526,7 @@ const currentUrl = Astro.url.pathname;
   });
 
   document.addEventListener('click', (e: any) => {
-    if (!searchInput?.contains(e.target) && !searchDropdown?.contains(e.target)) {
+    if (!globalSearch?.contains(e.target) && !searchDropdown?.contains(e.target)) {
       searchDropdown?.classList.add('hidden');
     }
     if (!notifBtn?.contains(e.target) && !notifDropdown?.contains(e.target)) {
@@ -550,9 +583,9 @@ const currentUrl = Astro.url.pathname;
         e.preventDefault();
         e.stopPropagation(); // Prevent document click listener from hiding the dropdown
         const insert = item.getAttribute('data-insert');
-        if (searchInput && insert) {
-          searchInput.value = insert;
-          searchInput.focus();
+        if (globalSearch && insert) {
+          globalSearch.value = insert;
+          globalSearch.focus();
           // Programmatically trigger search since dispatchEvent doesn't always bubble correctly in all browsers
           if (typeof performSearch === 'function') {
             performSearch(insert);

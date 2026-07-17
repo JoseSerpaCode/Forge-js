@@ -10,6 +10,7 @@ export const ui = {
     'sidebar.kanban': 'Kanban Board',
     'sidebar.knowledge': 'Knowledge Base',
     'sidebar.databases': 'Databases',
+    'sidebar.metrics': 'Metrics',
     'sidebar.settings': 'Settings',
     'sidebar.notifications': 'Notifications',
     'notifications.markAllRead': 'Mark all as read',
@@ -143,6 +144,50 @@ export const ui = {
     'hub.no_workspaces': 'You are not assigned to any workspaces. Create one to begin.',
     'hub.no_tasks': 'No pending tasks. Forge a new issue to begin.',
 
+    // KB Index
+    'kb.empty_title': 'No pages yet.',
+    'kb.empty_desc': 'No pages found in this workspace.',
+    'kb.empty_cta': 'Click "New Page" in the sidebar to create one.',
+
+    // Metrics
+    'metrics.title': 'Dashboard & Metrics',
+    'metrics.desc': 'Analyze team performance and workload',
+    'metrics.global_hist': 'Global (Historical)',
+    'metrics.workload_dist': 'Workload Distribution',
+    'metrics.scope_hist': 'Scope: Historical Total',
+    'metrics.todo': 'TODO',
+    'metrics.in_progress': 'IN PROGRESS',
+    'metrics.done': 'DONE',
+    'metrics.sprint_burndown': 'Sprint Burndown (Snapshot)',
+    'metrics.scope_sprint': 'Scope: Requires Sprint',
+    'metrics.select_sprint': 'Select a specific sprint above to view',
+    'metrics.velocity_trend': 'Velocity Trend',
+    'metrics.scope_5sprints': 'Scope: Historical (Last 5 Sprints)',
+    'metrics.not_enough_sprints': 'Not enough completed sprints',
+    'metrics.estimation_precision': 'Estimation Precision',
+    'metrics.estimated_h': 'Estimated (h)',
+    'metrics.logged_h': 'Logged (h)',
+
+    // DB Index
+    'db.title': 'Databases & Tables',
+    'db.subtitle': 'Create structured tables to manage CRMs, inventories, or trackers directly inside your workspace. Think of it as your own integrated spreadsheet or Notion table.',
+    'db.columns': 'COLUMNS',
+
+    // Dashboard / Hub common table headers
+    'table.type': 'TYPE',
+    'table.name': 'NAME',
+    'table.due_date': 'DUE DATE',
+    'table.status': 'STATUS',
+
+    // Modals
+    'modal.due_date': 'Due Date',
+
+    // Statuses
+    'status.todo': 'todo',
+    'status.in_progress': 'in progress',
+    'status.in_review': 'in review',
+    'status.done': 'done',
+
     // Auth & Misc
     'auth.authorized': 'AUTHORIZED PERSONNEL ONLY',
     'auth.new_personnel': 'NEW PERSONNEL REGISTRATION',
@@ -158,6 +203,10 @@ export const ui = {
     '404.back': 'Return to Hub',
 
     // Dashboard
+    'dashboard.workspace_overview': 'Workspace Overview',
+    'dashboard.time': 'Time',
+    'dashboard.logged': 'logged',
+    'dashboard.no_estimate': 'no estimate',
     'dashboard.open_board': 'Open Board',
     'dashboard.knowledge_base': 'Knowledge Base',
     'dashboard.active_sprint': 'Active Sprint',
@@ -218,8 +267,14 @@ export const ui = {
     // About Modal
     'about.title': 'About Forge JS',
     'about.guide': 'User Guide',
+    'about.shortcuts': 'Keyboard Shortcuts',
+    'about.shortcuts.desc': 'Speed up your workflow with these shortcuts.',
     'about.docs': 'Documentation',
     'about.legal': 'License & Legal',
+    'about.kanban.empty_title': 'Welcome to your new board',
+    'about.kanban.empty_desc': 'Your kanban board is currently empty. Get started by creating your first issue to track tasks, bugs, and user stories.',
+    'about.kanban.empty_cta_1': 'Press',
+    'about.kanban.empty_cta_2': 'to create a new issue',
     'about.kanban.title': 'Kanban & Sprints',
     'about.kanban.desc': 'An interactive board where you can drag and drop cards (issues). Organize your work in Sprints, assign tasks and watch your team\'s real-time progress.',
     'about.kb.title': 'Knowledge Base',
@@ -245,6 +300,7 @@ export const ui = {
     'sidebar.kanban': 'Tablero Kanban',
     'sidebar.knowledge': 'Base de Conocimiento',
     'sidebar.databases': 'Bases de Datos',
+    'sidebar.metrics': 'Métricas',
     'sidebar.settings': 'Ajustes',
     'sidebar.notifications': 'Notificaciones',
     'notifications.markAllRead': 'Marcar todo como leído',
@@ -378,6 +434,50 @@ export const ui = {
     'hub.no_workspaces': 'No estás asignado a ningún workspace. Crea uno para empezar.',
     'hub.no_tasks': 'No tienes tareas pendientes. Forja un nuevo ticket para comenzar.',
 
+    // KB Index
+    'kb.empty_title': 'Aún no hay páginas.',
+    'kb.empty_desc': 'No se encontraron páginas en este workspace.',
+    'kb.empty_cta': 'Haz clic en "Nueva Página" en la barra lateral para crear una.',
+
+    // Metrics
+    'metrics.title': 'Dashboard & Métricas',
+    'metrics.desc': 'Analiza el rendimiento y la carga de trabajo del equipo',
+    'metrics.global_hist': 'Global (Histórico)',
+    'metrics.workload_dist': 'Distribución de Trabajo',
+    'metrics.scope_hist': 'Alcance: Total Histórico',
+    'metrics.todo': 'POR HACER',
+    'metrics.in_progress': 'EN PROGRESO',
+    'metrics.done': 'HECHO',
+    'metrics.sprint_burndown': 'Burndown del Sprint (Instantánea)',
+    'metrics.scope_sprint': 'Alcance: Requiere un Sprint',
+    'metrics.select_sprint': 'Selecciona un sprint específico arriba para ver',
+    'metrics.velocity_trend': 'Tendencia de Velocidad',
+    'metrics.scope_5sprints': 'Alcance: Histórico (Últimos 5 Sprints)',
+    'metrics.not_enough_sprints': 'No hay suficientes sprints completados',
+    'metrics.estimation_precision': 'Precisión de Estimación',
+    'metrics.estimated_h': 'Estimado (h)',
+    'metrics.logged_h': 'Registrado (h)',
+
+    // DB Index
+    'db.title': 'Bases de Datos & Tablas',
+    'db.subtitle': 'Crea tablas estructuradas para gestionar CRMs, inventarios o rastreadores directamente en tu workspace. Piensa en ello como tu propia hoja de cálculo o tabla de Notion integrada.',
+    'db.columns': 'COLUMNAS',
+
+    // Dashboard / Hub common table headers
+    'table.type': 'TIPO',
+    'table.name': 'NOMBRE',
+    'table.due_date': 'FECHA LÍMITE',
+    'table.status': 'ESTADO',
+
+    // Modals
+    'modal.due_date': 'Fecha Límite',
+
+    // Statuses
+    'status.todo': 'por hacer',
+    'status.in_progress': 'en progreso',
+    'status.in_review': 'en revisión',
+    'status.done': 'hecho',
+
     // Auth & Misc
     'auth.authorized': 'SÓLO PERSONAL AUTORIZADO',
     'auth.new_personnel': 'REGISTRO DE NUEVO PERSONAL',
@@ -393,6 +493,10 @@ export const ui = {
     '404.back': 'Volver al Hub',
 
     // Dashboard
+    'dashboard.workspace_overview': 'Resumen del Espacio',
+    'dashboard.time': 'Tiempo',
+    'dashboard.logged': 'registradas',
+    'dashboard.no_estimate': 'sin estimar',
     'dashboard.open_board': 'Abrir Tablero',
     'dashboard.knowledge_base': 'Base de Conocimiento',
     'dashboard.active_sprint': 'Sprint Activo',
@@ -453,8 +557,14 @@ export const ui = {
     // About Modal
     'about.title': 'Acerca de Forge JS',
     'about.guide': 'Guía de Uso',
+    'about.shortcuts': 'Atajos de Teclado',
+    'about.shortcuts.desc': 'Acelera tu flujo de trabajo con estos atajos.',
     'about.docs': 'Documentación',
     'about.legal': 'Licencia & Legal',
+    'about.kanban.empty_title': 'Bienvenido a tu nuevo tablero',
+    'about.kanban.empty_desc': 'Tu tablero kanban está actualmente vacío. Comienza creando tu primera tarea (issue) para dar seguimiento a historias de usuario y bugs.',
+    'about.kanban.empty_cta_1': 'Presiona',
+    'about.kanban.empty_cta_2': 'para crear una nueva tarea',
     'about.kanban.title': 'Kanban & Sprints',
     'about.kanban.desc': 'Un tablero interactivo donde puedes arrastrar y soltar tarjetas (issues). Organiza tu trabajo en Sprints, asigna tareas y observa el progreso en tiempo real de tu equipo.',
     'about.kb.title': 'Knowledge Base',
@@ -477,7 +587,9 @@ export const ui = {
 export type Language = keyof typeof ui;
 
 export function useTranslations(lang: Language) {
-  return function t(key: keyof typeof ui[typeof defaultLang]) {
-    return ui[lang][key] || ui[defaultLang][key];
+  return function t(key: keyof typeof ui[typeof defaultLang]): string {
+    const langDict = ui[lang] as Record<string, string>;
+    const defaultDict = ui[defaultLang] as Record<string, string>;
+    return langDict[key as string] || defaultDict[key as string] || key;
   }
 }
