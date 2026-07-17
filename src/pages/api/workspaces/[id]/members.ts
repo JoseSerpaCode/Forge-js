@@ -13,6 +13,8 @@ export const POST: APIRoute = async ({ request, params, locals }) => {
     if (access.reason === 'not_member') return new Response('Not Found', { status: 404 });
     return new Response(access.error || 'Forbidden', { status: 403 });
   }
+  
+  if (user.is_guest === 1) return new Response('Guest accounts cannot invite users', { status: 403 });
 
   try {
     const { username, role } = await request.json();

@@ -61,6 +61,18 @@ try {
   // Ignorar error si la columna ya existe
 }
 
+try {
+  db.exec('ALTER TABLE users ADD COLUMN is_public BOOLEAN DEFAULT 1 CHECK(is_public IN (0, 1))');
+} catch (e) {
+  // Ignorar
+}
+
+try {
+  db.exec('ALTER TABLE users ADD COLUMN banner_url TEXT');
+} catch (e) {
+  // Ignorar
+}
+
 // 3. Diccionario de Datos: Aislamiento Multi-Tenant (El Pivote)
 db.exec(`
 CREATE TABLE IF NOT EXISTS workspace_members (

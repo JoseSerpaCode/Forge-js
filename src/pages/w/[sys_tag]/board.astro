@@ -89,10 +89,15 @@ if (activeSprintId) {
   totalLogged = totals.total_logged || 0;
   totalEstimated = totals.total_estimated || 0;
 }
+const metaDescription = `${workspace.name} board on Forge OS. Track issues, sprints, and tasks efficiently.`;
 ---
 
-<MainLayout title={`Board - ${workspace.name}`} workspaceId={workspace.id}>
-  <div class="h-full flex flex-col">
+<MainLayout 
+  title={`Board - ${workspace.name}`} 
+  workspaceId={workspace.id}
+  description={metaDescription}
+>
+  <div class="h-full flex flex-col pt-4 overflow-hidden">
     <header class="mb-4 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
       <div class="flex items-center gap-4">
         <h1 class="text-2xl font-bold text-forge-text">{workspace.name} Board</h1>

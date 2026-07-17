@@ -14,16 +14,18 @@ CREATE TABLE sessions (
  expires_at INTEGER NOT NULL,
  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-CREATE TABLE workspaces (
- id TEXT PRIMARY KEY,
- name TEXT NOT NULL,
- sys_tag TEXT NOT NULL UNIQUE,
- icon TEXT,
- description TEXT,
- created_by TEXT NOT NULL,
- created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
- FOREIGN KEY (created_by) REFERENCES users(id)
-);
+ CREATE TABLE workspaces (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  sys_tag TEXT NOT NULL UNIQUE,
+  icon TEXT,
+  description TEXT,
+  created_by TEXT NOT NULL,
+  is_public BOOLEAN DEFAULT 0 CHECK(is_public IN (0, 1)),
+  join_policy TEXT DEFAULT 'disabled' CHECK(join_policy IN ('open', 'friends_only', 'disabled')),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (created_by) REFERENCES users(id)
+ );
 CREATE TABLE workspace_members (
  workspace_id TEXT NOT NULL,
  user_id TEXT NOT NULL,

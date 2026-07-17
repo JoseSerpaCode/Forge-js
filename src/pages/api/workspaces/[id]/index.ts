@@ -34,8 +34,12 @@ export const PATCH: APIRoute = async ({ request, params, locals }) => {
     return new Response(access.error || 'Forbidden', { status: 403 });
   }
 
+  if (user.is_guest === 1) {
+    return new Response('Guest accounts cannot modify workspace settings', { status: 403 });
+  }
+
   try {
-    const { name, sys_tag, icon } = await request.json();
+    const { name, sys_tag, icon, description, is_public, join_policy } = await request.json();
     if (!name || !sys_tag) return new Response('Name and System Tag are required', { status: 400 });
     
     // [M-2 FIX] Validate sys_tag format — same rule as POST /api/workspaces
@@ -47,10 +51,33 @@ export const PATCH: APIRoute = async ({ request, params, locals }) => {
     const existing = db.prepare('SELECT id FROM workspaces WHERE sys_tag = ? AND id != ?').get(sys_tag, workspaceId);
     if (existing) return new Response('System tag already in use', { status: 400 });
     
-    const oldWs = db.prepare('SELECT sys_tag FROM workspaces WHERE id = ?').get(workspaceId) as any;
+    const oldWs = db.prepare('SELECT sys_tag, is_public, join_policy FROM workspaces WHERE id = ?').get(workspaceId) as any;
     
-    db.prepare('UPDATE workspaces SET name = ?, sys_tag = ?, icon = ? WHERE id = ?').run(name, sys_tag, icon || null, workspaceId);
+    // Validate is_public and join_policy
+    const validIsPublic = is_public ? 1 : 0;
+    const validJoinPolicy = ['open', 'friends_only', 'disabled'].includes(join_policy) ? join_policy : 'disabled';
+
+    db.prepare('UPDATE workspaces SET name = ?, sys_tag = ?, icon = ?, description = ?, is_public = ?, join_policy = ? WHERE id = ?').run(
+      name, sys_tag, icon || null, description || null, validIsPublic, validJoinPolicy, workspaceId
+    );
     
+    // Public to private transition or disabling join policy => cancel pending requests
+    if (oldWs && ((oldWs.is_public === 1 && validIsPublic === 0) || (oldWs.join_policy !== 'disabled' && validJoinPolicy === 'disabled'))) {
+      const pendingReqs = db.prepare(`SELECT id, user_id FROM workspace_join_requests WHERE workspace_id = ? AND status = 'pending'`).all(workspaceId) as any[];
+      if (pendingReqs.length > 0) {
+        db.prepare(`UPDATE workspace_join_requests SET status = 'cancelled' WHERE workspace_id = ? AND status = 'pending'`).run(workspaceId);
+        // Send notification to users whose requests were cancelled
+        const crypto = await import('crypto');
+        const stmt = db.prepare(`INSERT INTO notifications (id, user_id, type, title, message) VALUES (?, ?, 'system', 'Workspace Request Cancelled', 'Your request to join workspace ' || ? || ' was cancelled because the workspace is no longer accepting requests.')`);
+        const tx = db.transaction(() => {
+          for (const req of pendingReqs) {
+            stmt.run(crypto.randomUUID(), req.user_id, name);
+          }
+        });
+        tx();
+      }
+    }
+
     if (oldWs && oldWs.sys_tag !== sys_tag) {
       db.prepare('UPDATE users SET last_workspace_id = ? WHERE last_workspace_id = ?').run(sys_tag, oldWs.sys_tag);
     }

@@ -56,10 +56,16 @@ describe('Workspace API PATCH', () => {
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.success).toBe(true);
-    
-    expect(mockRun).toHaveBeenCalledWith('New Name', 'new-tag', 'data:image/webp;base64,123', 'ws1');
+    expect(mockRun).toHaveBeenCalledWith(
+      'New Name', 
+      'new-tag', 
+      'data:image/webp;base64,123', 
+      null, // description
+      0,    // is_public (default falsy from undefined)
+      'disabled', // invite_policy (default falsy from undefined)
+      'ws1'
+    );
   });
-  
   it('rejects invalid sys_tag format', async () => {
     const mockRequest = {
       json: vi.fn().mockResolvedValue({

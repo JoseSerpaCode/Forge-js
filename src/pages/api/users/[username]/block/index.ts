@@ -1,10 +1,9 @@
 import type { APIRoute } from 'astro';
 import db from '../../../../../lib/db';
-import { checkAuth } from '../../../../../lib/auth';
 
 export const POST: APIRoute = async ({ request, params, locals }) => {
   try {
-    const user = await checkAuth(request, locals);
+    const user = locals.user;
     if (!user) return new Response('Unauthorized', { status: 401 });
 
     const targetUsername = params.username;
@@ -35,9 +34,9 @@ export const POST: APIRoute = async ({ request, params, locals }) => {
         // 2. Delete pending workspace requests both ways
         db.prepare(`
            DELETE FROM workspace_join_requests WHERE status='pending' AND (
-             (workspace_id IN (SELECT id FROM workspaces WHERE owner_id = ?) AND user_id = ?)
+             (workspace_id IN (SELECT id FROM workspaces WHERE created_by = ?) AND user_id = ?)
              OR
-             (workspace_id IN (SELECT id FROM workspaces WHERE owner_id = ?) AND user_id = ?)
+             (workspace_id IN (SELECT id FROM workspaces WHERE created_by = ?) AND user_id = ?)
            )
         `).run(user.id, targetUser.id, targetUser.id, user.id);
 
@@ -61,7 +60,7 @@ export const POST: APIRoute = async ({ request, params, locals }) => {
 
 export const DELETE: APIRoute = async ({ request, params, locals }) => {
   try {
-    const user = await checkAuth(request, locals);
+    const user = locals.user;
     if (!user) return new Response('Unauthorized', { status: 401 });
 
     const targetUsername = params.username;
@@ -75,17 +74,27 @@ export const DELETE: APIRoute = async ({ request, params, locals }) => {
 
     const tx = db.transaction(() => {
         // Delete block
-        db.prepare('DELETE FROM user_blocks WHERE blocker_id = ? AND blocked_id = ?').run(user.id, targetUser.id);
+        const blockResult = db.prepare('DELETE FROM user_blocks WHERE blocker_id = ? AND blocked_id = ?').run(user.id, targetUser.id);
         
+        if (blockResult.changes === 0) {
+            return false;
+        }
+
         // Remove friendship entirely so it's a clean slate
         db.prepare(`
             DELETE FROM friendships 
             WHERE (user_a_id = ? AND user_b_id = ?) AND status = 'blocked'
             AND (user_a_id = ? OR user_b_id = ?)
         `).run(userA, userB, userA, userB);
+
+        return true;
     });
 
-    tx();
+    const success = tx();
+    
+    if (!success) {
+        return new Response(JSON.stringify({ error: 'Not Found' }), { status: 404 });
+    }
 
     return new Response(JSON.stringify({ success: true }), { status: 200 });
 

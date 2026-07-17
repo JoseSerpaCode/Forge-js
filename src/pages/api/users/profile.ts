@@ -5,7 +5,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const user = locals.user!;
 
   try {
-    const { bio, pronouns, public_email, avatar_url } = await request.json();
+    const { bio, pronouns, public_email, is_public, avatar_url, banner_url } = await request.json();
     
     // Strict validation
     if (bio && typeof bio !== 'string') return new Response('Invalid bio', { status: 400 });
@@ -20,17 +20,23 @@ export const POST: APIRoute = async ({ request, locals }) => {
       return new Response('Invalid email format', { status: 400 });
     }
 
-    db.prepare(`
-      UPDATE users 
-      SET bio = ?, pronouns = ?, public_email = ?, avatar_url = COALESCE(?, avatar_url)
-      WHERE id = ?
-    `).run(
-      bio ? bio.trim() : null, 
-      pronouns ? pronouns.trim() : null, 
-      public_email ? public_email.trim() : null, 
-      avatar_url ? avatar_url.trim() : null,
-      user.id
-    );
+    const updateFields: string[] = [];
+    const values: any[] = [];
+
+    if (bio !== undefined) { updateFields.push('bio = ?'); values.push(bio ? bio.trim() : null); }
+    if (pronouns !== undefined) { updateFields.push('pronouns = ?'); values.push(pronouns ? pronouns.trim() : null); }
+    if (public_email !== undefined) { updateFields.push('public_email = ?'); values.push(public_email ? public_email.trim() : null); }
+    if (is_public !== undefined) { 
+        updateFields.push('is_public = ?'); 
+        values.push(user.is_guest === 1 ? 0 : (is_public ? 1 : 0)); 
+    }
+    if (avatar_url !== undefined) { updateFields.push('avatar_url = ?'); values.push(avatar_url ? avatar_url.trim() : null); }
+    if (banner_url !== undefined) { updateFields.push('banner_url = ?'); values.push(banner_url ? banner_url.trim() : null); }
+
+    if (updateFields.length > 0) {
+        values.push(user.id);
+        db.prepare(`UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`).run(...values);
+    }
     
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (err: any) {

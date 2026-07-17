@@ -24,6 +24,14 @@ const members = db.prepare(`
   ORDER BY wm.joined_at ASC
 `).all(ws.id) as any[];
 
+const joinRequests = db.prepare(`
+  SELECT r.id, r.status, r.created_at, u.username, u.avatar_url
+  FROM workspace_join_requests r
+  JOIN users u ON r.user_id = u.id
+  WHERE r.workspace_id = ? AND r.status = 'pending'
+  ORDER BY r.created_at DESC
+`).all(ws.id) as any[];
+
 const auditLogs = db.prepare(`
   SELECT a.id, a.action, a.entity_type, a.entity_id, a.details_json, a.timestamp, u.username, u.avatar_url
   FROM audit_logs a
@@ -65,7 +73,7 @@ const wsPendingInvites = pendingInvites.filter(n => {
 });
 ---
 
-<MainLayout title={`Settings - ${ws.name}`} workspaceId={ws.id}>
+<MainLayout title={`${t('sidebar.settings')} - ${ws.name}`} workspaceId={ws.id}>
   <div class="max-w-4xl mx-auto mt-4 sm:mt-10 p-0 sm:p-6 space-y-6 sm:space-y-8 relative">
     <div class="flex items-center justify-between">
       <h1 class="text-3xl font-bold text-forge-text">{t('ws.settings.title')}</h1>
@@ -99,7 +107,28 @@ const wsPendingInvites = pendingInvites.filter(n => {
             <label class="block text-sm font-bold text-forge-muted uppercase mb-1">{t('ws.settings.tag')}</label>
             <input type="text" id="ws-tag-input" value={ws.sys_tag} class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-secondary" />
           </div>
-          <button id="btn-save-general" class="bg-forge-primary text-forge-bg font-bold py-2 px-6 rounded hover:bg-forge-primary/90 transition-colors mt-2" data-ws-id={ws.id}>
+          <div>
+            <label class="block text-sm font-bold text-forge-muted uppercase mb-1">{t('ws.settings.desc')}</label>
+            <textarea id="ws-desc-input" rows="2" class="w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-secondary">{ws.description || ''}</textarea>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-bold text-forge-muted uppercase mb-1">{t('ws.settings.visibility')}</label>
+              <select id="ws-public-input" class={`w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-secondary ${user.is_guest ? 'guest-restricted-action opacity-50' : ''}`} data-guest={user.is_guest ? 'true' : 'false'} data-guest-msg="Create an account to change project visibility.">
+                <option value="0" selected={ws.is_public === 0}>{t('ws.settings.private')}</option>
+                <option value="1" selected={ws.is_public === 1}>{t('ws.settings.public')}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-forge-muted uppercase mb-1">{t('ws.settings.join_policy')}</label>
+              <select id="ws-join-policy-input" class={`w-full bg-forge-bg border border-forge-border rounded p-2 text-forge-text focus:outline-none focus:border-forge-secondary ${user.is_guest ? 'guest-restricted-action opacity-50' : ''}`} data-guest={user.is_guest ? 'true' : 'false'} data-guest-msg="Create an account to change join policy.">
+                <option value="disabled" selected={ws.join_policy === 'disabled'}>{t('ws.settings.policy_disabled')}</option>
+                <option value="friends_only" selected={ws.join_policy === 'friends_only'}>{t('ws.settings.policy_friends')}</option>
+                <option value="open" selected={ws.join_policy === 'open'}>{t('ws.settings.policy_open')}</option>
+              </select>
+            </div>
+          </div>
+          <button id="btn-save-general" class={`bg-forge-primary text-forge-bg font-bold py-2 px-6 rounded hover:bg-forge-primary/90 transition-colors mt-2 ${user.is_guest ? 'guest-restricted-action opacity-50' : ''}`} data-ws-id={ws.id} data-guest={user.is_guest ? 'true' : 'false'} data-guest-msg="Create an account to save workspace settings.">
             {t('ws.settings.save')}
           </button>
         </div>
@@ -110,15 +139,9 @@ const wsPendingInvites = pendingInvites.filter(n => {
     <div class="bg-forge-panel border border-forge-border rounded-lg shadow-lg p-6">
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-xl font-bold text-forge-text">{t('ws.settings.members')}</h2>
-        {user.is_guest ? (
-          <span class="text-xs text-forge-secondary font-medium px-3 py-1 bg-forge-secondary/10 rounded border border-forge-secondary/20">
-            Create an account to invite users
-          </span>
-        ) : (
-          <button id="btn-add-member" class="bg-forge-bg border border-forge-border text-forge-text px-3 py-1.5 text-sm rounded hover:border-forge-secondary transition-colors">
-            {t('ws.settings.invite')}
-          </button>
-        )}
+        <button id="btn-add-member" class={`bg-forge-bg border border-forge-border text-forge-text px-3 py-1.5 text-sm rounded hover:border-forge-secondary transition-colors ${user.is_guest ? 'guest-restricted-action opacity-50' : ''}`} data-guest={user.is_guest ? 'true' : 'false'} data-guest-msg="Create an account to invite users.">
+          {t('ws.settings.invite')}
+        </button>
       </div>
 
       <div class="space-y-3">
@@ -172,6 +195,44 @@ const wsPendingInvites = pendingInvites.filter(n => {
             </div>
           </div>
         ))}
+      </div>
+    </div>
+    
+    <!-- Join Requests -->
+    <div class="bg-forge-panel border border-forge-border rounded-lg shadow-lg p-6">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-bold text-forge-text">{t('ws.settings.join_requests')}</h2>
+        <span class="text-xs text-forge-secondary font-medium px-3 py-1 bg-forge-secondary/10 rounded border border-forge-secondary/20">
+          {joinRequests.length} pending
+        </span>
+      </div>
+
+      <div class="space-y-3">
+        {joinRequests.length === 0 ? (
+          <div class="text-forge-muted text-sm italic">{t('ws.settings.no_requests')}</div>
+        ) : (
+          joinRequests.map((req) => (
+            <div class="flex items-center justify-between bg-forge-bg border border-forge-border p-3 rounded">
+              <div class="flex items-center gap-3">
+                {req.avatar_url ? (
+                  <img src={req.avatar_url} class="w-8 h-8 rounded-full border border-forge-border object-cover" alt={`${req.username} avatar`} loading="lazy" />
+                ) : (
+                  <div class="w-8 h-8 rounded-full border border-forge-border flex items-center justify-center text-forge-secondary shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </div>
+                )}
+                <div>
+                  <span class="font-bold text-forge-text block">@{req.username}</span>
+                  <span class="text-[10px] text-forge-muted">{new Date(req.created_at).toLocaleDateString()}</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button class="btn-req-accept px-3 py-1 bg-green-600/20 text-green-400 hover:bg-green-600/30 rounded border border-green-500/30 transition-colors text-sm font-medium" data-req-id={req.id}>{t('ws.settings.accept')}</button>
+                <button class="btn-req-reject px-3 py-1 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded border border-red-500/30 transition-colors text-sm font-medium" data-req-id={req.id}>{t('ws.settings.reject')}</button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
     
@@ -464,7 +525,9 @@ const wsPendingInvites = pendingInvites.filter(n => {
     const wsIdAttr = e.currentTarget.getAttribute('data-ws-id');
     const name = document.getElementById('ws-name-input').value;
     const sys_tag = document.getElementById('ws-tag-input').value;
-    const description = ""; // Description field removed from UI
+    const description = document.getElementById('ws-desc-input')?.value || "";
+    const is_public = document.getElementById('ws-public-input')?.value === "1";
+    const join_policy = document.getElementById('ws-join-policy-input')?.value || "disabled";
     
     let finalIcon = newIconUrl;
     if (!finalIcon) {
@@ -481,7 +544,7 @@ const wsPendingInvites = pendingInvites.filter(n => {
     const res = await fetch(`/api/workspaces/${wsIdAttr}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, sys_tag, description, icon: finalIcon })
+      body: JSON.stringify({ name, sys_tag, description, icon: finalIcon, is_public, join_policy })
     });
     
     if (res.ok) {
@@ -509,6 +572,47 @@ const wsPendingInvites = pendingInvites.filter(n => {
       } else {
         window.showToast(await res.text(), true);
         window.location.reload(); // reset select
+      }
+    });
+  });
+
+  // Join Requests
+  document.querySelectorAll('.btn-req-accept').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const el = e.currentTarget;
+      const reqId = el.getAttribute('data-req-id');
+      const wsId = document.getElementById('btn-save-general')?.getAttribute('data-ws-id');
+      
+      const res = await fetch(`/api/workspaces/${wsId}/requests/${reqId}/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      if (res.ok) {
+        window.showToast('Request accepted');
+        window.location.reload();
+      } else {
+        window.showToast(await res.text(), true);
+      }
+    });
+  });
+
+  document.querySelectorAll('.btn-req-reject').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const el = e.currentTarget;
+      const reqId = el.getAttribute('data-req-id');
+      const wsId = document.getElementById('btn-save-general')?.getAttribute('data-ws-id');
+      
+      const res = await fetch(`/api/workspaces/${wsId}/requests/${reqId}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      if (res.ok) {
+        el.closest('div.bg-forge-bg')?.remove();
+        window.showToast('Request rejected');
+      } else {
+        window.showToast(await res.text(), true);
       }
     });
   });
