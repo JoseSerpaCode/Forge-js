@@ -23,8 +23,11 @@ export default function resetDb() {
     DELETE FROM issues;
     DELETE FROM sprints;
     DELETE FROM workspace_members;
+    DELETE FROM workspace_join_requests;
     DELETE FROM workspaces;
     DELETE FROM sessions;
+    DELETE FROM friendships;
+    DELETE FROM user_blocks;
     DELETE FROM users;
   `);
 

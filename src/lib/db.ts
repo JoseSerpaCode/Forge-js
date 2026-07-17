@@ -92,8 +92,9 @@ CREATE TABLE IF NOT EXISTS workspace_join_requests (
   id TEXT PRIMARY KEY,
   workspace_id TEXT NOT NULL,
   user_id TEXT NOT NULL,
-  status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'approved', 'rejected')),
+  status TEXT NOT NULL CHECK (status IN ('pending','approved','rejected','cancelled')),
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   UNIQUE (workspace_id, user_id)
@@ -101,14 +102,29 @@ CREATE TABLE IF NOT EXISTS workspace_join_requests (
 
 CREATE TABLE IF NOT EXISTS friendships (
   id TEXT PRIMARY KEY,
-  user_id1 TEXT NOT NULL,
-  user_id2 TEXT NOT NULL,
-  status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'accepted', 'rejected', 'blocked')),
+  user_a_id TEXT NOT NULL,
+  user_b_id TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('pending','accepted','rejected','ended','blocked')),
+  action_user_id TEXT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id1) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (user_id2) REFERENCES users(id) ON DELETE CASCADE,
-  UNIQUE(user_id1, user_id2)
+  FOREIGN KEY (user_a_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_b_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (action_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CHECK (user_a_id < user_b_id),
+  CHECK (user_a_id != user_b_id),
+  UNIQUE (user_a_id, user_b_id)
+);
+
+CREATE TABLE IF NOT EXISTS user_blocks (
+  id TEXT PRIMARY KEY,
+  blocker_id TEXT NOT NULL,
+  blocked_id TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (blocker_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (blocked_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE (blocker_id, blocked_id),
+  CHECK (blocker_id != blocked_id)
 );
 `);
 
