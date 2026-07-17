@@ -59,6 +59,11 @@ const currentUrl = Astro.url.pathname;
     </div>
   </div>
   <div class="flex items-center gap-3">
+    {user?.is_guest && (
+      <a href="/register" class="hidden sm:flex items-center justify-center px-3 py-1.5 bg-forge-primary text-black rounded text-xs font-bold hover:bg-forge-primary/90 transition-colors">
+        {t('auth.login') || 'Sign In'} / {t('auth.register') || 'Register'}
+      </a>
+    )}
     <form method="post" action="/api/lang" class="hidden sm:block">
       <input type="hidden" name="current_path" value={currentUrl} />
       <button type="submit" name="lang" value={lang === 'en' ? 'es' : 'en'} class="text-forge-muted hover:text-forge-secondary transition-colors p-1.5 rounded hover:bg-forge-bg text-sm font-medium flex items-center gap-1" title="Change Language">

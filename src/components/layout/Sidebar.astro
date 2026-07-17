@@ -143,6 +143,11 @@ const isOwner = userRole === 'owner' || userRole === 'sysadmin';
 
   <!-- User Footer -->
   <div class="p-3 border-t border-forge-border shrink-0">
+    {user?.is_guest && (
+      <a href="/register" class="flex items-center justify-center w-full mb-3 py-1.5 bg-forge-primary text-black rounded text-xs font-bold hover:bg-forge-primary/90 transition-colors">
+        {t('auth.login') || 'Sign In'} / {t('auth.register') || 'Register'}
+      </a>
+    )}
     <a href={user?.is_guest ? "/register" : "/settings"} class="flex items-center gap-2.5 hover:bg-forge-bg p-2 -mx-1 rounded-lg transition-colors group" id="btn-user-settings" title={user?.is_guest ? "Create Account to Save Data" : "Account Settings"}>
       {user?.avatar_url && !user.is_guest ? (
         <img src={user.avatar_url} class="w-7 h-7 rounded-full border border-forge-border bg-forge-bg object-cover shrink-0" alt={`${user.username} avatar`} />
