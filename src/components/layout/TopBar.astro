@@ -615,9 +615,6 @@ const currentUrl = Astro.url.pathname;
             performSearch(insert);
           }
         }
-      } else if (type === 'user') {
-        e.preventDefault();
-        window.showToast?.('User profiles coming soon');
       } else {
         searchDropdown?.classList.add('hidden');
       }

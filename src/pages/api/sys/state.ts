@@ -54,7 +54,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
 
     // Search Users
     if (filter === 'all' || filter === 'user') {
-      const users = db.prepare(`SELECT username as title, 'user' as type, '/u/' || username as url FROM users WHERE username LIKE ? AND (is_public = 1 OR id = ?) LIMIT 5`).all(query, user.id);
+      const users = db.prepare(`SELECT username as title, 'user' as type, '/u/' || username as url FROM users WHERE username LIKE ? AND id != 'system' AND (is_public = 1 OR id = ?) LIMIT 5`).all(query, user.id);
       results = results.concat(users);
     }
 
